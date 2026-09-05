@@ -109,6 +109,9 @@ function EditorContentComponent() {
   const [copied, setCopied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Chế độ hiển thị trên màn hình di động & tablet (< 1024px) (TASK-412)
+  const [mobileActiveView, setMobileActiveView] = useState<"sidebar" | "canvas">("sidebar");
+
   // 1. Tải danh sách templates từ API
   useEffect(() => {
     let ignore = false;
@@ -228,6 +231,7 @@ function EditorContentComponent() {
     setThinkingText("");
     setStreamStats(null);
     setEditorContent(""); // Làm trống canvas để đón typewriter stream
+    setMobileActiveView("canvas"); // Tự động chuyển sang Canvas trên di động (TASK-412)
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -298,6 +302,7 @@ function EditorContentComponent() {
     setThinkingText("");
     setStreamStats(null);
     setExtractedFacts(null);
+    setMobileActiveView("canvas"); // Tự động chuyển sang Canvas trên di động (TASK-412)
 
     // Lưu văn bản gốc hiện tại để chuẩn bị so sánh Diff nếu cần
     const originalSnapshot = editorContent;
@@ -675,10 +680,39 @@ function EditorContentComponent() {
         </div>
       </header>
 
+      {/* Mobile / Tablet Segmented View Switcher (< 1024px) (TASK-412) */}
+      <div className="flex lg:hidden border-b bg-muted/40 p-2 gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileActiveView("sidebar")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            mobileActiveView === "sidebar"
+              ? "bg-background text-foreground shadow-xs border border-border/80"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Layers className="h-4 w-4" />
+          <span>Nhập dữ liệu ({sidebarMode === "template" ? "Mẫu" : "Nháp"})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileActiveView("canvas")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            mobileActiveView === "canvas"
+              ? "bg-background text-foreground shadow-xs border border-border/80"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          <span>Trang soạn thảo A4</span>
+        </button>
+      </div>
+
       {/* Main Workspace: Left Sidebar & Right A4 Canvas */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Biểu mẫu động & Nháp thô */}
-        <aside className="w-full md:w-[420px] lg:w-[460px] border-r bg-muted/20 flex flex-col shrink-0 overflow-hidden">
+        <aside className={`${mobileActiveView === "sidebar" ? "flex" : "hidden"} lg:flex w-full lg:w-[460px] border-r bg-muted/20 flex-col shrink-0 overflow-hidden`}>
           {/* Mode Switcher Tabs */}
           <div className="p-3 border-b bg-background/50 flex items-center gap-1">
             <button
@@ -877,7 +911,7 @@ function EditorContentComponent() {
         </aside>
 
         {/* Right Side: A4 Canvas Editor (Tiptap) */}
-        <main className="flex-1 flex flex-col overflow-hidden relative">
+        <main className={`${mobileActiveView === "canvas" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden relative`}>
           <TiptapEditor
             initialContent={editorContent}
             onChange={(html, json) => {

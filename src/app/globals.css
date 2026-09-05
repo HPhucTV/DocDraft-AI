@@ -133,3 +133,44 @@ body {
   }
 }
 
+/* ==========================================================================
+   TASK-412: Touch & Responsive Canvas View (iPad / Tablet / Smartphone)
+   - Thanh công cụ cuộn ngang cảm ứng mượt mà (touch-scroll-x)
+   - Tự động co giãn A4 Paper Canvas trên màn hình nhỏ
+   ========================================================================== */
+.touch-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+.touch-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+.a4-paper-canvas {
+  width: 210mm;
+  min-height: 297mm;
+  padding-top: 20mm;
+  padding-bottom: 20mm;
+  padding-left: 30mm;
+  padding-right: 15mm;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+@media (max-width: 1023px) {
+  .a4-paper-canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 1.5rem 1.25rem !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .a4-paper-canvas {
+    padding: 1rem 0.75rem !important;
+  }
+}
+
+

@@ -507,19 +507,10 @@ export function TiptapEditor({
 
       {/* Khu vực Canvas A4 và Bảng bình luận / Đề xuất cộng tác (TASK-306, TASK-307) */}
       <div className="flex-1 flex overflow-hidden min-h-[900px]">
-        {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP */}
-        <div className="flex-1 bg-muted/40 p-4 sm:p-8 md:p-12 overflow-x-auto flex justify-center">
+        {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP (TASK-110, TASK-412) */}
+        <div className="flex-1 bg-muted/40 p-2 sm:p-6 md:p-10 lg:p-12 overflow-x-auto flex justify-center">
           <div
-            className="bg-white dark:bg-card text-foreground shadow-2xl rounded-xs border border-border/60 transition-all box-border"
-            style={{
-              width: "210mm",
-              minHeight: "297mm",
-              paddingTop: "20mm", // Lề trên: 20mm
-              paddingBottom: "20mm", // Lề dưới: 20mm
-              paddingLeft: "30mm", // Lề trái: 30mm
-              paddingRight: "15mm", // Lề phải: 15mm
-              fontFamily: "'Times New Roman', Times, serif",
-            }}
+            className="a4-paper-canvas bg-white dark:bg-card text-foreground shadow-xl lg:shadow-2xl rounded-sm border border-border/60 transition-all box-border w-full lg:w-[210mm]"
           >
             <EditorContent editor={editor} />
           </div>
