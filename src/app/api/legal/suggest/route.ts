@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CURATED_LEGAL_DOCUMENTS } from "@/lib/legal/legal-data";
+import { performHybridLegalSearch } from "@/lib/legal/hybrid-search-rrf";
 
 export const dynamic = "force-dynamic";
 
@@ -59,29 +59,14 @@ export async function GET(req: NextRequest) {
       console.warn("DB chưa sẵn sàng, dùng bộ nhớ đệm curated legal data:", dbErr);
     }
 
-    // 2. Nếu DB trả về rỗng (chưa chạy seed), sử dụng CURATED_LEGAL_DOCUMENTS
-    if (dbResults.length === 0) {
-      const filtered = CURATED_LEGAL_DOCUMENTS.filter((d) => {
-        if (!cleanQuery) return true;
-        return (
-          d.docCode.toLowerCase().includes(cleanQuery) ||
-          d.title.toLowerCase().includes(cleanQuery) ||
-          d.fullCitation.toLowerCase().includes(cleanQuery) ||
-          d.issuingAuthority.toLowerCase().includes(cleanQuery)
-        );
-      }).slice(0, 8);
+    // 2. Nếu DB trả về rỗng (hoặc chế độ Hybrid Search được kích hoạt), sử dụng Động cơ Hybrid Search RRF (TASK-407)
+    if (dbResults.length === 0 || searchParams.get("hybrid") === "true") {
+      const hybridResults = await performHybridLegalSearch(cleanQuery, {
+        limit: 8,
+        statusFilter: "ACTIVE",
+      });
 
-      const mapped = filtered.map((d, idx) => ({
-        id: `mock-legal-${idx}`,
-        docCode: d.docCode,
-        title: d.title,
-        docType: d.docType,
-        issuingAuthority: d.issuingAuthority,
-        status: d.status,
-        fullCitation: d.fullCitation,
-      }));
-
-      return NextResponse.json(mapped);
+      return NextResponse.json(hybridResults);
     }
 
     return NextResponse.json(dbResults);

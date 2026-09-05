@@ -6,6 +6,7 @@ from .middleware import InternalSecretMiddleware
 from .routers.health import router as health_router
 from .routers.docx import router as docx_router, parse_router as parse_docx_router
 from .routers.pdf import router as pdf_router
+from .routers.ocr import router as ocr_router
 
 app = FastAPI(
     title=settings.SERVICE_NAME,
@@ -36,6 +37,7 @@ app.include_router(health_router)
 app.include_router(docx_router)
 app.include_router(parse_docx_router)
 app.include_router(pdf_router)
+app.include_router(ocr_router)
 
 
 @app.get("/")
