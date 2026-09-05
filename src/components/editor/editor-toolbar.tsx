@@ -25,6 +25,8 @@ import {
   Loader2,
   Scale,
   ShieldCheck,
+  Share2,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +46,10 @@ interface EditorToolbarProps {
   onOpenLegalDialog?: () => void;
   onOpenComplianceDialog?: () => void;
   complianceScore?: number;
+  onOpenShareDialog?: () => void;
+  onToggleComments?: () => void;
+  commentsCount?: number;
+  isCommentsOpen?: boolean;
 }
 
 export function EditorToolbar({
@@ -55,6 +61,10 @@ export function EditorToolbar({
   onOpenLegalDialog,
   onOpenComplianceDialog,
   complianceScore,
+  onOpenShareDialog,
+  onToggleComments,
+  commentsCount,
+  isCommentsOpen,
 }: EditorToolbarProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -396,7 +406,38 @@ export function EditorToolbar({
         )}
       </Button>
 
-      {/* Group 10: Safe Placeholders [...] Navigator (TASK-112) */}
+      {/* Group 10: Shared Links (TASK-305) */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onOpenShareDialog}
+        className="h-8 text-xs gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 font-semibold"
+        title="Tạo liên kết chia sẻ bảo mật có mật khẩu & phân quyền"
+      >
+        <Share2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+        <span className="hidden sm:inline">Chia sẻ</span>
+      </Button>
+
+      {/* Group 11: In-context Comments (TASK-306) */}
+      <Button
+        type="button"
+        variant={isCommentsOpen ? "secondary" : "ghost"}
+        size="sm"
+        onClick={onToggleComments}
+        className="h-8 text-xs gap-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 font-semibold"
+        title="Bình luận theo ngữ cảnh & cộng tác trao đổi (TASK-306)"
+      >
+        <MessageSquare className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+        <span className="hidden sm:inline">Bình luận</span>
+        {typeof commentsCount === "number" && commentsCount > 0 && (
+          <span className="ml-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+            {commentsCount}
+          </span>
+        )}
+      </Button>
+
+      {/* Group 12: Safe Placeholders [...] Navigator (TASK-112) */}
       <div className="ml-auto flex items-center gap-2">
         {placeholderCount > 0 ? (
           <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-900 dark:text-amber-200">

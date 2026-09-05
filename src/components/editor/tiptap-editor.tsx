@@ -21,6 +21,8 @@ import {
 import { EditorToolbar } from "./editor-toolbar";
 import { LegalAutocompleteDialog } from "./legal-autocomplete-dialog";
 import { ComplianceDialog } from "./compliance-dialog";
+import { ShareDialog } from "./share-dialog";
+import { CommentsPanel, type CommentAnchor } from "./comments-panel";
 import { checkCompliance } from "@/lib/compliance/compliance-engine";
 import {
   Sparkles,
@@ -31,6 +33,7 @@ import {
   Check,
   X,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +45,8 @@ export interface TiptapEditorProps {
   onApplyTextRef?: React.MutableRefObject<((text: string) => void) | null>;
   editable?: boolean;
   className?: string;
+  draftId?: string;
+  draftTitle?: string;
 }
 
 interface InlineSuggestionState {
@@ -64,6 +69,8 @@ export function TiptapEditor({
   onApplyTextRef,
   editable = true,
   className = "",
+  draftId,
+  draftTitle,
 }: TiptapEditorProps) {
   const [placeholderCount, setPlaceholderCount] = useState(0);
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
@@ -78,6 +85,14 @@ export function TiptapEditor({
   // State cho Compliance Dialog NĐ 30 (TASK-301, TASK-302)
   const [isComplianceDialogOpen, setIsComplianceDialogOpen] = useState(false);
   const [complianceScore, setComplianceScore] = useState<number>(100);
+
+  // State cho Share Dialog (TASK-305)
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+
+  // State cho In-context Comments Panel (TASK-306)
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [activeAnchor, setActiveAnchor] = useState<CommentAnchor | null>(null);
+  const [commentsCount, setCommentsCount] = useState<number>(0);
 
   const editor = useEditor({
     extensions: [
@@ -229,6 +244,19 @@ export function TiptapEditor({
     }
   };
 
+  // Mở bảng bình luận với đoạn văn bản đang chọn (TASK-306)
+  const handleAddCommentFromSelection = () => {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    const text = editor.state.doc.textBetween(from, to, " ");
+    setActiveAnchor({
+      from,
+      to,
+      quote: text.slice(0, 150),
+    });
+    setIsCommentsOpen(true);
+  };
+
   // Chấp nhận thay đổi từ AI Inline Copilot
   const handleAcceptInline = () => {
     if (!editor || !inlineSuggestion) return;
@@ -255,6 +283,10 @@ export function TiptapEditor({
         onOpenLegalDialog={() => setIsLegalDialogOpen(true)}
         onOpenComplianceDialog={() => setIsComplianceDialogOpen(true)}
         complianceScore={complianceScore}
+        onOpenShareDialog={() => setIsShareDialogOpen(true)}
+        onToggleComments={() => setIsCommentsOpen(!isCommentsOpen)}
+        commentsCount={commentsCount}
+        isCommentsOpen={isCommentsOpen}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
@@ -362,28 +394,59 @@ export function TiptapEditor({
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
                 <span>Chính tả</span>
               </Button>
+
+              <div className="h-4 w-px bg-border/60 mx-0.5" />
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleAddCommentFromSelection}
+                className="h-7 text-xs gap-1 px-2 hover:text-amber-600 hover:bg-amber-500/10"
+                title="Thêm bình luận cho đoạn văn bản này (TASK-306)"
+              >
+                <MessageSquare className="h-3.5 w-3.5 text-amber-500" />
+                <span>Bình luận</span>
+              </Button>
             </div>
           )}
         </BubbleMenu>
       )}
 
-      {/* Khu vực Canvas A4 với nền xám nhạt mô phỏng bàn làm việc */}
-      <div className="flex-1 bg-muted/40 p-4 sm:p-8 md:p-12 overflow-x-auto flex justify-center min-h-[900px]">
+      {/* Khu vực Canvas A4 và Bảng bình luận cộng tác (TASK-306) */}
+      <div className="flex-1 flex overflow-hidden min-h-[900px]">
         {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP */}
-        <div
-          className="bg-white dark:bg-card text-foreground shadow-2xl rounded-xs border border-border/60 transition-all box-border"
-          style={{
-            width: "210mm",
-            minHeight: "297mm",
-            paddingTop: "20mm", // Lề trên: 20mm
-            paddingBottom: "20mm", // Lề dưới: 20mm
-            paddingLeft: "30mm", // Lề trái: 30mm
-            paddingRight: "15mm", // Lề phải: 15mm
-            fontFamily: "'Times New Roman', Times, serif",
-          }}
-        >
-          <EditorContent editor={editor} />
+        <div className="flex-1 bg-muted/40 p-4 sm:p-8 md:p-12 overflow-x-auto flex justify-center">
+          <div
+            className="bg-white dark:bg-card text-foreground shadow-2xl rounded-xs border border-border/60 transition-all box-border"
+            style={{
+              width: "210mm",
+              minHeight: "297mm",
+              paddingTop: "20mm", // Lề trên: 20mm
+              paddingBottom: "20mm", // Lề dưới: 20mm
+              paddingLeft: "30mm", // Lề trái: 30mm
+              paddingRight: "15mm", // Lề phải: 15mm
+              fontFamily: "'Times New Roman', Times, serif",
+            }}
+          >
+            <EditorContent editor={editor} />
+          </div>
         </div>
+
+        {/* Bảng bình luận ngữ cảnh cộng tác */}
+        {draftId && (
+          <CommentsPanel
+            isOpen={isCommentsOpen}
+            onClose={() => {
+              setIsCommentsOpen(false);
+              setActiveAnchor(null);
+            }}
+            draftId={draftId}
+            activeAnchor={activeAnchor}
+            onClearAnchor={() => setActiveAnchor(null)}
+            onCommentsCountChange={setCommentsCount}
+          />
+        )}
       </div>
 
       {/* Legal RAG Citation Autocomplete Dialog (TASK-210, TASK-211) */}
@@ -413,6 +476,16 @@ export function TiptapEditor({
           onChange?.(editor.getHTML(), fixedAst as object);
         }}
       />
+
+      {/* Secure Shared Links Dialog (TASK-305) */}
+      {draftId && (
+        <ShareDialog
+          open={isShareDialogOpen}
+          onOpenChange={setIsShareDialogOpen}
+          draftId={draftId}
+          draftTitle={draftTitle}
+        />
+      )}
     </div>
   );
 }
