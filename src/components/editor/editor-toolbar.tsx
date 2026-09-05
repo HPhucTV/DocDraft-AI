@@ -23,6 +23,7 @@ import {
   Columns2,
   Upload,
   Loader2,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ interface EditorToolbarProps {
   onJumpToNextPlaceholder: () => void;
   onImportDocx?: (file: File) => void;
   isImportingDocx?: boolean;
+  onOpenLegalDialog?: () => void;
 }
 
 export function EditorToolbar({
@@ -47,6 +49,7 @@ export function EditorToolbar({
   onJumpToNextPlaceholder,
   onImportDocx,
   isImportingDocx = false,
+  onOpenLegalDialog,
 }: EditorToolbarProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -355,6 +358,19 @@ export function EditorToolbar({
         <span className="hidden sm:inline">
           {isImportingDocx ? "Đang đọc Word..." : "Nhập Word (.docx)"}
         </span>
+      </Button>
+
+      {/* Group 8: Legal RAG Autocomplete (TASK-210, TASK-211) */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onOpenLegalDialog}
+        className="h-8 text-xs gap-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10"
+        title="Tra cứu & Gợi ý Căn cứ Pháp lý (Nghị định 30, Luật, Thông tư)"
+      >
+        <Scale className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+        <span className="hidden sm:inline">Căn cứ pháp lý</span>
       </Button>
 
       {/* Group 8: Safe Placeholders [...] Navigator (TASK-112) */}

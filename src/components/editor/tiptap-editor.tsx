@@ -19,6 +19,7 @@ import {
   extractPlaceholders,
 } from "./extensions/placeholder-highlight";
 import { EditorToolbar } from "./editor-toolbar";
+import { LegalAutocompleteDialog } from "./legal-autocomplete-dialog";
 import {
   Sparkles,
   Wand2,
@@ -68,6 +69,9 @@ export function TiptapEditor({
   // State cho AI In-line Copilot Toolbar (TASK-205)
   const [isInlineLoading, setIsInlineLoading] = useState(false);
   const [inlineSuggestion, setInlineSuggestion] = useState<InlineSuggestionState | null>(null);
+
+  // State cho Legal RAG Autocomplete Dialog (TASK-210, TASK-211)
+  const [isLegalDialogOpen, setIsLegalDialogOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -227,13 +231,14 @@ export function TiptapEditor({
 
   return (
     <div className={`flex flex-col w-full ${className}`}>
-      {/* Thanh công cụ Rich Toolbar */}
+      {/* Thanh công cụ định dạng chuẩn văn thư */}
       <EditorToolbar
         editor={editor}
         placeholderCount={placeholderCount}
         onJumpToNextPlaceholder={handleJumpToNextPlaceholder}
         onImportDocx={onImportDocx}
         isImportingDocx={isImportingDocx}
+        onOpenLegalDialog={() => setIsLegalDialogOpen(true)}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
@@ -364,6 +369,20 @@ export function TiptapEditor({
           <EditorContent editor={editor} />
         </div>
       </div>
+
+      {/* Legal RAG Citation Autocomplete Dialog (TASK-210, TASK-211) */}
+      <LegalAutocompleteDialog
+        isOpen={isLegalDialogOpen}
+        onClose={() => setIsLegalDialogOpen(false)}
+        onSelectCitation={(citationText) => {
+          if (!editor) return;
+          editor
+            .chain()
+            .focus()
+            .insertContent(`<p><em>${citationText}</em></p>`)
+            .run();
+        }}
+      />
     </div>
   );
 }
