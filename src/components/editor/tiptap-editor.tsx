@@ -18,6 +18,14 @@ import {
   SafePlaceholderHighlight,
   extractPlaceholders,
 } from "./extensions/placeholder-highlight";
+import {
+  SuggestionDeletion,
+  SuggestionInsertion,
+  extractSuggestions,
+  createSuggestion,
+  type DocumentSuggestion,
+} from "./extensions/suggestion-mode";
+import { SuggestionsPanel } from "./suggestions-panel";
 import { EditorToolbar } from "./editor-toolbar";
 import { LegalAutocompleteDialog } from "./legal-autocomplete-dialog";
 import { ComplianceDialog } from "./compliance-dialog";
@@ -34,6 +42,7 @@ import {
   X,
   Loader2,
   MessageSquare,
+  GitPullRequest,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -94,6 +103,10 @@ export function TiptapEditor({
   const [activeAnchor, setActiveAnchor] = useState<CommentAnchor | null>(null);
   const [commentsCount, setCommentsCount] = useState<number>(0);
 
+  // State cho Suggestion Mode (TASK-307)
+  const [isSuggestionsPanelOpen, setIsSuggestionsPanelOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<DocumentSuggestion[]>([]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -117,6 +130,8 @@ export function TiptapEditor({
       ND30TableHeader,
       ND30TableHelpers,
       SafePlaceholderHighlight,
+      SuggestionDeletion,
+      SuggestionInsertion,
     ],
     content: initialContent,
     editable,
@@ -135,6 +150,10 @@ export function TiptapEditor({
       // Cập nhật số lượng placeholder [...]
       const found = extractPlaceholders(ed.state.doc);
       setPlaceholderCount(found.length);
+
+      // Cập nhật danh sách đề xuất chỉnh sửa (TASK-307)
+      const foundSuggestions = extractSuggestions(ed.state.doc);
+      setSuggestions(foundSuggestions);
 
       // Tính lại điểm tuân thủ thể thức NĐ 30
       try {
@@ -271,6 +290,20 @@ export function TiptapEditor({
     setInlineSuggestion(null);
   };
 
+  // Tạo đề xuất từ AI Inline Copilot (TASK-307)
+  const handleSuggestInline = () => {
+    if (!editor || !inlineSuggestion) return;
+    createSuggestion(editor, {
+      from: inlineSuggestion.from,
+      to: inlineSuggestion.to,
+      replacementText: inlineSuggestion.resultText,
+      author: "AI Copilot",
+    });
+    setInlineSuggestion(null);
+    setSuggestions(extractSuggestions(editor.state.doc));
+    setIsSuggestionsPanelOpen(true);
+  };
+
   return (
     <div className={`flex flex-col w-full ${className}`}>
       {/* Thanh công cụ định dạng chuẩn văn thư */}
@@ -287,6 +320,9 @@ export function TiptapEditor({
         onToggleComments={() => setIsCommentsOpen(!isCommentsOpen)}
         commentsCount={commentsCount}
         isCommentsOpen={isCommentsOpen}
+        onOpenSuggestionsPanel={() => setIsSuggestionsPanelOpen(!isSuggestionsPanelOpen)}
+        suggestionsCount={suggestions.length}
+        isSuggestionsPanelOpen={isSuggestionsPanelOpen}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
@@ -327,6 +363,17 @@ export function TiptapEditor({
                 >
                   <X className="h-3 w-3" />
                   <span>Bác bỏ</span>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[11px] text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-purple-200 dark:border-purple-800 gap-1 px-2 font-medium"
+                  onClick={handleSuggestInline}
+                  title="Ghi nhận dưới dạng đề xuất chỉnh sửa để xem xét sau (TASK-307)"
+                >
+                  <GitPullRequest className="h-3 w-3" />
+                  <span>Đề xuất</span>
                 </Button>
                 <Button
                   type="button"
@@ -413,7 +460,7 @@ export function TiptapEditor({
         </BubbleMenu>
       )}
 
-      {/* Khu vực Canvas A4 và Bảng bình luận cộng tác (TASK-306) */}
+      {/* Khu vực Canvas A4 và Bảng bình luận / Đề xuất cộng tác (TASK-306, TASK-307) */}
       <div className="flex-1 flex overflow-hidden min-h-[900px]">
         {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP */}
         <div className="flex-1 bg-muted/40 p-4 sm:p-8 md:p-12 overflow-x-auto flex justify-center">
@@ -433,7 +480,21 @@ export function TiptapEditor({
           </div>
         </div>
 
-        {/* Bảng bình luận ngữ cảnh cộng tác */}
+        {/* Bảng Đề xuất chỉnh sửa (TASK-307) */}
+        <SuggestionsPanel
+          isOpen={isSuggestionsPanelOpen}
+          onClose={() => setIsSuggestionsPanelOpen(false)}
+          editor={editor}
+          suggestions={suggestions}
+          onSuggestionChange={() => {
+            if (editor) {
+              setSuggestions(extractSuggestions(editor.state.doc));
+              onChange?.(editor.getHTML(), editor.getJSON());
+            }
+          }}
+        />
+
+        {/* Bảng bình luận ngữ cảnh cộng tác (TASK-306) */}
         {draftId && (
           <CommentsPanel
             isOpen={isCommentsOpen}

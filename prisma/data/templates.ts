@@ -2411,4 +2411,704 @@ Hệ thống vận hành ổn định, bàn giao đầy đủ mã nguồn và t�
     isPublished: true,
     avgRating: 5.0,
   },
+
+  // ==========================================
+  // 15. GÓI PMO: BIÊN BẢN NGHIỆM THU CÔNG VIỆC XÂY DỰNG
+  // ==========================================
+  {
+    id: "pmo-acceptance-minutes",
+    categoryId: "construction",
+    industryPack: "PMO",
+    title: "Biên bản nghiệm thu công việc xây dựng",
+    description:
+      "Biên bản nghiệm thu công việc xây dựng, giai đoạn thi công hoàn thành tuân thủ nghiêm ngặt Nghị định số 06/2021/NĐ-CP và hồ sơ thiết kế kỹ thuật thi công.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Biên bản nghiệm thu công việc xây dựng với thông tin sau:
+- Tên công trình / Dự án: {{ten_du_an}}
+- Hạng mục / Công việc nghiệm thu: {{hang_muc_nghiem_thu}}
+- Địa điểm xây dựng: {{dia_diem_xay_dung}}
+- Đại diện Chủ đầu tư / Ban QLDA: {{chu_dau_tu}}
+- Đại diện Tư vấn Giám sát: {{tu_van_giam_sat}}
+- Đại diện Nhà thầu thi công: {{nha_thau_thi_cong}}
+- Thời gian nghiệm thu: {{thoi_gian_nghiem_thu}}
+- Đánh giá chất lượng công việc: {{danh_gia_chat_luong}}
+- Kết luận nghiệm thu: {{ket_luan_nghiem_thu}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_du_an",
+          label: "Tên dự án / Công trình xây dựng",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Dự án Xây dựng Tòa nhà Văn phòng DocDraft Tower",
+          validation: { min_length: 5, max_length: 250 },
+        },
+        {
+          name: "hang_muc_nghiem_thu",
+          label: "Hạng mục / Công việc nghiệm thu",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Nghiệm thu công tác cốt thép, cốp pha sàn tầng 5, trục 1-4/A-D",
+          validation: { min_length: 5, max_length: 250 },
+        },
+        {
+          name: "dia_diem_xay_dung",
+          label: "Địa điểm xây dựng",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Lô E2, Khu Đô thị mới Cầu Giấy, Hà Nội",
+        },
+        {
+          name: "chu_dau_tu",
+          label: "Đại diện Chủ đầu tư / Ban QLDA",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Trần Văn Cương - Giám đốc Ban QLDA",
+        },
+        {
+          name: "tu_van_giam_sat",
+          label: "Đại diện Tư vấn Giám sát",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Nguyễn Hoàng Linh - Kỹ sư trưởng TVGS",
+        },
+        {
+          name: "nha_thau_thi_cong",
+          label: "Đại diện Nhà thầu thi công",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Vũ Mạnh Hùng - Chỉ huy trưởng công trình",
+        },
+        {
+          name: "thoi_gian_nghiem_thu",
+          label: "Thời gian bắt đầu & kết thúc nghiệm thu",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Bắt đầu 09h00 ngày 05/09/2026, kết thúc 11h30 cùng ngày",
+        },
+        {
+          name: "danh_gia_chat_luong",
+          label: "Đánh giá chất lượng và sự phù hợp",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Đúng bản vẽ thiết kế thi công đã duyệt, đạt yêu cầu tiêu chuẩn kỹ thuật TCVN 4453:1995.",
+        },
+        {
+          name: "ket_luan_nghiem_thu",
+          label: "Kết luận nghiệm thu",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Đồng ý nghiệm thu công việc xây dựng; Cho phép chuyển bước thi công đổ bê tông sàn tầng 5.",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Biên bản nghiệm thu công tác đổ bê tông sàn",
+        input: {
+          ten_du_an: "Dự án Tòa nhà phức hợp DocDraft Tower",
+          hang_muc_nghiem_thu: "Nghiệm thu công tác đổ bê tông sàn tầng hầm B1",
+          dia_diem_xay_dung: "Số 18 Phạm Hùng, Nam Từ Liêm, Hà Nội",
+          chu_dau_tu: "Ban Quản lý Dự án Tòa nhà DocDraft",
+          tu_van_giam_sat: "Công ty Cổ phần Tư vấn Xây dựng Hà Nội",
+          nha_thau_thi_cong: "Công ty TNHH Đầu tư & Xây dựng Phúc Thịnh",
+          thoi_gian_nghiem_thu: "09h00 ngày 05 tháng 09 năm 2026",
+          danh_gia_chat_luong: "Kích thước hình học, cốt thép, cốp pha đúng hồ sơ bản vẽ thiết kế thi công đã duyệt; Đạt yêu cầu tiêu chuẩn kỹ thuật.",
+          ket_luan_nghiem_thu: "Chấp thuận nghiệm thu và đồng ý cho phép triển khai bước thi công tiếp theo.",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">BAN QUẢN LÝ DỰ ÁN TÒA NHÀ DOCDRAFT</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">BỘ PHẬN KỸ THUẬT - QA/QC</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Số: 26/BB-NT/B1</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:15pt; margin:20px 0 5px 0;">BIÊN BẢN NGHIỆM THU CÔNG VIỆC XÂY DỰNG</h2>
+<p style="text-align:center; font-style:italic; margin-bottom:20px;">(Căn cứ Nghị định số 06/2021/NĐ-CP ngày 26/01/2021 của Chính phủ)</p>
+
+<p><strong>1. Đối tượng và địa điểm nghiệm thu:</strong><br/>
+- Tên công việc: Nghiệm thu công tác đổ bê tông sàn tầng hầm B1.<br/>
+- Tên dự án: Dự án Tòa nhà phức hợp DocDraft Tower.<br/>
+- Địa điểm xây dựng: Số 18 Phạm Hùng, Nam Từ Liêm, Hà Nội.<br/>
+- Thời gian tiến hành: Vào hồi 09 giờ 00 phút ngày 05 tháng 09 năm 2026.</p>
+
+<p><strong>2. Thành phần trực tiếp nghiệm thu:</strong><br/>
+- Đại diện Chủ đầu tư: Ông [HỌ TÊN ĐẠI DIỆN CĐT], Chức vụ: Giám đốc Dự án.<br/>
+- Đại diện Tư vấn giám sát: Ông [HỌ TÊN KỸ SƯ TRƯỞNG TVGS], Chức vụ: Kỹ sư trưởng.<br/>
+- Đại diện Nhà thầu thi công: Ông [HỌ TÊN CHỈ HUY TRƯỞNG], Chức vụ: Chỉ huy trưởng.</p>
+
+<p><strong>3. Căn cứ nghiệm thu:</strong><br/>
+- Căn cứ Hợp đồng thi công xây dựng số [SỐ HỢP ĐỒNG] đã ký kết;<br/>
+- Căn cứ Hồ sơ thiết kế bản vẽ thi công và các chỉ dẫn kỹ thuật được phê duyệt;<br/>
+- Căn cứ Tiêu chuẩn kỹ thuật thi công và nghiệm thu bê tông cốt thép hiện hành (TCVN 4453:1995);<br/>
+- Căn cứ Phiếu kiểm tra kết quả thí nghiệm vật liệu đầu vào và nhật ký thi công công trình.</p>
+
+<p><strong>4. Đánh giá chất lượng công việc xây dựng:</strong><br/>
+- Về kích thước hình học, độ cao độ và độ phẳng: Phù hợp bản vẽ thiết kế kỹ thuật;<br/>
+- Về vật liệu và quy trình đổ bê tông: Đạt yêu cầu chất lượng kỹ thuật theo quy định;<br/>
+- Các ý kiến khác: Đảm bảo vệ sinh môi trường và an toàn lao động tại công trường.</p>
+
+<p><strong>5. Kết luận:</strong><br/>
+- Chấp nhận nghiệm thu công việc: Nghiệm thu công tác đổ bê tông sàn tầng hầm B1.<br/>
+- Đồng ý cho phép nhà thầu tiếp tục triển khai thi công bước tiếp theo: Lắp dựng cốp pha cột vách tầng hầm B1.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:33%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN NHÀ THẦU</strong><br/>
+      <em>(Ký, ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Vũ Mạnh Hùng</strong>
+    </td>
+    <td style="width:33%; text-align:center; vertical-align:top; border:none;">
+      <strong>TƯ VẤN GIÁM SÁT</strong><br/>
+      <em>(Ký, ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Hoàng Linh</strong>
+    </td>
+    <td style="width:34%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN CHỦ ĐẦU TƯ</strong><br/>
+      <em>(Ký, ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Trần Văn Cương</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ==========================================
+  // 16. GÓI PMO: TỜ TRÌNH THANH TOÁN KHỐI LƯỢNG HOÀN THÀNH
+  // ==========================================
+  {
+    id: "pmo-payment-proposal",
+    categoryId: "construction",
+    industryPack: "PMO",
+    title: "Tờ trình xin thanh toán khối lượng hoàn thành",
+    description:
+      "Tờ trình của Nhà thầu / Ban điều hành dự án đề nghị Chủ đầu tư thanh toán khối lượng thi công hoàn thành theo từng đợt của hợp đồng xây dựng.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Tờ trình xin thanh toán khối lượng thi công hoàn thành với thông tin sau:
+- Tên công trình / Dự án: {{ten_du_an}}
+- Số hợp đồng thi công: {{so_hop_dong}}
+- Tên Nhà thầu thi công: {{nha_thau}}
+- Tên Chủ đầu tư / Ban QLDA: {{chu_dau_tu}}
+- Đợt thanh toán: {{dot_thanh_toan}}
+- Tổng giá trị hợp đồng: {{gia_tri_hop_dong}}
+- Giá trị khối lượng hoàn thành đợt này: {{gia_tri_nghiem_thu_dot_nay}}
+- Khấu trừ tạm ứng / bảo hành đợt này: {{khau_tru_tam_ung}}
+- Số tiền đề nghị thanh toán: {{so_tien_de_nghi_thanh_toan}}
+- Thông tin tài khoản thụ hưởng: {{tai_khoan_thu_huong}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_du_an",
+          label: "Tên dự án / Gói thầu xây lắp",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Dự án Xây dựng Cầu đường vành đai 3 trên cao",
+        },
+        {
+          name: "so_hop_dong",
+          label: "Số và ngày ký Hợp đồng",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Hợp đồng số 12/2025/HĐ-XD ngày 15/03/2025",
+        },
+        {
+          name: "nha_thau",
+          label: "Tên Nhà thầu thi công",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tổng công ty Đầu tư & Phát triển Hạ tầng Giao thông",
+        },
+        {
+          name: "chu_dau_tu",
+          label: "Tên Chủ đầu tư / Ban QLDA",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ban Quản lý Dự án Đầu tư Xây dựng Công trình Giao thông TP. Hà Nội",
+        },
+        {
+          name: "dot_thanh_toan",
+          label: "Đợt thanh toán",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Đợt 03 (Tháng 08/2026)",
+        },
+        {
+          name: "gia_tri_hop_dong",
+          label: "Tổng giá trị hợp đồng đã ký",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 120.000.000.000 đ (Một trăm hai mươi tỷ đồng)",
+        },
+        {
+          name: "gia_tri_nghiem_thu_dot_nay",
+          label: "Giá trị khối lượng nghiệm thu đợt này",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 18.500.000.000 đ (Mười tám tỷ năm trăm triệu đồng)",
+        },
+        {
+          name: "khau_tru_tam_ung",
+          label: "Khấu trừ tạm ứng & giữ lại bảo hành",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 3.700.000.000 đ (20% tạm ứng) và 925.000.000 đ (5% bảo hành)",
+        },
+        {
+          name: "so_tien_de_nghi_thanh_toan",
+          label: "Số tiền thực tế đề nghị thanh toán",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 13.875.000.000 đ (Mười ba tỷ tám trăm bảy mươi lăm triệu đồng)",
+        },
+        {
+          name: "tai_khoan_thu_huong",
+          label: "Số tài khoản và ngân hàng thụ hưởng",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TK 0123456789 tại Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV) - Chi nhánh Hà Nội",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Tờ trình đề nghị thanh toán khối lượng xây dựng đợt 3",
+        input: {
+          ten_du_an: "Gói thầu số 05 - Xây lắp cầu vượt và đường dẫn",
+          so_hop_dong: "Hợp đồng số 45/2025/HĐ-XD ngày 10/01/2025",
+          nha_thau: "Công ty Cổ phần Xây dựng Giao thông 1",
+          chu_dau_tu: "Ban Quản lý Dự án Giao thông Đô thị",
+          dot_thanh_toan: "Đợt 03",
+          gia_tri_hop_dong: "85.000.000.000 đ",
+          gia_tri_nghiem_thu_dot_nay: "12.000.000.000 đ",
+          khau_tru_tam_ung: "2.400.000.000 đ",
+          so_tien_de_nghi_thanh_toan: "9.600.000.000 đ",
+          tai_khoan_thu_huong: "Số TK 1122334455 tại Vietcombank - Chi nhánh Thăng Long",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">CÔNG TY CP XÂY DỰNG GIAO THÔNG 1</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">BAN ĐIỀU HÀNH DỰ ÁN</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Số: 108/TTr-BĐH</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:15pt; margin:20px 0 5px 0;">TỜ TRÌNH</h2>
+<p style="text-align:center; font-style:italic; margin-bottom:20px;">V/v Đề nghị thanh toán khối lượng hoàn thành Đợt 03 - Gói thầu số 05</p>
+
+<p style="margin-left:40px;"><strong>Kính gửi:</strong> Ban Quản lý Dự án Giao thông Đô thị.</p>
+
+<p><em>- Căn cứ Hợp đồng số 45/2025/HĐ-XD ngày 10/01/2025 ký giữa Ban Quản lý Dự án Giao thông Đô thị và Công ty Cổ phần Xây dựng Giao thông 1;</em></p>
+<p><em>- Căn cứ Biên bản nghiệm thu công việc xây dựng và Bảng xác định giá trị khối lượng công việc hoàn thành Đợt 03 đã được Tư vấn giám sát xác nhận;</em></p>
+<p><em>- Căn cứ tình hình thi công thực tế tại công trường.</em></p>
+
+<p>Nhà thầu kính trình Ban Quản lý Dự án xem xét và giải quyết thanh toán khối lượng thi công xây dựng hoàn thành Đợt 03 với các nội dung chi tiết sau:</p>
+
+<p><strong>1. Thông tin hợp đồng:</strong><br/>
+- Tên công trình: Gói thầu số 05 - Xây lắp cầu vượt và đường dẫn.<br/>
+- Tổng giá trị hợp đồng: <strong>85.000.000.000 đ</strong> (Tám mươi lăm tỷ đồng).</p>
+
+<p><strong>2. Giá trị đề nghị thanh toán Đợt 03:</strong><br/>
+- Giá trị khối lượng nghiệm thu hoàn thành: <strong>12.000.000.000 đ</strong>.<br/>
+- Khấu trừ hoàn trả tiền tạm ứng: <strong>2.400.000.000 đ</strong>.<br/>
+- Số tiền đề nghị thanh toán thực tế đợt này: <strong>9.600.000.000 đ</strong> (Bằng chữ: Chín tỷ sáu trăm triệu đồng chẵn).</p>
+
+<p><strong>3. Thông tin tài khoản thụ hưởng:</strong><br/>
+- Đơn vị thụ hưởng: Công ty Cổ phần Xây dựng Giao thông 1.<br/>
+- Số tài khoản: <strong>1122334455</strong> tại Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank) - Chi nhánh Thăng Long.</p>
+
+<p>Kính đề nghị Ban Quản lý Dự án Giao thông Đô thị xem xét, hoàn tất thủ tục chuyển tiền để Nhà thầu tiếp tục đẩy nhanh tiến độ thi công công trình.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Như trên;<br/>
+      - TVGS (để phối hợp);<br/>
+      - Lưu: VT, BĐH.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>GIÁM ĐỐC BAN ĐIỀU HÀNH DỰ ÁN</strong><br/>
+      <em>(Ký và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Đỗ Quốc Tuấn</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ==========================================
+  // 17. GÓI PMO: HỢP ĐỒNG THẦU PHỤ THI CÔNG XÂY DỰNG
+  // ==========================================
+  {
+    id: "pmo-subcontractor-agreement",
+    categoryId: "construction",
+    industryPack: "PMO",
+    title: "Hợp đồng thầu phụ thi công xây dựng",
+    description:
+      "Hợp đồng giao kết giữa Tổng thầu / Nhà thầu chính và Thầu phụ thi công phần việc chuyên môn hoặc nhân công xây lắp theo Luật Xây dựng.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Hợp đồng thầu phụ thi công xây dựng với thông tin sau:
+- Bên giao thầu (Tổng thầu): {{ben_giao_thau}}
+- Bên nhận thầu (Thầu phụ): {{ben_nhan_thau}}
+- Tên công trình và vị trí: {{ten_cong_trinh}}
+- Phạm vi nội dung công việc: {{noi_dung_cong_viec}}
+- Giá trị hợp đồng: {{gia_tri_hop_dong}}
+- Tiến độ thi công: {{tien_do_thi_cong}}
+- Phương thức thanh toán: {{phuong_thuc_thanh_toan}}
+- Yêu cầu về An toàn lao động & Vệ sinh môi trường: {{an_toan_lao_dong}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ben_giao_thau",
+          label: "Bên giao thầu (Tổng thầu / Nhà thầu chính)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Công ty Cổ phần Tập đoàn Xây dựng Thăng Long, Đại diện: Ông Lê Văn Hưng - Tổng Giám đốc",
+        },
+        {
+          name: "ben_nhan_thau",
+          label: "Bên nhận thầu (Thầu phụ thi công)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Công ty TNHH Cơ điện & PCCC Sao Mai, Đại diện: Ông Nguyễn Văn Bình - Giám đốc",
+        },
+        {
+          name: "ten_cong_trinh",
+          label: "Tên công trình và vị trí thi công",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tòa nhà Trụ sở Văn phòng Tập đoàn, Khu đô thị Tây Hồ Tây, Hà Nội",
+        },
+        {
+          name: "noi_dung_cong_viec",
+          label: "Phạm vi nội dung công việc giao thầu",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Thi công cung cấp vật tư và lắp đặt toàn bộ hệ thống Phòng cháy chữa cháy (PCCC) từ tầng hầm đến tầng mái.",
+        },
+        {
+          name: "gia_tri_hop_dong",
+          label: "Giá trị hợp đồng thầu phụ",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 15.600.000.000 đ (Mười lăm tỷ sáu trăm triệu đồng, đã bao gồm thuế VAT)",
+        },
+        {
+          name: "tien_do_thi_cong",
+          label: "Thời gian khởi công & hoàn thành",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Khởi công ngày 15/09/2026, nghiệm thu bàn giao trước ngày 30/03/2027 (Tổng thời gian 195 ngày)",
+        },
+        {
+          name: "phuong_thuc_thanh_toan",
+          label: "Điều khoản tạm ứng & thanh toán",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tạm ứng 20% sau khi ký hợp đồng và có bảo lãnh; Thanh toán theo khối lượng nghiệm thu hàng tháng 75%; Giữ lại bảo hành 5%.",
+        },
+        {
+          name: "an_toan_lao_dong",
+          label: "Trách nhiệm An toàn lao động (ATLĐ)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Thầu phụ chịu trách nhiệm 100% về trang bị bảo hộ lao động, tập huấn an toàn và bồi thường thiệt hại nếu xảy ra sự cố.",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Hợp đồng thầu phụ thi công hệ thống PCCC tòa nhà",
+        input: {
+          ben_giao_thau: "Công ty Cổ phần Xây dựng Thăng Long (Bên A)",
+          ben_nhan_thau: "Công ty TNHH Cơ điện Sao Mai (Bên B)",
+          ten_cong_trinh: "Tòa nhà Trụ sở DocDraft Complex, Hà Nội",
+          noi_dung_cong_viec: "Cung cấp vật tư thiết bị và thi công lắp đặt hoàn chỉnh hệ thống báo cháy tự động, chữa cháy vách tường và sprinkler.",
+          gia_tri_hop_dong: "12.500.000.000 đ",
+          tien_do_thi_cong: "Bắt đầu ngày 01/10/2026, hoàn thành ngày 15/04/2027",
+          phuong_thuc_thanh_toan: "Tạm ứng 20%, thanh toán theo nghiệm thu từng tầng 75%, bảo hành 5% trong 24 tháng.",
+          an_toan_lao_dong: "Tuân thủ nghiêm quy định an toàn lao động, vệ sinh môi trường và PCCC tại công trường.",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:100%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:16pt; margin:15px 0 5px 0;">HỢP ĐỒNG THẦU PHỤ THI CÔNG XÂY DỰNG</h2>
+<p style="text-align:center; font-size:12pt; margin-bottom:20px;">Số: 89/2026/HĐTP-TL-SM</p>
+
+<p><em>- Căn cứ Bộ luật Dân sự số 91/2015/QH13 ngày 24/11/2015;</em></p>
+<p><em>- Căn cứ Luật Xây dựng số 50/2014/QH13 và Luật sửa đổi bổ sung năm 2020;</em></p>
+<p><em>- Căn cứ Nghị định số 37/2015/NĐ-CP và Nghị định số 50/2021/NĐ-CP của Chính phủ về hợp đồng xây dựng;</em></p>
+<p><em>- Căn cứ nhu cầu và khả năng thực tế của hai bên.</em></p>
+
+<p>Hôm nay, ngày 05 tháng 09 năm 2026, tại Trụ sở Bên A, chúng tôi gồm có:</p>
+
+<p><strong>BÊN GIAO THẦU (BÊN A): CÔNG TY CỔ PHẦN XÂY DỰNG THĂNG LONG</strong><br/>
+- Đại diện: Ông <strong>Lê Văn Hưng</strong> - Chức vụ: Tổng Giám đốc.<br/>
+- Địa chỉ: Tầng 12, Tòa nhà Licogi 13, Thanh Xuân, Hà Nội.<br/>
+- Mã số thuế: 0101234567.</p>
+
+<p><strong>BÊN NHẬN THẦU (BÊN B): CÔNG TY TNHH CƠ ĐIỆN SAO MAI</strong><br/>
+- Đại diện: Ông <strong>Nguyễn Văn Bình</strong> - Chức vụ: Giám đốc.<br/>
+- Địa chỉ: Số 56 đường Hoàng Quốc Việt, Cầu Giấy, Hà Nội.<br/>
+- Mã số thuế: 0107654321.</p>
+
+<p>Hai bên thống nhất ký kết Hợp đồng thầu phụ với các điều khoản cụ thể sau:</p>
+
+<p><strong>Điều 1. Phạm vi công việc:</strong><br/>
+Bên A giao và Bên B nhận thi công cung cấp vật tư thiết bị và lắp đặt hoàn chỉnh hệ thống báo cháy tự động, chữa cháy vách tường và hệ thống chữa cháy tự động Sprinkler thuộc dự án Tòa nhà Trụ sở DocDraft Complex.</p>
+
+<p><strong>Điều 2. Giá trị hợp đồng và hình thức giá:</strong><br/>
+1. Tổng giá trị hợp đồng: <strong>12.500.000.000 đ</strong> (Mười hai tỷ năm trăm triệu đồng chẵn). Đã bao gồm thuế GTGT 10%.<br/>
+2. Hình thức giá hợp đồng: Hợp đồng theo đơn giá cố định.</p>
+
+<p><strong>Điều 3. Tiến độ thực hiện:</strong><br/>
+- Ngày khởi công: Ngày 01 tháng 10 năm 2026.<br/>
+- Ngày hoàn thành nghiệm thu bàn giao: Ngày 15 tháng 04 năm 2027.</p>
+
+<p><strong>Điều 4. Tạm ứng và thanh toán:</strong><br/>
+- Tạm ứng: 20% giá trị hợp đồng sau khi ký kết và nộp bảo lãnh tạm ứng.<br/>
+- Thanh toán định kỳ: Thanh toán 75% giá trị khối lượng hoàn thành được nghiệm thu hàng tháng.<br/>
+- Giữ lại bảo hành: 5% giá trị hợp đồng trong thời hạn bảo hành 24 tháng.</p>
+
+<p><strong>Điều 5. An toàn lao động và Bảo hiểm:</strong><br/>
+Bên B có nghĩa vụ trang bị đầy đủ bảo hộ lao động, thực hiện nghiêm ngặt biện pháp ATLĐ, PCCC và chịu hoàn toàn trách nhiệm pháp lý nếu để xảy ra tai nạn lao động tại khu vực thi công của mình.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN B</strong><br/>
+      <em>(Ký tên, đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Văn Bình</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN A</strong><br/>
+      <em>(Ký tên, đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Lê Văn Hưng</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ==========================================
+  // 18. GÓI PMO: BÁO CÁO ĐỊNH KỲ TIẾN ĐỘ THI CÔNG VÀ AN TOÀN LAO ĐỘNG
+  // ==========================================
+  {
+    id: "pmo-progress-report",
+    categoryId: "construction",
+    industryPack: "PMO",
+    title: "Báo cáo định kỳ tiến độ thi công và an toàn lao động",
+    description:
+      "Báo cáo tuần / tháng của Ban Chỉ huy công trường gửi Chủ đầu tư và Tư vấn Quản lý dự án về tiến độ thực hiện, chất lượng và an toàn vệ sinh lao động.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Báo cáo định kỳ tiến độ thi công và an toàn lao động với thông tin sau:
+- Tên công trình / Dự án: {{ten_du_an}}
+- Ban chỉ huy công trường / Nhà thầu: {{ban_chi_huy}}
+- Kỳ báo cáo: {{ky_bao_cao}}
+- Khối lượng công việc chính đã hoàn thành: {{khoi_luong_hoan_thanh}}
+- Đánh giá tiến độ so với kế hoạch: {{danh_gia_tien_do}}
+- Tình hình an toàn lao động & vệ sinh môi trường: {{cong_tac_an_toan}}
+- Kế hoạch công tác kỳ tiếp theo: {{ke_hoach_ky_toi}}
+- Đề xuất và kiến nghị với Chủ đầu tư: {{kien_nghi_chu_dau_tu}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_du_an",
+          label: "Tên dự án / Công trình",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Dự án Cụm Chung cư Cao tầng Thăng Long Plaza",
+        },
+        {
+          name: "ban_chi_huy",
+          label: "Ban chỉ huy công trường / Nhà thầu",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ban Chỉ huy Công trường - Công ty Cổ phần Xây dựng Delta",
+        },
+        {
+          name: "ky_bao_cao",
+          label: "Kỳ báo cáo",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Báo cáo Tuần 35 (Từ 25/08 đến 31/08/2026) / Tháng 08/2026",
+        },
+        {
+          name: "khoi_luong_hoan_thanh",
+          label: "Khối lượng công việc đã hoàn thành trong kỳ",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Hoàn thành đổ bê tông cột vách tầng 12, lắp dựng cốp pha sàn tầng 13 đạt 80%, thi công xây tường ngăn tầng 8 đạt 95%.",
+        },
+        {
+          name: "danh_gia_tien_do",
+          label: "Đánh giá tiến độ so với kế hoạch mốc",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Đảm bảo đúng tiến độ tổng thể; Dự kiến cất nóc đúng cam kết ngày 15/11/2026.",
+        },
+        {
+          name: "cong_tac_an_toan",
+          label: "Tình hình An toàn lao động, PCCC & Vệ sinh",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Trong kỳ không có sự cố mất ATLĐ; Lưới bao che và rào chắn lan can duy trì nghiêm túc; Kiểm tra định kỳ thiết bị nâng hạ đạt chuẩn.",
+        },
+        {
+          name: "ke_hoach_ky_toi",
+          label: "Kế hoạch công tác kỳ tiếp theo",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Đổ bê tông sàn tầng 13, triển khai lắp dựng giàn giáo tầng 14, hoàn tất nghiệm thu phần thô tầng 8.",
+        },
+        {
+          name: "kien_nghi_chu_dau_tu",
+          label: "Kiến nghị và đề xuất giải quyết vướng mắc",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Đề nghị Chủ đầu tư sớm phê duyệt mẫu vật liệu hoàn thiện gạch ốp lát và thiết bị vệ sinh.",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Báo cáo tiến độ tuần thi công xây thô tòa nhà",
+        input: {
+          ten_du_an: "Tòa nhà hỗn hợp Thương mại & Căn hộ Skylight",
+          ban_chi_huy: "Ban Chỉ huy Công trường Delta",
+          ky_bao_cao: "Tuần 36 (Từ ngày 28/08/2026 đến 03/09/2026)",
+          khoi_luong_hoan_thanh: "Đổ bê tông sàn tầng 18; xây thô căn hộ tầng 12-14 đạt 90%; kéo rải ống luồn dây điện tầng 10-12.",
+          danh_gia_tien_do: "Đúng tiến độ cam kết theo phụ lục hợp đồng số 02.",
+          cong_tac_an_toan: "An toàn lao động 100%, trang bị đầy đủ bảo hộ, thực hiện kiểm tra an toàn hằng ngày trước giờ giao ban.",
+          ke_hoach_ky_toi: "Lắp dựng cốp pha cột vách tầng 19; hoàn thành trát áo tường tầng 10.",
+          kien_nghi_chu_dau_tu: "Đề nghị Tư vấn Giám sát bố trí nhân sự nghiệm thu ca đêm công tác đổ bê tông.",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">TỔNG CÔNG TY XÂY DỰNG DELTA</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">BCH CÔNG TRƯỜNG SKYLIGHT</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Số: 36/BC-BCH</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:15pt; margin:20px 0 5px 0;">BÁO CÁO ĐỊNH KỲ TIẾN ĐỘ THI CÔNG VÀ AN TOÀN LAO ĐỘNG</h2>
+<p style="text-align:center; font-style:italic; margin-bottom:20px;">(Kỳ báo cáo: Tuần 36 - Từ 28/08/2026 đến 03/09/2026)</p>
+
+<p style="margin-left:40px;"><strong>Kính gửi:</strong><br/>
+- Ban Quản lý Dự án Skylight Tower (Chủ đầu tư);<br/>
+- Công ty Tư vấn Quản lý Dự án & Giám sát Xây dựng Coninco.</p>
+
+<p>Ban Chỉ huy Công trường xin trân trọng báo cáo tình hình thi công và an toàn lao động tại dự án trong tuần vừa qua như sau:</p>
+
+<p><strong>1. Khối lượng thi công hoàn thành trong kỳ:</strong><br/>
+- Thi công kết cấu: Hoàn thành nghiệm thu và đổ bê tông sàn tầng 18 (Khối lượng 380m3 bê tông, 42 tấn cốt thép);<br/>
+- Công tác hoàn thiện xây thô: Xây tường ngăn căn hộ tầng 12, 13, 14 đạt 90% khối lượng;<br/>
+- Công tác cơ điện (MEP): Đặt ống chờ và kéo rải ống luồn dây điện âm sàn tầng 10 đến tầng 12.</p>
+
+<p><strong>2. Đánh giá tiến độ:</strong><br/>
+- So với tiến độ tổng thể đã được duyệt: <strong>Đúng kế hoạch</strong> (Hoàn thành chu kỳ sàn 6 ngày/sàn);<br/>
+- Tình hình huy động nhân lực máy móc: 180 công nhân trực tiếp, 2 cần trục tháp và 1 vận thăng lồng hoạt động ổn định.</p>
+
+<p><strong>3. Công tác An toàn lao động, Vệ sinh môi trường & PCCC:</strong><br/>
+- Duy trì họp phổ biến an toàn đầu giờ (Toolbox Meeting) 100% các buổi sáng;<br/>
+- Lưới an toàn chống rơi quanh chu vi tòa nhà được căng bảo vệ đầy đủ;<br/>
+- Trong kỳ không xảy ra bất kỳ sự cố tai nạn lao động nào.</p>
+
+<p><strong>4. Kế hoạch công tác tuần tiếp theo:</strong><br/>
+- Triển khai lắp dựng cốp pha cột vách tầng 19 và gia công cốt thép sàn tầng 19;<br/>
+- Tiếp tục công tác xây trát tường căn hộ tầng 14 và 15.</p>
+
+<p><strong>5. Đề xuất và kiến nghị:</strong><br/>
+Kính đề nghị Tư vấn Giám sát bố trí cán bộ thường trực nghiệm thu ca đêm để đảm bảo quy trình đổ bê tông các phân đoạn đúng kỹ thuật.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Như trên;<br/>
+      - Ban Giám đốc Delta (để báo cáo);<br/>
+      - Lưu: VT, BCH.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>CHỈ HUY TRƯỞNG CÔNG TRƯỜNG</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Thành Trung</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
 ];
+

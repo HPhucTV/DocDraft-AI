@@ -2,13 +2,13 @@ import { SEED_TEMPLATES } from "../../prisma/data/templates";
 import { buildZodSchema } from "../../src/lib/dynamic-form-schema";
 
 function runTemplateTests() {
-  console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 10 Mẫu biểu (TASK-106)...");
+  console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 18 Mẫu biểu (TASK-106, TASK-212, TASK-308)...");
 
-  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 mẫu SME Pack mới)
-  if (SEED_TEMPLATES.length !== 14) {
-    throw new Error(`Kỳ vọng 14 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
+  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 mẫu SME Pack + 4 mẫu PMO Pack)
+  if (SEED_TEMPLATES.length !== 18) {
+    throw new Error(`Kỳ vọng 18 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
   }
-  console.log(`✓ Đã xác thực đủ 14 mẫu văn bản (kèm 4 mẫu SME Pack).`);
+  console.log(`✓ Đã xác thực đủ 18 mẫu văn bản (kèm 4 mẫu SME Pack & 4 mẫu PMO Pack).`);
 
   // 2. Kiểm tra tính duy nhất của ID
   const ids = new Set<string>();
@@ -18,7 +18,7 @@ function runTemplateTests() {
     }
     ids.add(t.id);
   }
-  console.log(`✓ 10 mẫu có ID duy nhất.`);
+  console.log(`✓ 18 mẫu có ID duy nhất.`);
 
   // 3. Kiểm tra từng mẫu: formSchema, Zod compilation, fewShotExamples, Nghị định 30 HTML
   for (const t of SEED_TEMPLATES) {
@@ -70,7 +70,9 @@ function runTemplateTests() {
         ex.output_html.includes("CHỦ TỊCH") ||
         ex.output_html.includes("ĐẠI DIỆN") ||
         ex.output_html.includes("THƯ KÝ") ||
-        ex.output_html.includes("CHỦ TỌA");
+        ex.output_html.includes("CHỦ TỌA") ||
+        ex.output_html.includes("CHỈ HUY TRƯỞNG") ||
+        ex.output_html.includes("TƯ VẤN GIÁM SÁT");
       if (!hasSignatureBlock) {
         throw new Error(`Mẫu [${t.id}] thiếu khối chữ ký chuẩn!`);
       }

@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Share2,
   MessageSquare,
+  GitPullRequest,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,11 @@ interface EditorToolbarProps {
   onToggleComments?: () => void;
   commentsCount?: number;
   isCommentsOpen?: boolean;
+  isSuggestionMode?: boolean;
+  onToggleSuggestionMode?: () => void;
+  onOpenSuggestionsPanel?: () => void;
+  suggestionsCount?: number;
+  isSuggestionsPanelOpen?: boolean;
 }
 
 export function EditorToolbar({
@@ -65,6 +71,10 @@ export function EditorToolbar({
   onToggleComments,
   commentsCount,
   isCommentsOpen,
+  isSuggestionMode,
+  onOpenSuggestionsPanel,
+  suggestionsCount,
+  isSuggestionsPanelOpen,
 }: EditorToolbarProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -437,7 +447,25 @@ export function EditorToolbar({
         )}
       </Button>
 
-      {/* Group 12: Safe Placeholders [...] Navigator (TASK-112) */}
+      {/* Group 12: Suggestion Mode (TASK-307) */}
+      <Button
+        type="button"
+        variant={isSuggestionsPanelOpen || isSuggestionMode ? "secondary" : "ghost"}
+        size="sm"
+        onClick={onOpenSuggestionsPanel}
+        className="h-8 text-xs gap-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 font-semibold"
+        title="Bảng Đề xuất chỉnh sửa & Theo dõi sửa đổi Track Changes (TASK-307)"
+      >
+        <GitPullRequest className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+        <span className="hidden sm:inline">Đề xuất</span>
+        {typeof suggestionsCount === "number" && suggestionsCount > 0 && (
+          <span className="ml-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 px-1.5 py-0.2 text-[10px] font-bold text-purple-800 dark:text-purple-300">
+            {suggestionsCount}
+          </span>
+        )}
+      </Button>
+
+      {/* Group 13: Safe Placeholders [...] Navigator (TASK-112) */}
       <div className="ml-auto flex items-center gap-2">
         {placeholderCount > 0 ? (
           <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-900 dark:text-amber-200">
