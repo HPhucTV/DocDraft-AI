@@ -1,0 +1,44 @@
+services:
+  document-service:
+    build:
+      context: ./services/document-service
+      dockerfile: Dockerfile
+    container_name: docdraft-document-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - ENVIRONMENT=production
+      - DOCDRAFT_INTERNAL_SECRET=docdraft_internal_secret_dev_2026
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - docdraft-net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docdraft-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DOCUMENT_SERVICE_URL=http://document-service:8000
+      - DOCDRAFT_INTERNAL_SECRET=docdraft_internal_secret_dev_2026
+    depends_on:
+      document-service:
+        condition: service_healthy
+    networks:
+      - docdraft-net
+
+networks:
+  docdraft-net:
+    driver: bridge
