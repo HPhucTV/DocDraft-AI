@@ -1,0 +1,70 @@
+# ==============================================================================
+# DOCDRAFT AI — GITIGNORE CONFIGURATION
+# ==============================================================================
+
+# --- PRIVATE PRODUCT IDEAS & TASKBOARDS (KHÔNG ĐẨY LÊN GITHUB) ---
+TASKBOARD.md
+taskboard.md
+*TASKBOARD*
+*taskboard*
+idea.md
+docs/idea.md
+*idea.md
+
+# --- DEPENDENCIES ---
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- NEXT.JS BUILD & RUNTIME ---
+.next/
+out/
+build/
+dist/
+
+# --- PYTHON / FASTAPI (DOCUMENT SERVICE) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+poetry.lock
+Pipfile.lock
+*.egg-info/
+.eggs/
+
+# --- ENVIRONMENT VARIABLES & SECRETS (BẢO MẬT TUYỆT ĐỐI) ---
+.env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+
+# --- VERCEL & CLOUD ---
+.vercel
+
+# --- TYPESCRIPT ---
+*.tsbuildinfo
+
+# --- OS & IDE FILES ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+*.log
