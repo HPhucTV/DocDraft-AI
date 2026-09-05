@@ -58,6 +58,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
+    if (session?.user && session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Quyền truy cập bị từ chối. Thao tác chỉ dành cho Quản trị viên." },
+        { status: 403 }
+      );
+    }
     const userId = session?.user?.id || null;
 
     const body = await req.json();

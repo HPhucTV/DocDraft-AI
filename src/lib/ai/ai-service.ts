@@ -102,6 +102,8 @@ export function createDeepSeekClient(apiKey: string): OpenAI {
   return new OpenAI({
     apiKey,
     baseURL: "https://api.deepseek.com",
+    timeout: 20000,
+    maxRetries: 2,
   });
 }
 

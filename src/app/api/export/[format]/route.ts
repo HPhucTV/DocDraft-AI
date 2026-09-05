@@ -77,10 +77,12 @@ export async function POST(
           format === "docx"
             ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             : "application/pdf";
+        const safeTitle = (title || "document").replace(/[^\w\s.-]/g, "_");
+        const encodedTitle = encodeURIComponent(title || "document");
         return new Response(new Uint8Array(cached.fileBuffer), {
           headers: {
             "Content-Type": mediaType,
-            "Content-Disposition": `attachment; filename="${encodeURIComponent(title)}.${format}"`,
+            "Content-Disposition": `attachment; filename="${safeTitle}.${format}"; filename*=UTF-8''${encodedTitle}.${format}`,
             "X-DocDraft-Cache": "HIT",
             "X-DocDraft-Hash": contentHash,
           },
@@ -155,9 +157,11 @@ export async function POST(
         ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         : "application/pdf";
 
+    const safePayloadTitle = (payload.title || "document").replace(/[^\w\s.-]/g, "_");
+    const encodedPayloadTitle = encodeURIComponent(payload.title || "document");
     const contentDisposition =
       res.headers.get("Content-Disposition") ||
-      `attachment; filename="${encodeURIComponent(payload.title)}.${format}"`;
+      `attachment; filename="${safePayloadTitle}.${format}"; filename*=UTF-8''${encodedPayloadTitle}.${format}`;
 
     return new Response(new Uint8Array(buffer), {
       headers: {

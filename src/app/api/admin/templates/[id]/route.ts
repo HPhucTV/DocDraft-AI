@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { TemplateService } from "@/lib/templates/template-service";
 
 /**
@@ -37,6 +38,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (session?.user && session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Quyền truy cập bị từ chối. Thao tác chỉ dành cho Quản trị viên." },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     await TemplateService.deleteCustomTemplate(id);
 
@@ -61,6 +70,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (session?.user && session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Quyền truy cập bị từ chối. Thao tác chỉ dành cho Quản trị viên." },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     const body = await req.json();
 
