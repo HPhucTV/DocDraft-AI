@@ -2,13 +2,13 @@ import { SEED_TEMPLATES } from "../../prisma/data/templates";
 import { buildZodSchema } from "../../src/lib/dynamic-form-schema";
 
 function runTemplateTests() {
-  console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 22 Mẫu biểu (TASK-106, TASK-212, TASK-308, TASK-309)...");
+  console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 26 Mẫu biểu (TASK-106, TASK-212, TASK-308, TASK-309, TASK-409)...");
 
-  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 SME + 4 PMO + 4 EDU)
-  if (SEED_TEMPLATES.length !== 22) {
-    throw new Error(`Kỳ vọng 22 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
+  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 SME + 4 PMO + 4 EDU + 2 PROPERTY + 2 HEALTHCARE)
+  if (SEED_TEMPLATES.length !== 26) {
+    throw new Error(`Kỳ vọng 26 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
   }
-  console.log(`✓ Đã xác thực đủ 22 mẫu văn bản (kèm 4 mẫu SME, 4 mẫu PMO & 4 mẫu EDU Pack).`);
+  console.log(`✓ Đã xác thực đủ 26 mẫu văn bản (kèm 4 mẫu SME, 4 PMO, 4 EDU, 2 PROPERTY & 2 HEALTHCARE).`);
 
   // 2. Kiểm tra tính duy nhất của ID
   const ids = new Set<string>();
@@ -18,7 +18,7 @@ function runTemplateTests() {
     }
     ids.add(t.id);
   }
-  console.log(`✓ 22 mẫu có ID duy nhất.`);
+  console.log(`✓ 26 mẫu có ID duy nhất.`);
 
   // 3. Kiểm tra từng mẫu: formSchema, Zod compilation, fewShotExamples, Nghị định 30 HTML
   for (const t of SEED_TEMPLATES) {

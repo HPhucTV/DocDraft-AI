@@ -3776,6 +3776,730 @@ Tiếp tục đổi mới mạnh mẽ phương pháp dạy học, tăng cường
     isPublished: true,
     avgRating: 5.0,
   },
+
+  // ============================================================================
+  // 23. BIÊN BẢN BÀN GIAO CĂN HỘ CHUNG CƯ (PROPERTY PACK)
+  // ============================================================================
+  {
+    id: "property-handover-minute",
+    categoryId: "bien-ban",
+    industryPack: "PROPERTY",
+    title: "Biên bản bàn giao căn hộ chung cư",
+    description: "Biên bản nghiệm thu và bàn giao căn hộ giữa Ban Quản lý / Chủ đầu tư và Cư dân theo Thông tư 02/2016/TT-BXD",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Hãy soạn thảo Biên bản bàn giao căn hộ chung cư với các thông tin sau:
+- Tên tòa nhà / Dự án: {{ten_toa_nha}}
+- Mã số căn hộ: {{so_can_ho}}
+- Tên chủ hộ / Đại diện cư dân: {{ten_chu_ho}}
+- Số CCCD/Hộ chiếu: {{so_cmnd_cccd}}
+- Số điện thoại liên hệ: {{so_dien_thoai}}
+- Diện tích thông thủy: {{dien_tich_thong_thuy}} m2
+- Hiện trạng trang thiết bị: {{hien_trang_ban_giao}}
+- Số lượng chìa khóa bàn giao: {{so_luong_chia_khoa}} chìa
+- Chỉ số công tơ điện: {{chi_so_dien}} kWh
+- Chỉ số đồng hồ nước: {{chi_so_nuoc}} m3`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_toa_nha",
+          label: "Tên tòa nhà / Dự án",
+          type: "text",
+          required: true,
+          placeholder: "Ví dụ: Tòa Sky Oasis - Chung cư Ecopark",
+        },
+        {
+          name: "so_can_ho",
+          label: "Số hiệu căn hộ",
+          type: "text",
+          required: true,
+          placeholder: "Ví dụ: Căn hộ 1806, Tầng 18",
+        },
+        {
+          name: "ten_chu_ho",
+          label: "Họ và tên Chủ sở hữu căn hộ",
+          type: "text",
+          required: true,
+          placeholder: "Ví dụ: Nguyễn Văn Hùng",
+        },
+        {
+          name: "so_cmnd_cccd",
+          label: "Số CCCD / Hộ chiếu",
+          type: "text",
+          required: true,
+          placeholder: "Ví dụ: 001089012345",
+        },
+        {
+          name: "so_dien_thoai",
+          label: "Số điện thoại liên hệ",
+          type: "text",
+          required: true,
+          placeholder: "Ví dụ: 0912345678",
+        },
+        {
+          name: "dien_tich_thong_thuy",
+          label: "Diện tích thông thủy (m2)",
+          type: "number",
+          required: true,
+          placeholder: "78.5",
+        },
+        {
+          name: "hien_trang_ban_giao",
+          label: "Hiện trạng thiết bị & hoàn thiện",
+          type: "textarea",
+          required: true,
+          placeholder: "Đầy đủ thiết bị vệ sinh, sàn gỗ, hệ thống chiếu sáng, điều hòa hoạt động bình thường...",
+        },
+        {
+          name: "so_luong_chia_khoa",
+          label: "Số lượng chìa khóa bàn giao",
+          type: "number",
+          required: true,
+          placeholder: "4",
+        },
+        {
+          name: "chi_so_dien",
+          label: "Chỉ số công tơ điện ban đầu (kWh)",
+          type: "number",
+          required: true,
+          placeholder: "12",
+        },
+        {
+          name: "chi_so_nuoc",
+          label: "Chỉ số đồng hồ nước ban đầu (m3)",
+          type: "number",
+          required: true,
+          placeholder: "0",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Bàn giao căn hộ chung cư giữa Ban Quản lý và Chủ hộ",
+        input: {
+          ten_toa_nha: "Tòa chung cư Moonlight Residences",
+          so_can_ho: "A-1205, Tầng 12",
+          ten_chu_ho: "Trần Đức Nam",
+          so_cmnd_cccd: "034090018899",
+          so_dien_thoai: "0909123456",
+          dien_tich_thong_thuy: 72.5,
+          hien_trang_ban_giao: "Căn hộ bàn giao hoàn thiện cơ bản: Trần thạch cao, tường sơn trắng, cửa chống cháy, thiết bị vệ sinh Kohler đầy đủ và hoạt động tốt.",
+          so_luong_chia_khoa: 4,
+          chi_so_dien: 15,
+          chi_so_nuoc: 0,
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">CÔNG TY CP QUẢN LÝ BẤT ĐỘNG SẢN</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">BAN QUẢN LÝ TÒA NHÀ</p>
+      <p style="margin:2px auto; width:80px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:11pt;">Số: 12/BBBG-BQL</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">TP. Hồ Chí Minh, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:16pt; margin:20px 0 5px 0;">BIÊN BẢN BÀN GIAO CĂN HỘ</h2>
+<p style="text-align:center; font-style:italic; margin-bottom:20px;">(V/v Bàn giao căn hộ A-1205, Tòa chung cư Moonlight Residences)</p>
+
+<p>Hôm nay, ngày 05 tháng 09 năm 2026, tại Tòa chung cư Moonlight Residences, chúng tôi gồm có:</p>
+
+<p><strong>BÊN GIAO (BÊN A): BAN QUẢN LÝ TÒA NHÀ MOONLIGHT RESIDENCES</strong><br/>
+- Đại diện: Ông Lê Hoàng Long - Chức vụ: Trưởng Ban Quản lý tòa nhà.<br/>
+- Số điện thoại liên hệ: 028.3899.9999.</p>
+
+<p><strong>BÊN NHẬN (BÊN B): ĐẠI DIỆN CHỦ SỞ HỮU CĂN HỘ</strong><br/>
+- Ông: <strong>Trần Đức Nam</strong>.<br/>
+- Số CCCD: 034090018899 cấp ngày 15/04/2021 tại Cục CSQLHC về TTXH.<br/>
+- Số điện thoại: 0909123456.</p>
+
+<p>Hai bên tiến hành kiểm tra thực tế và thống nhất bàn giao Căn hộ số <strong>A-1205, Tầng 12</strong> như sau:</p>
+
+<p><strong>1. Diện tích thông thủy bàn giao:</strong> 72.5 m2.<br/>
+<strong>2. Hiện trạng trang thiết bị:</strong> Căn hộ bàn giao hoàn thiện cơ bản: Trần thạch cao, tường sơn trắng, cửa chống cháy, thiết bị vệ sinh Kohler đầy đủ và hoạt động tốt.<br/>
+<strong>3. Số lượng chìa khóa và thẻ từ:</strong> 04 bộ chìa khóa cửa chính, 02 thẻ từ thang máy.<br/>
+<strong>4. Chỉ số điện/nước ban đầu:</strong><br/>
+- Chỉ số công tơ điện: <strong>15</strong> kWh.<br/>
+- Chỉ số đồng hồ nước: <strong>0</strong> m3.</p>
+
+<p>Hai bên đã kiểm tra hiện trạng thực tế, không có vướng mắc và ký tên xác nhận dưới đây.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN NHẬN (CHỦ HỘ)</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Trần Đức Nam</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN GIAO (TRƯỞNG BQL)</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Lê Hoàng Long</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ============================================================================
+  // 24. THÔNG BÁO BẢO TRÌ HỆ THỐNG TÒA NHÀ & PCCC (PROPERTY PACK)
+  // ============================================================================
+  {
+    id: "property-maintenance-notice",
+    categoryId: "thong-bao",
+    industryPack: "PROPERTY",
+    title: "Thông báo bảo trì hệ thống PCCC và kỹ thuật tòa nhà",
+    description: "Thông báo gửi cư dân về kế hoạch kiểm tra, bảo trì hệ thống PCCC và tạm ngừng thang máy/kỹ thuật",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Hãy soạn thảo Thông báo gửi cư dân tòa nhà về bảo trì hệ thống kỹ thuật / PCCC:
+- Tên Ban Quản lý: {{ten_ban_quan_ly}}
+- Tên tòa nhà / Cụm cư xá: {{ten_toa_nha}}
+- Số thông báo: {{so_thong_bao}}
+- Ngày thực hiện: {{ngay_thuc_hien}}
+- Thời gian bắt đầu: {{thoi_gian_bat_dau}}
+- Thời gian kết thúc: {{thoi_gian_ket_thuc}}
+- Khu vực ảnh hưởng: {{khu_vuc_anh_huong}}
+- Nội dung bảo trì kỹ thuật: {{noi_dung_bao_tri}}
+- Lưu ý an toàn cho cư dân: {{luu_y_cu_dan}}
+- Hotline kỹ thuật trực 24/7: {{hotline_ho_tro}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_ban_quan_ly",
+          label: "Tên Ban Quản lý / Đơn vị vận hành",
+          type: "text",
+          required: true,
+          placeholder: "Ban Quản lý Tòa nhà Green Bay Garden",
+        },
+        {
+          name: "ten_toa_nha",
+          label: "Tên Tòa nhà / Cụm cư xá",
+          type: "text",
+          required: true,
+          placeholder: "Tòa tháp A và B - Green Bay",
+        },
+        {
+          name: "so_thong_bao",
+          label: "Số thông báo",
+          type: "text",
+          required: true,
+          placeholder: "45/TB-BQL",
+        },
+        {
+          name: "ngay_thuc_hien",
+          label: "Ngày thực hiện bảo trì",
+          type: "date",
+          required: true,
+        },
+        {
+          name: "thoi_gian_bat_dau",
+          label: "Thời gian bắt đầu",
+          type: "text",
+          required: true,
+          placeholder: "08:30",
+        },
+        {
+          name: "thoi_gian_ket_thuc",
+          label: "Thời gian kết thúc (dự kiến)",
+          type: "text",
+          required: true,
+          placeholder: "16:30",
+        },
+        {
+          name: "khu_vuc_anh_huong",
+          label: "Khu vực chịu ảnh hưởng",
+          type: "text",
+          required: true,
+          placeholder: "Toàn bộ khu vực sảnh thang máy và căn hộ từ tầng 5 đến tầng 25",
+        },
+        {
+          name: "noi_dung_bao_tri",
+          label: "Nội dung công việc bảo trì",
+          type: "textarea",
+          required: true,
+          placeholder: "Kiểm tra chuông báo cháy, đầu báo khói, van xả nước tự động Sprinkler và áp lực máy bơm PCCC...",
+        },
+        {
+          name: "luu_y_cu_dan",
+          label: "Lưu ý an toàn đối với cư dân",
+          type: "textarea",
+          required: true,
+          placeholder: "Trong quá trình kiểm tra, chuông báo cháy có thể reo từng hồi ngắn; cư dân vui lòng không hoảng loạn...",
+        },
+        {
+          name: "hotline_ho_tro",
+          label: "Hotline hỗ trợ kỹ thuật trực 24/7",
+          type: "text",
+          required: true,
+          placeholder: "024.3789.9999",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Thông báo bảo dưỡng định kỳ hệ thống PCCC tòa nhà",
+        input: {
+          ten_ban_quan_ly: "Ban Quản lý Tòa nhà Green Bay Garden",
+          ten_toa_nha: "Tòa tháp A - Chung cư Green Bay",
+          so_thong_bao: "45/TB-BQL",
+          ngay_thuc_hien: "2026-09-12",
+          thoi_gian_bat_dau: "09:00",
+          thoi_gian_ket_thuc: "15:00",
+          khu_vuc_anh_huong: "Toàn bộ hành lang từ Tầng 1 đến Tầng 30 tháp A",
+          noi_dung_bao_tri: "Kiểm tra định kỳ quý III hệ thống chuông báo cháy tự động, đo áp lực bơm chữa cháy và kiểm thử đèn thoát hiểm khẩn cấp.",
+          luu_y_cu_dan: "Chuông báo cháy sẽ kích hoạt ngắt quãng từ 1 đến 2 phút mỗi tầng. Quý cư dân không hoảng sợ và không sử dụng thang máy thoát hiểm trong thời gian thử nghiệm tải.",
+          hotline_ho_tro: "024.3789.9999",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">CÔNG TY VẬN HÀNH TÒA NHÀ</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">BAN QUẢN LÝ GREEN BAY</p>
+      <p style="margin:2px auto; width:80px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:11pt;">Số: 45/TB-BQL</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:16pt; margin:20px 0 5px 0;">THÔNG BÁO</h2>
+<p style="text-align:center; font-weight:bold; font-size:13pt; margin-bottom:20px;">Về kế hoạch kiểm tra, bảo trì hệ thống Phòng cháy chữa cháy định kỳ</p>
+
+<p style="text-align:center; margin-bottom:20px;"><strong>Kính gửi:</strong> Quý Cư dân Tòa tháp A - Chung cư Green Bay Garden.</p>
+
+<p>Nhằm đảm bảo an toàn phòng cháy chữa cháy và vận hành kỹ thuật thông suốt trong toàn tòa nhà, Ban Quản lý xin trân trọng thông báo tới Quý Cư dân kế hoạch kiểm tra, bảo trì định kỳ hệ thống PCCC như sau:</p>
+
+<p><strong>1. Thời gian thực hiện:</strong> Từ <strong>09:00 đến 15:00, Thứ Bảy, ngày 12 tháng 09 năm 2026</strong>.<br/>
+<strong>2. Khu vực chịu ảnh hưởng:</strong> Toàn bộ hành lang từ Tầng 1 đến Tầng 30 tháp A.<br/>
+<strong>3. Nội dung kiểm tra bảo trì:</strong><br/>
+- Kiểm tra định kỳ quý III hệ thống chuông báo cháy tự động;<br/>
+- Đo áp lực các van cấp nước chữa cháy vách tường và bơm tăng áp;<br/>
+- Kiểm tra tín hiệu các đầu báo khói, đầu báo nhiệt tại hành lang căn hộ;<br/>
+- Kiểm thử đèn chỉ dẫn thoát hiểm sự cố.</p>
+
+<p><strong>4. Khuyến nghị an toàn cho Cư dân:</strong><br/>
+- Trong thời gian kiểm thử, chuông báo cháy và loa phát thanh tòa nhà sẽ phát tín hiệu ngắt quãng 1 - 2 phút ở từng tầng. Quý cư dân hoàn toàn an tâm sinh hoạt, tránh hoảng loạn.<br/>
+- Hạn chế để đồ vật cản trở lối thoát hiểm và hộp chữa cháy vách tường tại các sảnh tầng.</p>
+
+<p>Nếu có vấn đề cần hỗ trợ khẩn cấp, Quý Cư dân vui lòng liên hệ Hotline trực ban Kỹ thuật 24/7: <strong>024.3789.9999</strong>.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Toàn thể Quý Cư dân Tháp A;<br/>
+      - Ban Quản trị tòa nhà;<br/>
+      - Đội Kỹ thuật & Bảo vệ tòa nhà;<br/>
+      - Lưu: VT, BQL.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>TM. BAN QUẢN LÝ TÒA NHÀ</strong><br/>
+      <strong>TRƯỞNG BAN</strong><br/>
+      <em>(Ký, đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Vũ Đình Quý</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ============================================================================
+  // 25. BIÊN BẢN HỘI CHẨN CHUYÊN MÔN CA BỆNH (HEALTHCARE PACK)
+  // ============================================================================
+  {
+    id: "health-clinical-consultation",
+    categoryId: "bien-ban",
+    industryPack: "HEALTHCARE",
+    title: "Biên bản hội chẩn chuyên môn ca bệnh nặng",
+    description: "Biên bản hội đồng chuyên môn hội chẩn chẩn đoán và điều trị theo Luật Khám bệnh, chữa bệnh 2023",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Hãy soạn thảo Biên bản hội chẩn chuyên môn ca bệnh với các thông tin y khoa:
+- Tên cơ sở y tế / Bệnh viện: {{ten_benh_vien}}
+- Khoa phòng điều trị: {{khoa_dieu_tri}}
+- Họ và tên bệnh nhân: {{ho_ten_benh_nhan}}
+- Năm sinh: {{nam_sinh}}
+- Giới tính: {{gioi_tinh}}
+- Mã hồ sơ bệnh án: {{ma_benh_an}}
+- Chủ tọa phiên hội chẩn: {{chu_toa_hoi_chan}}
+- Thư ký ghi biên bản: {{thu_ky_hoi_chan}}
+- Thành viên hội đồng hội chẩn: {{thanh_vien_tham_gia}}
+- Tóm tắt diễn biến lâm sàng & Chẩn đoán: {{chan_doan_so_bo}}
+- Kết luận và phác đồ điều trị thống nhất: {{ket_luan_huong_dieu_tri}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_benh_vien",
+          label: "Tên Bệnh viện / Cơ sở khám chữa bệnh",
+          type: "text",
+          required: true,
+          placeholder: "Bệnh viện Đa khoa Trung ương",
+        },
+        {
+          name: "khoa_dieu_tri",
+          label: "Khoa phòng điều trị",
+          type: "text",
+          required: true,
+          placeholder: "Khoa Hồi sức tích cực & Chống độc (ICU)",
+        },
+        {
+          name: "ho_ten_benh_nhan",
+          label: "Họ và tên bệnh nhân",
+          type: "text",
+          required: true,
+          placeholder: "Nguyễn Thị Mai",
+        },
+        {
+          name: "nam_sinh",
+          label: "Năm sinh",
+          type: "number",
+          required: true,
+          placeholder: "1968",
+        },
+        {
+          name: "gioi_tinh",
+          label: "Giới tính",
+          type: "select",
+          required: true,
+          options: [
+            { value: "Nam", label: "Nam" },
+            { value: "Nữ", label: "Nữ" },
+          ],
+        },
+        {
+          name: "ma_benh_an",
+          label: "Mã số bệnh án (HSBA)",
+          type: "text",
+          required: true,
+          placeholder: "BA-2026-0892",
+        },
+        {
+          name: "chu_toa_hoi_chan",
+          label: "Chủ tọa phiên hội chẩn",
+          type: "text",
+          required: true,
+          placeholder: "PGS.TS. BS. Nguyễn Mạnh Hùng - Giám đốc chuyên môn",
+        },
+        {
+          name: "thu_ky_hoi_chan",
+          label: "Thư ký hội chẩn",
+          type: "text",
+          required: true,
+          placeholder: "BS. CKI. Đỗ Thu Hà",
+        },
+        {
+          name: "thanh_vien_tham_gia",
+          label: "Thành viên Hội đồng tham gia hội chẩn",
+          type: "textarea",
+          required: true,
+          placeholder: "Trưởng khoa Ngoại tổng hợp, Trưởng khoa Gây mê hồi sức, Trưởng khoa Chẩn đoán hình ảnh...",
+        },
+        {
+          name: "chan_doan_so_bo",
+          label: "Tóm tắt lâm sàng & Chẩn đoán",
+          type: "textarea",
+          required: true,
+          placeholder: "Sốc nhiễm trùng đường mật, sỏi kẹt ống mật chủ, viêm tụy cấp độ trung bình trên nền tăng huyết áp...",
+        },
+        {
+          name: "ket_luan_huong_dieu_tri",
+          label: "Kết luận và phác đồ điều trị thống nhất",
+          type: "textarea",
+          required: true,
+          placeholder: "Chỉ định can thiệp nội soi mật tụy ngược dòng (ERCP) cấp cứu lấy sỏi và dẫn lưu đường mật...",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Biên bản hội chẩn ca bệnh nặng tại khoa Hồi sức tích cực",
+        input: {
+          ten_benh_vien: "Bệnh viện Đa khoa Thống Nhất",
+          khoa_dieu_tri: "Khoa Hồi sức tích cực - Chống độc",
+          ho_ten_benh_nhan: "Lê Văn Thành",
+          nam_sinh: 1962,
+          gioi_tinh: "Nam",
+          ma_benh_an: "BA-2026-1145",
+          chu_toa_hoi_chan: "TS. BS. Phạm Quang Vinh - Phó Giám đốc Bệnh viện",
+          thu_ky_hoi_chan: "ThS. BS. Nguyễn Kim Dung",
+          thanh_vien_tham_gia: "BSCKII. Trần Văn Bình (Trưởng khoa HSTC), BSCKII. Đặng Thanh Tâm (Trưởng khoa Ngoại Tiêu hóa), BSCKI. Lê Quốc Tuấn (Khoa Thận nhân tạo).",
+          chan_doan_so_bo: "Sốc nhiễm khuẩn từ ổ áp xe gan vỡ, suy đa tạng (suy hô hấp cấp ARDS, suy thận cấp KDIGO III), đái tháo đường type 2.",
+          ket_luan_huong_dieu_tri: "Tiếp tục hồi sức huyết động tích cực bằng Noradrenalin, thở máy bảo vệ phổi theo ARDSnet, lọc máu liên tục CVVH 24/24, phối hợp kháng sinh phổ rộng liều cao Meropenem + Colistin, tiến hành chọc hút dẫn lưu ổ áp xe gan dưới hướng dẫn siêu âm.",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">SỞ Y TẾ THÀNH PHỐ</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">BỆNH VIỆN ĐA KHOA THỐNG NHẤT</p>
+      <p style="margin:2px auto; width:80px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:11pt;">Số: 89/BB-HC</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:16pt; margin:20px 0 5px 0;">BIÊN BẢN HỘI CHẨN CHUYÊN MÔN</h2>
+<p style="text-align:center; font-weight:bold; font-size:13pt; margin-bottom:20px;">V/v Đánh giá diễn biến ca bệnh nặng và thống nhất phương án điều trị</p>
+
+<p><strong>I. THÔNG TIN BỆNH NHÂN:</strong><br/>
+- Họ và tên: <strong>Lê Văn Thành</strong> &nbsp;&nbsp;&nbsp;&nbsp; - Năm sinh: 1962 (64 tuổi) &nbsp;&nbsp;&nbsp;&nbsp; - Giới tính: Nam.<br/>
+- Mã số bệnh án: <strong>BA-2026-1145</strong>.<br/>
+- Khoa điều trị: Khoa Hồi sức tích cực - Chống độc (ICU).<br/>
+- Thời gian hội chẩn: Vào hồi 14 giờ 00 phút, ngày 05 tháng 09 năm 2026.</p>
+
+<p><strong>II. THÀNH PHẦN HỘI ĐỒNG HỘI CHẨN:</strong><br/>
+- <strong>Chủ tọa:</strong> TS. BS. Phạm Quang Vinh - Phó Giám đốc Bệnh viện.<br/>
+- <strong>Thư ký:</strong> ThS. BS. Nguyễn Kim Dung.<br/>
+- <strong>Thành viên tham dự:</strong> BSCKII. Trần Văn Bình (Trưởng khoa HSTC), BSCKII. Đặng Thanh Tâm (Trưởng khoa Ngoại Tiêu hóa), BSCKI. Lê Quốc Tuấn (Khoa Thận nhân tạo).</p>
+
+<p><strong>III. DIỄN BIẾN LÂM SÀNG VÀ CHẨN ĐOÁN:</strong><br/>
+- Chẩn đoán xác định: Sốc nhiễm khuẩn từ ổ áp xe gan vỡ, suy đa tạng (suy hô hấp cấp ARDS, suy thận cấp KDIGO III), đái tháo đường type 2.<br/>
+- Toan chuyển hóa nặng, huyết áp phụ thuộc vận mạch liều cao, thiểu niệu.</p>
+
+<p><strong>IV. KẾT LUẬN VÀ PHÁC ĐỒ ĐIỀU TRỊ THỐNG NHẤT:</strong><br/>
+1. Tiếp tục hồi sức huyết động tích cực bằng Noradrenalin duy trì MAP &ge; 65 mmHg.<br/>
+2. Thở máy xâm nhập bảo vệ phổi theo chiến lược ARDSnet.<br/>
+3. Tiến hành lọc máu liên tục CVVH 24/24 kiểm soát toan kiềm và thăng bằng điện giải.<br/>
+4. Phối hợp kháng sinh phổ rộng liều cao Meropenem + Colistin theo kháng sinh đồ.<br/>
+5. Tiến hành chọc hút dẫn lưu ổ áp xe gan dưới hướng dẫn siêu âm lúc 16h00 cùng ngày.<br/>
+6. Giải thích tình trạng bệnh rất nặng, nguy cơ tử vong cao cho thân nhân bệnh nhân.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>THƯ KÝ HỘI CHẨN</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Kim Dung</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>CHỦ TỌA HỘI CHẨN</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Phạm Quang Vinh</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ============================================================================
+  // 26. BÁO CÁO SỰ CỐ Y KHOA (HEALTHCARE PACK)
+  // ============================================================================
+  {
+    id: "health-incident-report",
+    categoryId: "bao-cao",
+    industryPack: "HEALTHCARE",
+    title: "Báo cáo sự cố y khoa (Medical Incident Report)",
+    description: "Báo cáo ghi nhận và xử lý sự cố y khoa theo Thông tư 43/2018/TT-BYT của Bộ Y tế",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Hãy soạn thảo Báo cáo sự cố y khoa theo chuẩn Thông tư 43/2018/TT-BYT:
+- Tên Bệnh viện: {{ten_benh_vien}}
+- Khoa / Phòng xảy ra sự cố: {{khoa_phong_xay_ra}}
+- Mã số sự cố: {{ma_so_su_co}}
+- Thời gian xảy ra sự cố: {{thoi_gian_xay_ra}}
+- Mức độ nghiêm trọng của sự cố: {{muc_do_nghiem_trong}}
+- Mô tả tóm tắt diễn biến sự cố: {{mo_ta_dien_bien}}
+- Biện pháp xử lý tức thời đã thực hiện: {{bien_phap_xu_ly_tuc_thoi}}
+- Phân tích nguyên nhân sơ bộ: {{nguyen_nhan_so_bo}}
+- Kiến nghị giải pháp phòng ngừa tái diễn: {{kien_nghi_phong_ngua}}
+- Người làm báo cáo: {{nguoi_bao_cao}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_benh_vien",
+          label: "Tên Bệnh viện / Trung tâm Y tế",
+          type: "text",
+          required: true,
+          placeholder: "Bệnh viện Đa khoa Quốc tế",
+        },
+        {
+          name: "khoa_phong_xay_ra",
+          label: "Khoa / Phòng xảy ra sự cố",
+          type: "text",
+          required: true,
+          placeholder: "Khoa Cấp cứu & Chấn thương chỉnh hình",
+        },
+        {
+          name: "ma_so_su_co",
+          label: "Mã hồ sơ sự cố y khoa",
+          type: "text",
+          required: true,
+          placeholder: "SC-2026-042",
+        },
+        {
+          name: "thoi_gian_xay_ra",
+          label: "Thời gian xảy ra sự cố",
+          type: "text",
+          required: true,
+          placeholder: "10:15 ngày 04/09/2026",
+        },
+        {
+          name: "muc_do_nghiem_trong",
+          label: "Mức độ nghiêm trọng (theo TT 43/2018/TT-BYT)",
+          type: "select",
+          required: true,
+          options: [
+            { value: "Chưa gây tổn hại (Near-miss)", label: "Chưa gây tổn hại (Near-miss)" },
+            { value: "Tổn hại nhẹ (Low)", label: "Tổn hại nhẹ (Low)" },
+            { value: "Tổn hại trung bình (Medium)", label: "Tổn hại trung bình (Medium)" },
+            { value: "Tổn hại nặng / Tử vong (Severe)", label: "Tổn hại nặng / Tử vong (Severe)" },
+          ],
+        },
+        {
+          name: "mo_ta_dien_bien",
+          label: "Mô tả chi tiết diễn biến sự cố",
+          type: "textarea",
+          required: true,
+          placeholder: "Trong quá trình cấp phát thuốc buổi sáng, điều dưỡng phát hiện nhầm liều kháng sinh...",
+        },
+        {
+          name: "bien_phap_xu_ly_tuc_thoi",
+          label: "Biện pháp xử lý tức thời đã tiến hành",
+          type: "textarea",
+          required: true,
+          placeholder: "Ngừng ngay đường truyền thuốc, báo cáo bác sĩ trực theo dõi sinh hiệu, lấy máu xét nghiệm...",
+        },
+        {
+          name: "nguyen_nhan_so_bo",
+          label: "Phân tích nguyên nhân sơ bộ",
+          type: "textarea",
+          required: true,
+          placeholder: "Tên hai loại thuốc nhìn giống nhau (LASA), điều dưỡng không thực hiện đủ 5 đúng do quá tải buồng bệnh...",
+        },
+        {
+          name: "kien_nghi_phong_ngua",
+          label: "Kiến nghị giải pháp phòng ngừa",
+          type: "textarea",
+          required: true,
+          placeholder: "Dán nhãn cảnh báo Tall Man Lettering cho thuốc LASA, rà soát quy trình đối chiếu thuốc...",
+        },
+        {
+          name: "nguoi_bao_cao",
+          label: "Họ tên người lập báo cáo",
+          type: "text",
+          required: true,
+          placeholder: "Điều dưỡng trưởng Vũ Thị Mai",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Báo cáo sự cố y khoa nhầm lẫn thuốc theo Thông tư 43/2018/TT-BYT",
+        input: {
+          ten_benh_vien: "Bệnh viện Đa khoa Quốc tế Sao Mai",
+          khoa_phong_xay_ra: "Khoa Ngoại Thần kinh",
+          ma_so_su_co: "SC-2026-042",
+          thoi_gian_xay_ra: "08:45 ngày 04/09/2026",
+          muc_do_nghiem_trong: "Tổn hại nhẹ (Low)",
+          mo_ta_dien_bien: "Trong phiên tiêm kháng sinh buổi sáng, điều dưỡng phát hiện lọ thuốc Cefotaxim 1g bị nhầm vị trí với Ceftriaxon 1g tại tủ trực. May mắn phát hiện trước khi tiêm cho người bệnh.",
+          bien_phap_xu_ly_tuc_thoi: "Thu hồi toàn bộ khay thuốc, tiến hành kiểm tra chéo với bác sĩ điều trị và thực hiện tiêm đúng y lệnh.",
+          nguyen_nhan_so_bo: "Bao bì hai loại kháng sinh có màu sắc và kích thước tương tự nhau (thuốc LASA), nhân viên sắp xếp thuốc mới nhập kho chưa phân loại vào khay riêng.",
+          kien_nghi_phong_ngua: "Thực hiện dán tem nhãn màu đỏ cảnh báo LASA tại ngăn tủ trực, tổ chức đào tạo lại quy trình 5 đúng cho điều dưỡng toàn khoa.",
+          nguoi_bao_cao: "Điều dưỡng trưởng Vũ Thị Mai",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:40%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">BỆNH VIỆN SAO MAI</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">KHOA NGOẠI THẦN KINH</p>
+      <p style="margin:2px auto; width:80px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:11pt;">Mã SC: SC-2026-042</p>
+    </td>
+    <td style="width:60%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:16pt; margin:20px 0 5px 0;">BÁO CÁO SỰ CỐ Y KHOA</h2>
+<p style="text-align:center; font-style:italic; margin-bottom:20px;">(Theo quy định tại Thông tư số 43/2018/TT-BYT của Bộ Y tế)</p>
+
+<p><strong>1. Đơn vị báo cáo:</strong> Khoa Ngoại Thần kinh - Bệnh viện Đa khoa Quốc tế Sao Mai.<br/>
+<strong>2. Thời gian xảy ra sự cố:</strong> 08:45 ngày 04/09/2026.<br/>
+<strong>3. Đánh giá mức độ nghiêm trọng:</strong> <strong>Tổn hại nhẹ (Low)</strong> (Được phát hiện và can thiệp kịp thời).</p>
+
+<p><strong>4. Mô tả chi tiết diễn biến sự cố:</strong><br/>
+Trong phiên tiêm kháng sinh buổi sáng, điều dưỡng phát hiện lọ thuốc Cefotaxim 1g bị nhầm vị trí với Ceftriaxon 1g tại tủ trực. May mắn phát hiện trước khi tiêm cho người bệnh.</p>
+
+<p><strong>5. Biện pháp xử lý tức thời đã tiến hành:</strong><br/>
+Thu hồi toàn bộ khay thuốc, tiến hành kiểm tra chéo với bác sĩ điều trị và thực hiện tiêm đúng y lệnh.</p>
+
+<p><strong>6. Phân tích nguyên nhân gốc rễ sơ bộ:</strong><br/>
+Bao bì hai loại kháng sinh có màu sắc và kích thước tương tự nhau (thuốc LASA), nhân viên sắp xếp thuốc mới nhập kho chưa phân loại vào khay riêng.</p>
+
+<p><strong>7. Đề xuất, kiến nghị giải pháp khắc phục phòng ngừa:</strong><br/>
+- Thực hiện dán tem nhãn màu đỏ cảnh báo LASA tại ngăn tủ trực thuốc của các khoa lâm sàng;<br/>
+- Tổ chức tập huấn nhắc lại quy tắc "5 đúng" trong cấp phát thuốc cho toàn bộ điều dưỡng trong quý III/2026;<br/>
+- Khoa Dược rà soát danh mục thuốc nhìn giống nhau - đọc giống nhau.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>NGƯỜI LẬP BÁO CÁO</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Vũ Thị Mai</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>TRƯỞNG KHOA / PHÒNG QLCL</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>BSCKII. Nguyễn Thành Nam</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
 ];
 
 
