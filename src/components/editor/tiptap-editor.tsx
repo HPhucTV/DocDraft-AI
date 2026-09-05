@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type Content } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -20,6 +20,8 @@ import {
 } from "./extensions/placeholder-highlight";
 import { EditorToolbar } from "./editor-toolbar";
 import { LegalAutocompleteDialog } from "./legal-autocomplete-dialog";
+import { ComplianceDialog } from "./compliance-dialog";
+import { checkCompliance } from "@/lib/compliance/compliance-engine";
 import {
   Sparkles,
   Wand2,
@@ -73,6 +75,10 @@ export function TiptapEditor({
   // State cho Legal RAG Autocomplete Dialog (TASK-210, TASK-211)
   const [isLegalDialogOpen, setIsLegalDialogOpen] = useState(false);
 
+  // State cho Compliance Dialog NĐ 30 (TASK-301, TASK-302)
+  const [isComplianceDialogOpen, setIsComplianceDialogOpen] = useState(false);
+  const [complianceScore, setComplianceScore] = useState<number>(100);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -114,6 +120,14 @@ export function TiptapEditor({
       // Cập nhật số lượng placeholder [...]
       const found = extractPlaceholders(ed.state.doc);
       setPlaceholderCount(found.length);
+
+      // Tính lại điểm tuân thủ thể thức NĐ 30
+      try {
+        const rep = checkCompliance(json);
+        setComplianceScore(rep.score);
+      } catch {
+        // bỏ qua nếu ast chưa sẵn sàng
+      }
     },
   });
 
@@ -239,6 +253,8 @@ export function TiptapEditor({
         onImportDocx={onImportDocx}
         isImportingDocx={isImportingDocx}
         onOpenLegalDialog={() => setIsLegalDialogOpen(true)}
+        onOpenComplianceDialog={() => setIsComplianceDialogOpen(true)}
+        complianceScore={complianceScore}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
@@ -381,6 +397,20 @@ export function TiptapEditor({
             .focus()
             .insertContent(`<p><em>${citationText}</em></p>`)
             .run();
+        }}
+      />
+
+      {/* Compliance Rules Engine & 1-Click Auto-Fix Dialog (TASK-301, TASK-302) */}
+      <ComplianceDialog
+        open={isComplianceDialogOpen}
+        onOpenChange={setIsComplianceDialogOpen}
+        editorContent={editor?.getJSON()}
+        onApplyFixedContent={(fixedAst) => {
+          if (!editor) return;
+          editor.commands.setContent(fixedAst as Content);
+          const newRep = checkCompliance(fixedAst);
+          setComplianceScore(newRep.score);
+          onChange?.(editor.getHTML(), fixedAst as object);
         }}
       />
     </div>

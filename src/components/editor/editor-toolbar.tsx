@@ -24,6 +24,7 @@ import {
   Upload,
   Loader2,
   Scale,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,8 @@ interface EditorToolbarProps {
   onImportDocx?: (file: File) => void;
   isImportingDocx?: boolean;
   onOpenLegalDialog?: () => void;
+  onOpenComplianceDialog?: () => void;
+  complianceScore?: number;
 }
 
 export function EditorToolbar({
@@ -50,6 +53,8 @@ export function EditorToolbar({
   onImportDocx,
   isImportingDocx = false,
   onOpenLegalDialog,
+  onOpenComplianceDialog,
+  complianceScore,
 }: EditorToolbarProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -373,7 +378,25 @@ export function EditorToolbar({
         <span className="hidden sm:inline">Căn cứ pháp lý</span>
       </Button>
 
-      {/* Group 8: Safe Placeholders [...] Navigator (TASK-112) */}
+      {/* Group 9: Compliance Rules Engine NĐ 30 (TASK-301, TASK-302) */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onOpenComplianceDialog}
+        className="h-8 text-xs gap-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-semibold"
+        title="Soát lỗi Thể thức & Tự động sửa 1-Click theo Nghị định 30/2020/NĐ-CP"
+      >
+        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+        <span className="hidden sm:inline">Soát lỗi NĐ 30</span>
+        {typeof complianceScore === "number" && (
+          <span className="ml-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+            {complianceScore}đ
+          </span>
+        )}
+      </Button>
+
+      {/* Group 10: Safe Placeholders [...] Navigator (TASK-112) */}
       <div className="ml-auto flex items-center gap-2">
         {placeholderCount > 0 ? (
           <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-900 dark:text-amber-200">
