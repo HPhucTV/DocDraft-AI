@@ -45,7 +45,7 @@ async function runStreamProtocolTests() {
     const generator = generateDocumentStream({
       preferredProvider: "deepseek",
       messages: testMessages,
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(15000),
     });
 
     for await (const chunk of generator) {

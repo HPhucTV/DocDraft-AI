@@ -69,6 +69,27 @@ async function main() {
       icon: "GraduationCap",
       sortOrder: 6,
     },
+    {
+      id: "bien-ban",
+      name: "Biên bản & Giao nhận chuyên môn",
+      description: "Biên bản bàn giao căn hộ, hội chẩn y khoa, nghiệm thu kỹ thuật và sự việc",
+      icon: "FileCheck",
+      sortOrder: 7,
+    },
+    {
+      id: "thong-bao",
+      name: "Thông báo & Hướng dẫn kỹ thuật",
+      description: "Thông báo bảo trì hệ thống, lịch công tác, hướng dẫn phòng chống sự cố",
+      icon: "Bell",
+      sortOrder: 8,
+    },
+    {
+      id: "bao-cao",
+      name: "Báo cáo & Tờ trình chuyên đề",
+      description: "Báo cáo sự cố y khoa, báo cáo kỹ thuật, tờ trình chuyên môn các ngành",
+      icon: "FileText",
+      sortOrder: 9,
+    },
   ];
 
   for (const cat of categories) {

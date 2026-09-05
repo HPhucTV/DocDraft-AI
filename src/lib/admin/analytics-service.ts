@@ -55,8 +55,8 @@ export class AnalyticsService {
       startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     }
 
-    const whereDraft: { isDeleted: boolean; createdAt?: { gte: Date } } = {
-      isDeleted: false,
+    const whereDraft: { deletedAt: null; createdAt?: { gte: Date } } = {
+      deletedAt: null,
     };
     if (startDate) {
       whereDraft.createdAt = { gte: startDate };
