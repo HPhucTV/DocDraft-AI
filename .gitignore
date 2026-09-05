@@ -57,8 +57,10 @@ Pipfile.lock
 # --- VERCEL & CLOUD ---
 .vercel
 
-# --- TYPESCRIPT ---
+# --- TYPESCRIPT & TESTING ---
 *.tsbuildinfo
+next-env.d.ts
+coverage/
 
 # --- OS & IDE FILES ---
 .DS_Store
