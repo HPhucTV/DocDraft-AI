@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 import docx
 
 from ..schemas.document import ExportDocxRequest, ParseDocxResponse
+from ..services.docx_renderer import render_tiptap_to_docx
 
 router = APIRouter(prefix="/export", tags=["Word Processing"])
 parse_router = APIRouter(prefix="/parse", tags=["Word Processing"])
@@ -17,26 +18,15 @@ async def export_docx(payload: ExportDocxRequest):
     Streams the binary file directly from memory without writing to disk.
     """
     try:
-        doc = docx.Document()
-        
-        # Apply standard page margins (Nghị định 30/2020/NĐ-CP: 20mm top/bottom, 30mm left, 15mm right)
-        section = doc.sections[0]
-        section.top_margin = docx.shared.Mm(payload.config.margin_top_mm)
-        section.bottom_margin = docx.shared.Mm(payload.config.margin_bottom_mm)
-        section.left_margin = docx.shared.Mm(payload.config.margin_left_mm)
-        section.right_margin = docx.shared.Mm(payload.config.margin_right_mm)
-        
-        # Initial document title
-        doc.add_heading(payload.title, level=0)
-        
-        # Buffer to store Word binary
-        buffer = io.BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-        
+        buffer = render_tiptap_to_docx(
+            content_json=payload.content_json,
+            config=payload.config,
+            title=payload.title,
+        )
+
         # Encode filename safely for Content-Disposition header
         safe_filename = urllib.parse.quote(f"{payload.title or 'Van_ban'}.docx")
-        
+
         return StreamingResponse(
             buffer,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

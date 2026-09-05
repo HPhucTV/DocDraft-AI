@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from ..schemas.document import ExportPdfRequest
+from ..services.pdf_renderer import render_html_to_vector_pdf
 
 router = APIRouter(prefix="/export", tags=["PDF Processing"])
 
@@ -11,17 +12,17 @@ router = APIRouter(prefix="/export", tags=["PDF Processing"])
 @router.post("/pdf")
 async def export_pdf(payload: ExportPdfRequest):
     """
-    Render HTML to vector PDF.
-    Streams the binary PDF directly from memory.
+    Render HTML to vector PDF with A4 dimensions and NĐ 30/2020 margins.
+    Streams the binary PDF directly from memory without writing to disk.
     """
     try:
-        # Fallback / initial placeholder PDF stream (in task 203 we will connect headless Chromium)
-        pdf_bytes = b"%PDF-1.4\n%DocDraft AI Initial PDF Export Buffer\n%%EOF"
-        buffer = io.BytesIO(pdf_bytes)
-        buffer.seek(0)
-        
+        buffer = render_html_to_vector_pdf(
+            html_content=payload.html_content,
+            config=payload.config,
+        )
+
         safe_filename = urllib.parse.quote(f"{payload.title or 'Van_ban'}.pdf")
-        
+
         return StreamingResponse(
             buffer,
             media_type="application/pdf",

@@ -131,7 +131,7 @@ export default async function DashboardPage() {
               <KeyRound className="h-4 w-4 text-amber-500" />
             </div>
             <div className="mt-3 text-2xl font-bold text-amber-600 dark:text-amber-400">BYOK</div>
-            <p className="mt-1 text-xs text-muted-foreground">DeepSeek-V3 + Gemini 3.7</p>
+            <p className="mt-1 text-xs text-muted-foreground">DeepSeek-v4-flash + Gemini 3.7</p>
           </div>
         </div>
 

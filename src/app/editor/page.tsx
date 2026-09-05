@@ -14,6 +14,7 @@ import {
   Layers,
   HelpCircle,
   Brain,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -38,8 +39,10 @@ export default function EditorPage() {
 
   const [documentTitle, setDocumentTitle] = useState("Văn bản dự thảo mới");
   const [editorContent, setEditorContent] = useState<string>("");
+  const [editorJson, setEditorJson] = useState<object | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [thinkingText, setThinkingText] = useState<string>("");
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null);
   const [streamStats, setStreamStats] = useState<{
     wordCount?: number;
     durationMs?: number;
@@ -135,6 +138,57 @@ export default function EditorPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // 5. Xuất bản văn bản (Word .docx hoặc PDF) qua Next.js Proxy & Document Service
+  const handleExport = async (format: "docx" | "pdf") => {
+    if (!editorContent) return;
+    setExportingFormat(format);
+    try {
+      const payload =
+        format === "docx"
+          ? {
+              title: documentTitle,
+              content_json: editorJson || {
+                type: "doc",
+                content: [{ type: "paragraph", content: [{ type: "text", text: editorContent }] }],
+              },
+            }
+          : {
+              title: documentTitle,
+              html_content: editorContent,
+            };
+
+      const res = await fetch(`/api/export/${format}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || errJson.detail || `Lỗi xuất file ${format.toUpperCase()}`);
+      }
+
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const cleanTitle = (documentTitle || "Van_ban")
+        .replace(/[/\\?%*:|"<>]/g, "-")
+        .trim();
+      a.download = `${cleanTitle}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`Xuất ${format.toUpperCase()} thất bại:`, err);
+      alert(`Xuất ${format.toUpperCase()} thất bại: ${errMsg}`);
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top Header & Toolbar Bar */}
@@ -191,23 +245,36 @@ export default function EditorPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.print()}
-            disabled={!editorContent}
+            onClick={() => handleExport("pdf")}
+            disabled={!editorContent || exportingFormat !== null}
             className="gap-1.5 h-8 text-xs"
-            title="In hoặc Xuất PDF"
+            title="Xuất file PDF vector A4 chuẩn Nghị định 30"
           >
-            <Printer className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">In / PDF</span>
+            {exportingFormat === "pdf" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            ) : (
+              <Printer className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {exportingFormat === "pdf" ? "Đang xuất..." : "In / PDF"}
+            </span>
           </Button>
 
           <Button
             size="sm"
             className="gap-1.5 h-8 text-xs shadow-xs"
-            onClick={() => alert("Tính năng tải Word (.docx) chuẩn Nghị định 30 đang đồng bộ qua Document Service.")}
-            disabled={!editorContent}
+            onClick={() => handleExport("docx")}
+            disabled={!editorContent || exportingFormat !== null}
+            title="Xuất Microsoft Word (.docx) chuẩn Nghị định 30"
           >
-            <Download className="h-3.5 w-3.5" />
-            <span>Xuất Word (.docx)</span>
+            {exportingFormat === "docx" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            <span>
+              {exportingFormat === "docx" ? "Đang tạo .docx..." : "Xuất Word (.docx)"}
+            </span>
           </Button>
 
           <ThemeToggle />
@@ -324,7 +391,10 @@ export default function EditorPage() {
         <main className="flex-1 flex flex-col overflow-hidden">
           <TiptapEditor
             initialContent={editorContent}
-            onChange={(html) => setEditorContent(html)}
+            onChange={(html, json) => {
+              setEditorContent(html);
+              setEditorJson(json);
+            }}
             className="flex-1 overflow-y-auto"
           />
         </main>

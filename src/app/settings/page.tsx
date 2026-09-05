@@ -279,13 +279,13 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold">DeepSeek-V3 API</h3>
+                    <h3 className="text-lg font-bold">DeepSeek API</h3>
                     <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full font-medium">
-                      Mô hình chính (Primary)
+                      Mô hình chính (deepseek-v4-flash)
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Xử lý sinh văn bản hành chính với tốc độ cao và chi phí tối ưu
+                    Xử lý sinh văn bản hành chính với tốc độ cao, hỗ trợ reasoning tokens và chi phí tối ưu
                   </p>
                 </div>
               </div>

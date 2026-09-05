@@ -418,7 +418,7 @@ export async function* generateDocumentStream(
     } catch (fallbackErr) {
       console.error("[AI Engine] Cả DeepSeek và Gemini Fallback đều thất bại:", fallbackErr);
       throw new Error(
-        "Không thể kết nối đến cả DeepSeek-V3 và Google Gemini 3.7 Flash. Vui lòng kiểm tra API Key hoặc kết nối mạng."
+        `Không thể kết nối đến cả DeepSeek (${DEFAULT_DEEPSEEK_MODEL}) và Google Gemini 3.7 Flash. Vui lòng kiểm tra API Key hoặc kết nối mạng.`
       );
     }
   }
