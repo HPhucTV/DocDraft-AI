@@ -1,85 +1,91 @@
 @echo off
-chcp 65001 >nul
-title DocDraft AI - Trình khởi chạy hệ thống (One-Click Launcher)
+title DocDraft AI - One-Click Launcher
 cd /d "%~dp0"
 
 echo ==============================================================================
-echo       📄 DOCDRAFT AI — HỆ THỐNG SOẠN THẢO VĂN BẢN THÔNG MINH NGHỊ ĐỊNH 30
+echo       DOCDRAFT AI - HE THONG SOAN THAO VAN BAN THONG MINH NGHI DINH 30
 echo       Next.js 14 App Router + FastAPI Microservice + DeepSeek / Gemini AI
 echo ==============================================================================
 echo.
 
-REM 1. KIỂM TRA MÔI TRƯỜNG NODE.JS
+REM 1. KIEM TRA NODE.JS
 where node >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [LỖI] Chưa tìm thấy Node.js trên máy tính của bạn!
-    echo Vui lòng cài đặt Node.js phiên bản 18+ từ https://nodejs.org
+if errorlevel 1 (
+    echo [LOI] Khong tim thay Node.js tren may tinh!
+    echo Vui long cai dat Node.js phien ban 18+ tu https://nodejs.org
     pause
     exit /b 1
 )
 
-REM 2. KIỂM TRA MÔI TRƯỜNG PYTHON
+REM 2. KIEM TRA PYTHON
 where python >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [LỖI] Chưa tìm thấy Python trên máy tính của bạn!
-    echo Vui lòng cài đặt Python 3.10+ từ https://python.org (nhớ tích chọn Add Python to PATH)
+if errorlevel 1 (
+    echo [LOI] Khong tim thay Python tren may tinh!
+    echo Vui long cai dat Python 3.10+ tu https://python.org
     pause
     exit /b 1
 )
 
-REM 3. KIỂM TRA TỆP CẤU HÌNH .ENV
+REM 3. KIEM TRA TEP CAU HINH .ENV
 if not exist ".env" (
-    echo [THÔNG BÁO] Chưa có tệp .env, đang tự động khởi tạo từ .env.example...
+    echo [*] Dang khoi tao tep .env tu .env.example...
     copy ".env.example" ".env" >nul
-    echo [OK] Đã tạo tệp .env thành công.
+    echo [OK] Da tao tep .env thanh cong.
 )
 
-REM 4. KIỂM TRA THƯ VIỆN NODE.JS (NODE_MODULES)
+REM 4. KIEM TRA NODE_MODULES
 if not exist "node_modules" (
-    echo [THÔNG BÁO] Đang cài đặt thư viện Node.js (npm install)...
+    echo [*] Dang cai dat thu vien npm...
     call npm install
-    if %ERRORLEVEL% neq 0 (
-        echo [LỖI] Không thể cài đặt dependencies npm!
+    if errorlevel 1 (
+        echo [LOI] Khong the cai dat thu vien npm!
         pause
         exit /b 1
     )
 )
 
-REM 5. ĐỒNG BỘ PRISMA CLIENT
-echo [1/3] Đang khởi tạo Prisma ORM Client...
+REM 5. KHOI TAO PRISMA CLIENT
+echo [1/3] Dang khoi tao Prisma ORM Client...
 call npx prisma generate >nul 2>&1
 
-REM 6. GIẢI PHÓNG CỔNG NẾU ĐANG BỊ CHIẾM DỤNG
+REM 6. GIAI PHONG CONG NEU DANG BI CHIEM DUNG
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 3000,8000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 
-REM 7. KHỞI ĐỘNG CÁC DỊCH VỤ CỤC BỘ
-echo.
-echo [2/3] Đang khởi động Document Service (FastAPI Microservice trên cổng 8000)...
-start "DocDraft AI - Document Service (FastAPI :8000)" cmd /k "title DocDraft Document Service (Port 8000) && cd /d "%~dp0" && python -m uvicorn app.main:app --app-dir services/document-service --host 127.0.0.1 --port 8000 --reload"
+REM 7. KHOI DONG CAC DICH VU
+echo [2/3] Dang khoi dong Document Service (FastAPI Microservice tren cong 8000)...
+start "DocDraft Document Service (:8000)" cmd /k "python -m uvicorn app.main:app --app-dir services/document-service --host 127.0.0.1 --port 8000 --reload"
 
-echo [3/3] Đang khởi động Ứng dụng Next.js (Web Frontend trên cổng 3000)...
-start "DocDraft AI - Next.js Web (:3000)" cmd /k "title DocDraft Next.js Web (Port 3000) && cd /d "%~dp0" && npm run dev"
+echo [3/3] Dang khoi dong Ung dung Next.js (Web Frontend tren cong 3000)...
+start "DocDraft Next.js Web (:3000)" cmd /k "npm run dev"
 
 echo.
 echo ==============================================================================
-echo       🚀 TOÀN BỘ HỆ THỐNG DOCDRAFT AI ĐÃ ĐƯỢC KHỞI ĐỘNG THÀNH CÔNG!
+echo       TOAN BO HE THONG DOCDRAFT AI DA KHOI DONG THANH CONG!
 echo ==============================================================================
 echo.
-echo   🌐 Giao diện Web chính:           http://localhost:3000
-echo   📝 Trình soạn thảo trực quan:      http://localhost:3000/editor
-echo   ⚙️ Quản trị Mẫu văn bản:          http://localhost:3000/admin/templates
-echo   📊 Thống kê & Phân tích:          http://localhost:3000/admin/analytics
-echo   📄 Microservice Document API:     http://localhost:8000/docs
-echo   ❤️ Kiểm tra sức khỏe hệ thống:     http://localhost:8000/health
+echo   * Giao dien Web:         http://localhost:3000
+echo   * Trinh soan thao A4:    http://localhost:3000/editor
+echo   * Quan tri Mau van ban:  http://localhost:3000/admin/templates
+echo   * Thong ke Phan tich:    http://localhost:3000/admin/analytics
+echo   * Document API Docs:     http://localhost:8000/docs
+echo   * Kiem tra suc khoe:     http://localhost:8000/health
 echo.
-echo   ℹ️ Mẹo: Để dừng toàn bộ hệ thống, hãy nhấp đúp tệp stop.bat
+echo   Meo: Ban co the nhap dup chuot vao tep stop.bat de tat toan bo he thong.
 echo.
-echo Đang tự động mở trình duyệt web sau 4 giây...
+echo Dang tu dong mo trinh duyet sau 4 giay...
 ping 127.0.0.1 -n 5 >nul
 start http://localhost:3000
 
 echo.
-echo Hệ thống đang chạy trong nền. Nhấn phím bất kỳ trong cửa sổ này để DỪNG toàn bộ dịch vụ...
-pause >nul
-call "%~dp0stop.bat"
-exit /b 0
+echo ==============================================================================
+echo   He thong dang chay on dinh. Ban co the thu nho cua so nay.
+echo   - Nhap 'stop' roi an Enter de DUNG toan bo dich vu.
+echo   - Hoac chay tep stop.bat bat ky luc nao de tat.
+echo ==============================================================================
+:WAIT_LOOP
+set /p USER_CMD="Nhap 'stop' de tat he thong: "
+if /i "%USER_CMD%"=="stop" (
+    call "%~dp0stop.bat"
+    exit /b 0
+)
+goto :WAIT_LOOP
