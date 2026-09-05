@@ -1,0 +1,331 @@
+// ==============================================================================
+// DOCDRAFT AI — PRISMA ORM SCHEMA (POSTGRESQL 16 + PGVECTOR)
+// Based on docs/database/schema-and-erd.md (DATA-001)
+// ==============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector"), uuidOssp(map: "uuid-ossp")]
+}
+
+// ------------------------------------------------------------------------------
+// 1. NGƯỜI DÙNG (USERS)
+// ------------------------------------------------------------------------------
+model User {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String    @unique @db.VarChar(255)
+  passwordHash      String?   @map("password_hash") @db.VarChar(255)
+  fullName          String    @map("full_name") @db.VarChar(255)
+  avatarUrl         String?   @map("avatar_url")
+  organization      String?   @db.VarChar(255)
+  jobTitle          String?   @map("job_title") @db.VarChar(100)
+  role              String    @default("USER") @db.VarChar(20) // 'USER', 'APPROVER', 'ADMIN', 'VIEWER'
+  locale            String    @default("vi") @db.VarChar(10)
+  signatureImageUrl String?   @map("signature_image_url")
+  customApiKeys     Json      @default("{}") @map("custom_api_keys") // BYOK AES-256
+  preferences       Json      @default("{}")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  accounts          Account[]
+  folders           Folder[]
+  drafts            DocumentDraft[]
+  draftVersions     DraftVersion[]
+  auditLogs         AuditLog[]
+  submittedChains   ApprovalChain[]
+  approvalSteps     ApprovalStep[]
+  templatesCreated  Template[]
+  comments          Comment[]
+  sharedLinks       SharedLink[]
+  exportHistory     ExportHistory[]
+
+  @@map("users")
+}
+
+// ------------------------------------------------------------------------------
+// 2. TÀI KHOẢN OAUTH (ACCOUNTS - NextAuth.js v5)
+// ------------------------------------------------------------------------------
+model Account {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  provider          String   @db.VarChar(50) // 'google', 'credentials'
+  providerAccountId String   @map("provider_account_id") @db.VarChar(255)
+  accessToken       String?  @map("access_token")
+  refreshToken      String?  @map("refresh_token")
+  expiresAt         BigInt?  @map("expires_at")
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// ------------------------------------------------------------------------------
+// 3. DANH MỤC MẪU (CATEGORIES)
+// ------------------------------------------------------------------------------
+model Category {
+  id          String     @id @db.VarChar(50)
+  name        String     @db.VarChar(100)
+  description String?
+  icon        String?    @db.VarChar(50)
+  sortOrder   Int        @default(0) @map("sort_order")
+  isActive    Boolean    @default(true) @map("is_active")
+
+  templates   Template[]
+
+  @@map("categories")
+}
+
+// ------------------------------------------------------------------------------
+// 4. MẪU VĂN BẢN (TEMPLATES) - Kèm Industry Pack
+// ------------------------------------------------------------------------------
+model Template {
+  id                 String          @id @db.VarChar(100)
+  categoryId         String?         @map("category_id") @db.VarChar(50)
+  industryPack       String?         @map("industry_pack") @db.VarChar(50)
+  title              String          @db.VarChar(255)
+  description        String?
+  thumbnailUrl       String?         @map("thumbnail_url")
+  systemPrompt       String          @map("system_prompt")
+  userPromptTemplate String          @map("user_prompt_template")
+  fewShotExamples    Json            @default("[]") @map("few_shot_examples")
+  formSchema         Json            @map("form_schema")
+  exportConfig       Json            @default("{}") @map("export_config")
+  isBuiltin          Boolean         @default(true) @map("is_builtin")
+  createdBy          String?         @map("created_by") @db.Uuid
+  usageCount         Int             @default(0) @map("usage_count")
+  avgRating          Decimal         @default(0.0) @map("avg_rating") @db.Decimal(2, 1)
+  isPublished        Boolean         @default(true) @map("is_published")
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  category           Category?       @relation(fields: [categoryId], references: [id])
+  creator            User?           @relation(fields: [createdBy], references: [id])
+  drafts             DocumentDraft[]
+
+  @@index([industryPack], map: "idx_templates_industry")
+  @@map("templates")
+}
+
+// ------------------------------------------------------------------------------
+// 5. THƯ MỤC QUẢN LÝ (FOLDERS)
+// ------------------------------------------------------------------------------
+model Folder {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  name           String          @db.VarChar(255)
+  parentFolderId String?         @map("parent_folder_id") @db.Uuid
+  color          String?         @db.VarChar(7)
+  sortOrder      Int             @default(0) @map("sort_order")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentFolder   Folder?         @relation("FolderHierarchy", fields: [parentFolderId], references: [id])
+  subFolders     Folder[]        @relation("FolderHierarchy")
+  drafts         DocumentDraft[]
+
+  @@map("folders")
+}
+
+// ------------------------------------------------------------------------------
+// 6. BẢN NHÁP VĂN BẢN (DOCUMENT DRAFTS)
+// ------------------------------------------------------------------------------
+model DocumentDraft {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String          @map("user_id") @db.Uuid
+  folderId            String?         @map("folder_id") @db.Uuid
+  title               String          @db.VarChar(255)
+  templateId          String?         @map("template_id") @db.VarChar(100)
+  rawInputData        Json?           @map("raw_input_data")
+  contentJson         Json            @map("content_json") // Tiptap ProseMirror JSON AST
+  mode                String          @default("FORM") @db.VarChar(20)
+  status              String          @default("DRAFT") @db.VarChar(30)
+  language            String          @default("vi") @db.VarChar(10)
+  currentVersion      Int             @default(1) @map("current_version")
+  wordCount           Int             @default(0) @map("word_count")
+  lastComplianceScore Decimal?        @map("last_compliance_score") @db.Decimal(3, 0)
+  qrVerifyCode        String?         @unique @map("qr_verify_code") @db.VarChar(64)
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime?       @map("deleted_at") @db.Timestamptz(6)
+
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder              Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  template            Template?       @relation(fields: [templateId], references: [id])
+  versions            DraftVersion[]
+  auditLogs           AuditLog[]
+  approvalChains      ApprovalChain[]
+  sharedLinks         SharedLink[]
+  comments            Comment[]
+  exportHistory       ExportHistory[]
+
+  @@index([userId], map: "idx_drafts_user_id")
+  @@index([folderId], map: "idx_drafts_folder_id")
+  @@index([status], map: "idx_drafts_status")
+  @@index([deletedAt], map: "idx_drafts_deleted_at")
+  @@map("document_drafts")
+}
+
+// ------------------------------------------------------------------------------
+// 7. LỊCH SỬ PHIÊN BẢN (DRAFT VERSIONS)
+// ------------------------------------------------------------------------------
+model DraftVersion {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId       String        @map("draft_id") @db.Uuid
+  versionNumber Int           @map("version_number")
+  contentJson   Json          @map("content_json")
+  editSource    String        @map("edit_source") @db.VarChar(30) // 'AI_GENERATE', 'AI_INLINE_EDIT', 'USER_MANUAL'
+  changeSummary String?       @map("change_summary") @db.VarChar(255)
+  createdBy     String?       @map("created_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  draft         DocumentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  creator       User?         @relation(fields: [createdBy], references: [id])
+
+  @@unique([draftId, versionNumber])
+  @@index([draftId, versionNumber(sort: Desc)], map: "idx_versions_draft")
+  @@map("draft_versions")
+}
+
+// ------------------------------------------------------------------------------
+// 8. NHẬT KÝ KIỂM TOÁN (AUDIT LOGS - AI ATTRIBUTION)
+// ------------------------------------------------------------------------------
+model AuditLog {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId    String        @map("draft_id") @db.Uuid
+  actorId    String?       @map("actor_id") @db.Uuid
+  actionType String        @map("action_type") @db.VarChar(50)
+  source     String        @db.VarChar(30) // 'AI' | 'HUMAN'
+  details    Json?
+  ipAddress  String?       @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  draft      DocumentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  actor      User?         @relation(fields: [actorId], references: [id])
+
+  @@index([draftId], map: "idx_audit_draft_id")
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------------------------------
+// 9. LUỒNG TRÌNH KÝ & PHÊ DUYỆT (APPROVAL CHAINS & STEPS)
+// ------------------------------------------------------------------------------
+model ApprovalChain {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId     String         @map("draft_id") @db.Uuid
+  submittedBy String         @map("submitted_by") @db.Uuid
+  currentStep Int            @default(1) @map("current_step")
+  status      String         @default("PENDING") @db.VarChar(20) // 'PENDING', 'APPROVED', 'REJECTED'
+  note        String?
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime?      @map("completed_at") @db.Timestamptz(6)
+
+  draft       DocumentDraft  @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  submitter   User           @relation(fields: [submittedBy], references: [id])
+  steps       ApprovalStep[]
+
+  @@index([draftId], map: "idx_chains_draft_id")
+  @@map("approval_chains")
+}
+
+model ApprovalStep {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chainId          String        @map("chain_id") @db.Uuid
+  stepNumber       Int           @map("step_number")
+  approverId       String        @map("approver_id") @db.Uuid
+  status           String        @default("WAITING") @db.VarChar(20) // 'WAITING', 'APPROVED', 'REJECTED', 'REQUEST_CHANGES'
+  comments         String?
+  signatureApplied Boolean       @default(false) @map("signature_applied")
+  actionAt         DateTime?     @map("action_at") @db.Timestamptz(6)
+
+  chain            ApprovalChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  approver         User          @relation(fields: [approverId], references: [id])
+
+  @@map("approval_steps")
+}
+
+// ------------------------------------------------------------------------------
+// 10. CĂN CỨ PHÁP LÝ (LEGAL DOCUMENTS - RAG PGVECTOR)
+// ------------------------------------------------------------------------------
+model LegalDocument {
+  id               String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  docCode          String                 @map("doc_code") @db.VarChar(100)
+  title            String
+  docType          String?                @map("doc_type") @db.VarChar(50)
+  issuingAuthority String?                @map("issuing_authority") @db.VarChar(100)
+  issuedDate       DateTime?              @map("issued_date") @db.Date
+  effectiveDate    DateTime?              @map("effective_date") @db.Date
+  status           String                 @default("ACTIVE") @db.VarChar(30)
+  fullCitation     String                 @map("full_citation")
+  categoryId       String?                @map("category_id") @db.VarChar(50)
+  embedding        Unsupported("vector")?
+  createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("legal_documents")
+}
+
+// ------------------------------------------------------------------------------
+// 11. CHIA SẺ & BÌNH LUẬN (COLLABORATION)
+// ------------------------------------------------------------------------------
+model SharedLink {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId      String        @map("draft_id") @db.Uuid
+  sharedBy     String        @map("shared_by") @db.Uuid
+  shareToken   String        @unique @map("share_token") @db.VarChar(64)
+  permission   String        @default("VIEW") @db.VarChar(20) // 'VIEW', 'COMMENT', 'EDIT'
+  passwordHash String?       @map("password_hash") @db.VarChar(255)
+  expiresAt    DateTime?     @map("expires_at") @db.Timestamptz(6)
+  useCount     Int           @default(0) @map("use_count")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  draft        DocumentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  sharer       User          @relation(fields: [sharedBy], references: [id])
+
+  @@map("shared_links")
+}
+
+model Comment {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId         String        @map("draft_id") @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  parentCommentId String?       @map("parent_comment_id") @db.Uuid
+  content         String
+  anchorJson      Json?         @map("anchor_json")
+  isResolved      Boolean       @default(false) @map("is_resolved")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  draft           DocumentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id])
+  parentComment   Comment?      @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies         Comment[]     @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+// ------------------------------------------------------------------------------
+// 12. LỊCH SỬ XUẤT BẢN (EXPORT HISTORY)
+// ------------------------------------------------------------------------------
+model ExportHistory {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId            String        @map("draft_id") @db.Uuid
+  userId             String        @map("user_id") @db.Uuid
+  format             String        @db.VarChar(10) // 'docx', 'pdf'
+  fileUrl            String        @map("file_url")
+  fileSizeBytes      BigInt?       @map("file_size_bytes")
+  hasImageSignature  Boolean       @default(false) @map("has_image_signature")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  draft              DocumentDraft @relation(fields: [draftId], references: [id])
+  user               User          @relation(fields: [userId], references: [id])
+
+  @@map("export_history")
+}
