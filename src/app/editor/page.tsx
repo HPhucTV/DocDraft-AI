@@ -17,6 +17,14 @@ import {
   Brain,
   Loader2,
   AlertTriangle,
+  GitCompare,
+  History,
+  Sparkles,
+  Wand2,
+  FileEdit,
+  DollarSign,
+  Calendar,
+  Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -24,7 +32,11 @@ import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { DynamicFormEngine } from "@/components/forms/dynamic-form-engine";
 import { FormSchema } from "@/types/form-schema";
 import { streamDocumentGeneration } from "@/lib/ai/stream-client";
+import { streamRawToDocument } from "@/lib/ai/raw-to-doc-client";
+import { RawExtractionResult } from "@/lib/ai/raw-to-doc-service";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { SideBySideDiffModal } from "@/components/diff/side-by-side-diff-modal";
+import { AuditTrailPanel } from "@/components/audit/audit-trail-panel";
 
 interface TemplateItem {
   id: string;
@@ -35,6 +47,16 @@ interface TemplateItem {
   userPromptTemplate: string;
 }
 
+const RAW_DOC_TYPES = [
+  "Công văn",
+  "Quyết định",
+  "Tờ trình",
+  "Thông báo",
+  "Báo cáo",
+  "Biên bản",
+  "Kế hoạch",
+];
+
 function EditorContentComponent() {
   const searchParams = useSearchParams();
   const draftIdFromUrl = searchParams.get("id");
@@ -44,6 +66,14 @@ function EditorContentComponent() {
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [loadingTemplates, setLoadingTemplates] = useState(true);
+
+  // Chế độ bên trái: "template" (Form mẫu) | "raw" (Nháp thô)
+  const [sidebarMode, setSidebarMode] = useState<"template" | "raw">("template");
+
+  // State cho chế độ Nháp thô (TASK-201)
+  const [rawText, setRawText] = useState("");
+  const [rawTargetDocType, setRawTargetDocType] = useState("Công văn");
+  const [extractedFacts, setExtractedFacts] = useState<RawExtractionResult | null>(null);
 
   const [documentTitle, setDocumentTitle] = useState("Văn bản dự thảo mới");
   const [editorContent, setEditorContent] = useState<string>("");
@@ -56,6 +86,14 @@ function EditorContentComponent() {
     durationMs?: number;
     modelUsed?: string;
   } | null>(null);
+
+  // State cho Diff Modal (TASK-202, TASK-203)
+  const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
+  const [diffOriginalText, setDiffOriginalText] = useState("");
+  const [diffProposedText, setDiffProposedText] = useState("");
+
+  // State cho Audit Trail Panel (TASK-204)
+  const [isAuditPanelOpen, setIsAuditPanelOpen] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -122,8 +160,8 @@ function EditorContentComponent() {
 
   // 3. Cơ chế Tự động lưu (Auto-save) và Kiểm soát khóa lạc quan (Optimistic Locking - TASK-118)
   const autoSavePayload = useMemo(() => {
-    const rawText = editorContent ? editorContent.replace(/<[^>]*>/g, "") : "";
-    const words = rawText.trim() ? rawText.trim().split(/\s+/).length : 0;
+    const rawTextOnly = editorContent ? editorContent.replace(/<[^>]*>/g, "") : "";
+    const words = rawTextOnly.trim() ? rawTextOnly.trim().split(/\s+/).length : 0;
     return {
       title: documentTitle,
       contentJson: editorJson || undefined,
@@ -136,7 +174,7 @@ function EditorContentComponent() {
     {
       draftId: currentDraftId,
       initialVersion: currentVersion,
-      intervalMs: 30000, // 30 giây theo đặc tả Nghị định 30 / ADR-005
+      intervalMs: 30000,
       onSaveSuccess: ({ version }) => {
         setCurrentVersion(version);
       },
@@ -148,7 +186,30 @@ function EditorContentComponent() {
 
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId) || templates[0];
 
-  // 4. Xử lý gửi Form & Bắt đầu sinh văn bản qua AI SSE Stream
+  // Ghi nhận Audit Log (TASK-204)
+  const logAuditEvent = async (
+    actionType: string,
+    source: "AI" | "HUMAN",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    details: Record<string, any>
+  ) => {
+    if (!currentDraftId) return;
+    try {
+      await fetch(`/api/drafts/${currentDraftId}/audit-logs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actionType,
+          source,
+          details,
+        }),
+      });
+    } catch (e) {
+      console.error("Lỗi khi ghi audit log:", e);
+    }
+  };
+
+  // 4. Xử lý gửi Form & Bắt đầu sinh văn bản qua AI SSE Stream (Mẫu quy chuẩn)
   const handleFormSubmit = async (formData: Record<string, unknown>) => {
     if (isStreaming) return;
 
@@ -168,7 +229,7 @@ function EditorContentComponent() {
       preferredProvider: "deepseek",
       signal: controller.signal,
       onThinking: (token) => {
-        setThinkingText((prev) => (prev + token).slice(-300)); // Giữ 300 ký tự tư duy mới nhất
+        setThinkingText((prev) => (prev + token).slice(-300));
       },
       onToken: (chunk) => {
         accumulatedHtml += chunk;
@@ -183,7 +244,14 @@ function EditorContentComponent() {
           modelUsed: stats.model_used,
         });
 
-        // Nếu chưa có draftId trong DB, tự động tạo mới để lưu giữ
+        // Ghi Audit Trail
+        logAuditEvent("AI_GENERATE", "AI", {
+          words_added: stats.word_count,
+          ai_model: stats.model_used,
+          template_id: currentTemplate?.id,
+        });
+
+        // Tạo draft nếu chưa có
         if (!currentDraftId) {
           fetch("/api/drafts", {
             method: "POST",
@@ -201,7 +269,7 @@ function EditorContentComponent() {
                 setCurrentVersion(d.currentVersion || 1);
               }
             })
-            .catch((e) => console.error("Lỗi tự động tạo bản nháp:", e));
+            .catch((e) => console.error("Lỗi tạo bản nháp:", e));
         }
       },
       onError: (err) => {
@@ -211,7 +279,105 @@ function EditorContentComponent() {
     });
   };
 
-  // 5. Dừng sinh (AbortController)
+  // 5. Xử lý Chuẩn hóa Nháp thô sang Nghị định 30 (TASK-201)
+  const handleRawToDocSubmit = async () => {
+    if (!rawText.trim() || isStreaming) return;
+
+    setIsStreaming(true);
+    setThinkingText("");
+    setStreamStats(null);
+    setExtractedFacts(null);
+
+    // Lưu văn bản gốc hiện tại để chuẩn bị so sánh Diff nếu cần
+    const originalSnapshot = editorContent;
+    setEditorContent("");
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    let accumulatedHtml = "";
+
+    await streamRawToDocument({
+      rawText,
+      targetDocType: rawTargetDocType,
+      preferredProvider: "deepseek",
+      signal: controller.signal,
+      onFacts: (facts) => {
+        setExtractedFacts(facts);
+        if (facts.documentType) {
+          setDocumentTitle(`${facts.documentType}: ${facts.organization}`);
+        }
+      },
+      onThinking: (token) => {
+        setThinkingText((prev) => (prev + token).slice(-300));
+      },
+      onToken: (chunk) => {
+        accumulatedHtml += chunk;
+        setEditorContent(accumulatedHtml);
+      },
+      onComplete: (stats) => {
+        setIsStreaming(false);
+        setThinkingText("");
+        setStreamStats({
+          wordCount: stats.word_count,
+          durationMs: stats.duration_ms,
+          modelUsed: stats.model_used,
+        });
+
+        // Nếu trước đó đã có nội dung, chuẩn bị sẵn bản so sánh Diff View
+        if (originalSnapshot.trim()) {
+          setDiffOriginalText(originalSnapshot);
+          setDiffProposedText(accumulatedHtml);
+        }
+
+        // Ghi Audit Trail
+        logAuditEvent("AI_GENERATE", "AI", {
+          words_added: stats.word_count,
+          ai_model: stats.model_used,
+          mode: "RAW_TO_DOC",
+        });
+
+        if (!currentDraftId) {
+          fetch("/api/drafts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: documentTitle,
+              wordCount: stats.word_count,
+              mode: "RAW",
+            }),
+          })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.id) {
+                setCurrentDraftId(d.id);
+                setCurrentVersion(d.currentVersion || 1);
+              }
+            })
+            .catch((e) => console.error("Lỗi tự động tạo draft:", e));
+        }
+      },
+      onError: (err) => {
+        setIsStreaming(false);
+        console.error("Lỗi Raw-to-Doc stream:", err);
+      },
+    });
+  };
+
+  // 6. Áp dụng kết quả từ Side-by-side Diff View (TASK-202, TASK-203)
+  const handleApplyDiffMerged = (
+    mergedText: string,
+    stats: { aiAttributionPercentage: number; addedWords: number; removedWords: number }
+  ) => {
+    setEditorContent(mergedText);
+    logAuditEvent("AI_APPLY", "AI", {
+      words_added: stats.addedWords,
+      words_removed: stats.removedWords,
+      ai_attribution_percentage: stats.aiAttributionPercentage,
+    });
+  };
+
+  // 7. Dừng sinh (AbortController)
   const handleStopStreaming = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -219,7 +385,7 @@ function EditorContentComponent() {
     }
   };
 
-  // 6. Sao chép HTML
+  // 8. Sao chép HTML
   const handleCopyHTML = () => {
     if (!editorContent) return;
     navigator.clipboard.writeText(editorContent);
@@ -227,7 +393,7 @@ function EditorContentComponent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 7. Xuất bản văn bản (Word .docx hoặc PDF) qua Next.js Proxy & Document Service (TASK-113, TASK-114, TASK-115)
+  // 9. Xuất bản văn bản (Word .docx hoặc PDF) (TASK-113, TASK-114, TASK-115)
   const handleExport = async (format: "docx" | "pdf") => {
     if (!editorContent) return;
     setExportingFormat(format);
@@ -301,7 +467,7 @@ function EditorContentComponent() {
               type="text"
               value={documentTitle}
               onChange={(e) => setDocumentTitle(e.target.value)}
-              className="bg-transparent font-semibold text-sm sm:text-base border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5 max-w-[200px] sm:max-w-[320px] truncate"
+              className="bg-transparent font-semibold text-sm sm:text-base border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5 max-w-[180px] sm:max-w-[280px] truncate"
               placeholder="Nhập tên văn bản..."
             />
           </div>
@@ -322,7 +488,7 @@ function EditorContentComponent() {
               ) : lastSavedAt ? (
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  Đã lưu lúc {lastSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  Đã lưu {lastSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                 </span>
               ) : isDirty ? (
                 <span className="text-amber-500 font-medium">Chưa lưu</span>
@@ -334,7 +500,7 @@ function EditorContentComponent() {
         {/* Stats & Actions */}
         <div className="flex items-center gap-2">
           {streamStats && (
-            <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground mr-2">
+            <div className="hidden xl:flex items-center gap-2.5 text-xs text-muted-foreground mr-1">
               <span>Mô hình: <strong>{streamStats.modelUsed}</strong></span>
               <span>&bull;</span>
               <span>{streamStats.wordCount} từ</span>
@@ -343,6 +509,32 @@ function EditorContentComponent() {
             </div>
           )}
 
+          {/* Nút mở Side-by-side Diff View (TASK-202, TASK-203) */}
+          {diffOriginalText && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDiffModalOpen(true)}
+              className="gap-1.5 h-8 text-xs text-primary border-primary/30"
+              title="So sánh với bản nháp thô ban đầu"
+            >
+              <GitCompare className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Diff View</span>
+            </Button>
+          )}
+
+          {/* Nút mở Audit Trail (TASK-204) */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAuditPanelOpen(true)}
+            className="gap-1.5 h-8 text-xs"
+            title="Nhật ký kiểm toán AI & Người dùng"
+          >
+            <History className="h-3.5 w-3.5 text-primary" />
+            <span className="hidden sm:inline">Audit Trail</span>
+          </Button>
+
           {currentDraftId && (
             <Button
               variant="ghost"
@@ -350,7 +542,7 @@ function EditorContentComponent() {
               onClick={() => saveNow()}
               disabled={isSaving}
               className="gap-1.5 h-8 text-xs"
-              title="Lưu thủ công ngay bây giờ"
+              title="Lưu thủ công ngay"
             >
               <Save className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Lưu</span>
@@ -366,7 +558,7 @@ function EditorContentComponent() {
             title="Sao chép mã HTML"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{copied ? "Đã chép" : "Sao chép HTML"}</span>
+            <span className="hidden sm:inline">{copied ? "Đã chép" : "Sao chép"}</span>
           </Button>
 
           <Button
@@ -400,7 +592,7 @@ function EditorContentComponent() {
               <Download className="h-3.5 w-3.5" />
             )}
             <span>
-              {exportingFormat === "docx" ? "Đang tạo .docx..." : "Xuất Word (.docx)"}
+              {exportingFormat === "docx" ? "Đang tạo..." : "Xuất Word (.docx)"}
             </span>
           </Button>
 
@@ -408,32 +600,56 @@ function EditorContentComponent() {
         </div>
       </header>
 
-      {/* Main Workspace: Left Sidebar (Form Engine) & Right (A4 Canvas Editor) */}
+      {/* Main Workspace: Left Sidebar & Right A4 Canvas */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Side: Biểu mẫu động & AI Control Panel */}
+        {/* Left Side: Biểu mẫu động & Nháp thô */}
         <aside className="w-full md:w-[420px] lg:w-[460px] border-r bg-muted/20 flex flex-col shrink-0 overflow-hidden">
-          {/* Template Selector Top */}
-          <div className="p-4 border-b bg-background/50 space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Layers className="h-3.5 w-3.5 text-primary" />
-              <span>Mẫu văn bản quy chuẩn</span>
-            </label>
+          {/* Mode Switcher Tabs */}
+          <div className="p-3 border-b bg-background/50 flex items-center gap-1">
+            <button
+              onClick={() => setSidebarMode("template")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                sidebarMode === "template"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Mẫu quy chuẩn</span>
+            </button>
+            <button
+              onClick={() => setSidebarMode("raw")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                sidebarMode === "raw"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              <span>Chuẩn hóa nháp thô</span>
+            </button>
+          </div>
 
-            {loadingTemplates ? (
-              <div className="h-9 rounded-md bg-muted animate-pulse" />
-            ) : (
-              <div className="relative">
+          {/* Sub-header for Mode */}
+          {sidebarMode === "template" ? (
+            <div className="p-4 border-b bg-background/30 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <FileEdit className="h-3.5 w-3.5 text-primary" />
+                <span>Chọn biểu mẫu</span>
+              </label>
+
+              {loadingTemplates ? (
+                <div className="h-9 rounded-md bg-muted animate-pulse" />
+              ) : (
                 <select
                   value={selectedTemplateId}
                   onChange={(e) => {
                     const id = e.target.value;
                     setSelectedTemplateId(id);
                     const tmpl = templates.find((t) => t.id === id);
-                    if (tmpl) {
-                      setDocumentTitle(`Dự thảo ${tmpl.title}`);
-                    }
+                    if (tmpl) setDocumentTitle(`Dự thảo ${tmpl.title}`);
                   }}
-                  className="w-full appearance-none rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-xs focus:border-primary focus:outline-none"
                 >
                   {templates.map((tmpl) => (
                     <option key={tmpl.id} value={tmpl.id}>
@@ -441,21 +657,101 @@ function EditorContentComponent() {
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 border-b bg-background/30 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span>Loại văn bản đích</span>
+              </label>
+              <select
+                value={rawTargetDocType}
+                onChange={(e) => setRawTargetDocType(e.target.value)}
+                className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-xs focus:border-primary focus:outline-none"
+              >
+                {RAW_DOC_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Form Scrollable Area */}
+          {/* Form / Raw Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {currentTemplate ? (
-              <DynamicFormEngine
-                schema={currentTemplate.formSchema}
-                onSubmit={handleFormSubmit}
-                isSubmitting={isStreaming}
-              />
+            {sidebarMode === "template" ? (
+              currentTemplate ? (
+                <DynamicFormEngine
+                  schema={currentTemplate.formSchema}
+                  onSubmit={handleFormSubmit}
+                  isSubmitting={isStreaming}
+                />
+              ) : (
+                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+                  Đang tải cấu hình biểu mẫu...
+                </div>
+              )
             ) : (
-              <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                Đang tải cấu hình biểu mẫu...
+              /* Raw Polish Mode Form (TASK-201) */
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                    <span>Nội dung nháp thô / Ghi chú / Email</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {rawText.length} ký tự
+                    </span>
+                  </label>
+                  <textarea
+                    rows={8}
+                    value={rawText}
+                    onChange={(e) => setRawText(e.target.value)}
+                    placeholder="Dán nội dung nháp thô, email chỉ đạo, biên bản họp hoặc gạch đầu dòng vào đây... Ví dụ:&#10;- UBND tỉnh yêu cầu Sở GD&ĐT chuẩn bị khai giảng&#10;- Kinh phí tổ chức 150.000.000 đ&#10;- Hoàn thành trước 30/08/2026..."
+                    className="w-full rounded-lg border bg-background p-3 text-xs leading-relaxed shadow-xs focus:border-primary focus:outline-none resize-none font-sans"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleRawToDocSubmit}
+                  disabled={!rawText.trim() || isStreaming}
+                  className="w-full gap-2 shadow-xs"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  <span>Chuẩn hóa sang Nghị định 30</span>
+                </Button>
+
+                {/* Facts Extracted Badge Preview */}
+                {extractedFacts && (
+                  <div className="rounded-xl border bg-card p-3.5 space-y-2 text-xs animate-in fade-in">
+                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                      <span>Dữ kiện đã bóc tách (Bảo toàn 100%)</span>
+                    </div>
+
+                    <div className="space-y-1 text-muted-foreground text-[11px]">
+                      {extractedFacts.organization && (
+                        <div className="flex items-center gap-1.5">
+                          <Building className="h-3 w-3 text-primary shrink-0" />
+                          <span className="truncate">Cơ quan: {extractedFacts.organization}</span>
+                        </div>
+                      )}
+                      {extractedFacts.financialFigures.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                          <DollarSign className="h-3 w-3 shrink-0" />
+                          <span>Số tiền: {extractedFacts.financialFigures.join(", ")}</span>
+                        </div>
+                      )}
+                      {extractedFacts.datesAndDeadlines.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span>Thời hạn: {extractedFacts.datesAndDeadlines.join(", ")}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -472,7 +768,7 @@ function EditorContentComponent() {
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground animate-pulse">
-                    Đang phân tích cấu trúc Nghị định 30 và chuẩn hóa điều khoản...
+                    Đang phân tích cấu trúc Nghị định 30 và bóc tách dữ kiện...
                   </p>
                 )}
               </div>
@@ -517,6 +813,23 @@ function EditorContentComponent() {
           />
         </main>
       </div>
+
+      {/* Side-by-side Diff Modal (TASK-202, TASK-203) */}
+      <SideBySideDiffModal
+        isOpen={isDiffModalOpen}
+        onClose={() => setIsDiffModalOpen(false)}
+        originalText={diffOriginalText}
+        proposedText={diffProposedText}
+        onApplyMerged={handleApplyDiffMerged}
+        title={`So sánh đề xuất thay đổi: ${documentTitle}`}
+      />
+
+      {/* Audit Trail Panel (TASK-204) */}
+      <AuditTrailPanel
+        draftId={currentDraftId}
+        isOpen={isAuditPanelOpen}
+        onClose={() => setIsAuditPanelOpen(false)}
+      />
     </div>
   );
 }
