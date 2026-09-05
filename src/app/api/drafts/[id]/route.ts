@@ -76,6 +76,7 @@ export async function PATCH(
       rawInputData,
       status,
       wordCount,
+      folderId,
       currentVersion,
       editSource = "USER_MANUAL",
       changeSummary,
@@ -123,6 +124,7 @@ export async function PATCH(
       if (rawInputData !== undefined) updateData.rawInputData = rawInputData;
       if (status !== undefined) updateData.status = status;
       if (wordCount !== undefined) updateData.wordCount = wordCount;
+      if (folderId !== undefined) updateData.folderId = folderId;
 
       const draft = await tx.documentDraft.update({
         where: { id },

@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FolderTree } from "./folder-tree";
 
 export interface DraftItem {
   id: string;
@@ -69,6 +70,7 @@ export function DashboardWorkspace() {
   const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "TRASH">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState("ALL");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   // Modal tạo mới
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -95,6 +97,10 @@ export function DashboardWorkspace() {
         params.append("industryPack", selectedIndustry);
       }
 
+      if (selectedFolderId) {
+        params.append("folderId", selectedFolderId);
+      }
+
       const res = await fetch(`/api/drafts?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
@@ -105,7 +111,7 @@ export function DashboardWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, searchQuery, selectedIndustry]);
+  }, [activeTab, searchQuery, selectedIndustry, selectedFolderId]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -207,8 +213,19 @@ export function DashboardWorkspace() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Control Bar: Search, Industry Filter, View Toggles & New Button */}
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
+      {/* Cột trái: Cây thư mục lồng nhau Drag & Drop (TASK-208) */}
+      <aside className="w-full lg:w-64 shrink-0 rounded-2xl border bg-card p-4 shadow-xs self-start sticky top-20">
+        <FolderTree
+          selectedFolderId={selectedFolderId}
+          onSelectFolder={(id) => setSelectedFolderId(id)}
+          onDraftDropped={() => fetchDrafts()}
+        />
+      </aside>
+
+      {/* Cột phải: Không gian văn bản & Bảng điều khiển */}
+      <div className="flex-1 min-w-0 space-y-6 w-full">
+        {/* Control Bar: Search, Industry Filter, View Toggles & New Button */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-1 items-center gap-3">
           {/* Search Bar */}
@@ -341,6 +358,11 @@ export function DashboardWorkspace() {
             return (
               <div
                 key={draft.id}
+                draggable={!isTrash}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("text/draft-id", draft.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
                 onClick={() => {
                   if (!isTrash) router.push(`/editor?id=${draft.id}`);
                 }}
@@ -356,11 +378,23 @@ export function DashboardWorkspace() {
                     {statusConfig.label}
                   </span>
 
-                  {draft.template?.industryPack && (
-                    <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                      {draft.template.industryPack}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    {draft.folder && (
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: draft.folder.color || "#3b82f6" }}
+                        />
+                        <span className="truncate max-w-[100px]">{draft.folder.name}</span>
+                      </span>
+                    )}
+
+                    {draft.template?.industryPack && (
+                      <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {draft.template.industryPack}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Title & Document Meta */}
@@ -461,6 +495,11 @@ export function DashboardWorkspace() {
                 return (
                   <tr
                     key={draft.id}
+                    draggable={!isTrash}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/draft-id", draft.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
                     className="transition-colors hover:bg-muted/30 cursor-pointer"
                     onClick={() => {
                       if (!isTrash) router.push(`/editor?id=${draft.id}`);
@@ -469,7 +508,18 @@ export function DashboardWorkspace() {
                     <td className="px-6 py-4 font-semibold text-foreground">
                       <div className="flex items-center gap-3">
                         <FileText className="h-4 w-4 text-primary shrink-0" />
-                        <span className="line-clamp-1">{draft.title}</span>
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="line-clamp-1">{draft.title}</span>
+                          {draft.folder && (
+                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <span
+                                className="h-1.5 w-1.5 rounded-full shrink-0"
+                                style={{ backgroundColor: draft.folder.color || "#3b82f6" }}
+                              />
+                              <span className="truncate max-w-[140px]">{draft.folder.name}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-xs text-muted-foreground">
@@ -629,6 +679,7 @@ export function DashboardWorkspace() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

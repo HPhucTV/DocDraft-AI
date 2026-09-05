@@ -33,7 +33,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (folderId) {
-      where.folderId = folderId;
+      if (folderId === "UNORGANIZED" || folderId === "none") {
+        where.folderId = null;
+      } else {
+        where.folderId = folderId;
+      }
     }
 
     if (industryPack && industryPack !== "ALL") {

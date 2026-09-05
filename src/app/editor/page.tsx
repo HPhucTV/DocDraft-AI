@@ -39,6 +39,7 @@ import { RawExtractionResult } from "@/lib/ai/raw-to-doc-service";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { SideBySideDiffModal } from "@/components/diff/side-by-side-diff-modal";
 import { AuditTrailPanel } from "@/components/audit/audit-trail-panel";
+import { VersionHistoryPanel } from "@/components/editor/version-history-panel";
 
 interface TemplateItem {
   id: string;
@@ -96,6 +97,9 @@ function EditorContentComponent() {
 
   // State cho Audit Trail Panel (TASK-204)
   const [isAuditPanelOpen, setIsAuditPanelOpen] = useState(false);
+
+  // State cho Version History Panel (TASK-209)
+  const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
 
   // State cho AI Chat Sidebar & In-line Copilot (TASK-206)
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -570,6 +574,18 @@ function EditorContentComponent() {
             </Button>
           )}
 
+          {/* Nút mở Lịch sử phiên bản & Rollback (TASK-209) */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsVersionPanelOpen(true)}
+            className="gap-1.5 h-8 text-xs font-semibold text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+            title="Lịch sử phiên bản & Khôi phục 1-Click"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>v{currentVersion}</span>
+          </Button>
+
           {/* Nút mở Audit Trail (TASK-204) */}
           <Button
             variant="outline"
@@ -902,6 +918,18 @@ function EditorContentComponent() {
         draftId={currentDraftId}
         isOpen={isAuditPanelOpen}
         onClose={() => setIsAuditPanelOpen(false)}
+      />
+
+      {/* Version History Panel (TASK-209) */}
+      <VersionHistoryPanel
+        draftId={currentDraftId}
+        currentVersion={currentVersion}
+        isOpen={isVersionPanelOpen}
+        onClose={() => setIsVersionPanelOpen(false)}
+        onRollbackSuccess={(newVersion, contentJson) => {
+          setCurrentVersion(newVersion);
+          setEditorJson(contentJson);
+        }}
       />
     </div>
   );
