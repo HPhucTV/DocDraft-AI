@@ -73,90 +73,47 @@ async function main() {
   }
   console.log(`✓ Đã khởi tạo thành công ${categories.length} danh mục biểu mẫu.`);
 
-  // 3. Tạo Mẫu văn bản đầu tiên: Quyết định Bổ nhiệm Cán bộ (Industry Pack: HR / Administrative)
-  const templateBoNhiem = await prisma.template.upsert({
-    where: { id: "qd-bo-nhiem" },
-    update: {},
-    create: {
-      id: "qd-bo-nhiem",
-      categoryId: "administrative",
-      industryPack: "HR",
-      title: "Quyết định Bổ nhiệm Cán bộ / Lãnh đạo quản lý",
-      description:
-        "Mẫu Quyết định chuẩn thể thức Nghị định 30/2020/NĐ-CP về việc bổ nhiệm cán bộ giữ chức vụ lãnh đạo quản lý.",
-      systemPrompt: `Bạn là trợ lý AI chuyên soạn thảo văn bản hành chính nhà nước Việt Nam, tuyệt đối tuân thủ Nghị định 30/2020/NĐ-CP.
-QUY TẮC CỐT LÕI:
-1. KHÔNG ảo giác số liệu. Bất kỳ thông tin nào người dùng chưa cung cấp (mức lương cụ thể, số quyết định trước đó, hệ số phụ cấp...) BẮT BUỘC để giữ chỗ dạng [...] để chuyên viên tự điền.
-2. Phần đầu và phần ký tên phải khớp cấu trúc bảng ẩn 2 cột chuẩn Nghị định 30.
-3. Sử dụng văn phong hành chính trang trọng, chính xác, dứt khoát.`,
-      userPromptTemplate: `Soạn thảo Quyết định bổ nhiệm dựa trên các thông tin sau:
-- Cơ quan ban hành: {{co_quan_ban_hanh}}
-- Cấp trên trực tiếp: {{co_quan_cap_tren}}
-- Người được bổ nhiệm: {{ho_ten_nguoi_duoc_bo_nhiem}}
-- Chức danh hiện tại: {{chuc_danh_hien_tai}}
-- Chức danh bổ nhiệm: {{chuc_danh_bo_nhiem}}
-- Đơn vị công tác: {{don_vi_cong_tac}}
-- Thời hạn bổ nhiệm: {{thoi_han_bo_nhiem}}
-- Căn cứ pháp lý: {{can_cu_phap_ly}}`,
-      formSchema: {
-        type: "object",
-        required: [
-          "co_quan_ban_hanh",
-          "ho_ten_nguoi_duoc_bo_nhiem",
-          "chuc_danh_bo_nhiem",
-          "don_vi_cong_tac",
-        ],
-        properties: {
-          co_quan_cap_tren: {
-            type: "string",
-            title: "Tên cơ quan cấp trên",
-            default: "ỦY BAN NHÂN DÂN THÀNH PHỐ",
-          },
-          co_quan_ban_hanh: {
-            type: "string",
-            title: "Tên cơ quan ban hành quyết định",
-            placeholder: "Ví dụ: SỞ KẾ HOẠCH VÀ ĐẦU TƯ",
-          },
-          ho_ten_nguoi_duoc_bo_nhiem: {
-            type: "string",
-            title: "Họ và tên người được bổ nhiệm",
-          },
-          chuc_danh_hien_tai: {
-            type: "string",
-            title: "Chức vụ / Công việc hiện tại",
-          },
-          chuc_danh_bo_nhiem: {
-            type: "string",
-            title: "Chức vụ được bổ nhiệm",
-          },
-          don_vi_cong_tac: {
-            type: "string",
-            title: "Phòng ban / Đơn vị công tác",
-          },
-          thoi_han_bo_nhiem: {
-            type: "string",
-            title: "Thời hạn bổ nhiệm (năm)",
-            default: "05 năm",
-          },
-          can_cu_phap_ly: {
-            type: "string",
-            title: "Căn cứ pháp lý bổ sung (nếu có)",
-          },
-        },
+  // 3. Khởi tạo dữ liệu hạt giống 10 Mẫu Hành chính & Doanh nghiệp chuẩn Nghị định 30 (TASK-106)
+  const { SEED_TEMPLATES } = await import("./data/templates");
+
+  for (const t of SEED_TEMPLATES) {
+    const createdTemplate = await prisma.template.upsert({
+      where: { id: t.id },
+      update: {
+        categoryId: t.categoryId,
+        industryPack: t.industryPack,
+        title: t.title,
+        description: t.description,
+        systemPrompt: t.systemPrompt,
+        userPromptTemplate: t.userPromptTemplate,
+        fewShotExamples: t.fewShotExamples as unknown as object,
+        formSchema: t.formSchema as unknown as object,
+        exportConfig: t.exportConfig as unknown as object,
+        isBuiltin: t.isBuiltin,
+        isPublished: t.isPublished,
+        avgRating: t.avgRating,
       },
-      exportConfig: {
-        margins: { top: 20, bottom: 20, left: 30, right: 15 },
-        defaultFont: "Times New Roman",
-        fontSize: 13,
+      create: {
+        id: t.id,
+        categoryId: t.categoryId,
+        industryPack: t.industryPack,
+        title: t.title,
+        description: t.description,
+        systemPrompt: t.systemPrompt,
+        userPromptTemplate: t.userPromptTemplate,
+        fewShotExamples: t.fewShotExamples as unknown as object,
+        formSchema: t.formSchema as unknown as object,
+        exportConfig: t.exportConfig as unknown as object,
+        isBuiltin: t.isBuiltin,
+        createdBy: adminUser.id,
+        usageCount: 0,
+        avgRating: t.avgRating,
+        isPublished: t.isPublished,
       },
-      isBuiltin: true,
-      createdBy: adminUser.id,
-      usageCount: 0,
-      avgRating: 5.0,
-      isPublished: true,
-    },
-  });
-  console.log(`✓ Đã tạo mẫu văn bản: ${templateBoNhiem.title} (${templateBoNhiem.id})`);
+    });
+    console.log(`✓ Đã nạp mẫu văn bản: ${createdTemplate.title} (${createdTemplate.id})`);
+  }
+  console.log(`✓ Đã nạp thành công ${SEED_TEMPLATES.length} mẫu biểu hành chính & doanh nghiệp.`);
 
   console.log("🎉 Hoàn tất gieo dữ liệu (Seeding Completed)!");
 }

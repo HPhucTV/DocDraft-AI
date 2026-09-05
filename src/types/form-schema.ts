@@ -32,6 +32,7 @@ export interface FormField {
   options?: FormFieldOption[];
   validation?: FormFieldValidation;
   default_value?: string | number | boolean;
+  defaultValue?: string | number | boolean;
 }
 
 export interface FormSchema {

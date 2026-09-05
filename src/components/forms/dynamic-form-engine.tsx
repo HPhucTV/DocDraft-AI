@@ -127,7 +127,7 @@ export function DynamicFormEngine({
                   render={({ field: controllerField }) => (
                     <CurrencyInput
                       id={field.name}
-                      value={controllerField.value}
+                      value={controllerField.value as number | string | undefined}
                       onChange={controllerField.onChange}
                       placeholder={field.placeholder || "0"}
                       hasError={hasError}
