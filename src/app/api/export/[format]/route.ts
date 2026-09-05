@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { r2Storage } from "@/lib/storage/r2-storage";
+import { optimizeHtmlForPdfPageBreak } from "@/lib/export/pdf-page-break";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +42,15 @@ export async function POST(
       font_size_pt: 13,
     };
 
-    const content =
+    const rawContent =
       format === "docx"
         ? body.contentJson || body.content_json || body.tiptap_json || { type: "doc", content: [] }
         : body.htmlContent || body.html_content || body.html || "<p></p>";
+
+    const content =
+      format === "pdf" && typeof rawContent === "string"
+        ? optimizeHtmlForPdfPageBreak(rawContent)
+        : rawContent;
 
     // 1. Tính mã băm SHA-256 của nội dung và cấu hình xuất bản
     const contentHash = r2Storage.computeContentHash(content, config, format);

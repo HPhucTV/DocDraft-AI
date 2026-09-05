@@ -81,3 +81,55 @@ body {
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* ==========================================================================
+   TASK-311: Smart Page-Break Engine for Print & PDF (Nghị định 30/2020/NĐ-CP)
+   - Khổ A4 đứng (210mm x 297mm), căn lề chuẩn 20mm/15mm/20mm/30mm
+   - Tránh cắt ngang dòng chữ, hàng bảng hoặc khối chữ ký
+   - Tự động đẩy tiêu đề mục sang trang mới nếu ở cuối trang
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin-top: 20mm;
+    margin-bottom: 20mm;
+    margin-left: 30mm;
+    margin-right: 15mm;
+  }
+
+  /* Tránh rớt mồ côi dòng đầu/cuối của đoạn văn (Orphans & Widows) */
+  p, div {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Tránh ngắt trang ngay sau tiêu đề (Orphan Heading Prevention) */
+  h1, h2, h3, h4, .heading-1, .heading-2, .heading-3 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Tránh xé đôi bảng, ô bảng và hàng bảng */
+  table, .nd30-table, tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Giữ nguyên vẹn toàn bộ khối chữ ký và nơi nhận */
+  .signature-section, .footer-section, [data-table-type="signature"], [data-table-type="footer"] {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Lớp hỗ trợ ngắt trang chủ động */
+  .page-break, .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+}
+

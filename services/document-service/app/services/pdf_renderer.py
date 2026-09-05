@@ -11,6 +11,8 @@ from reportlab.platypus import (
     Table as RLTable,
     TableStyle,
     HRFlowable,
+    KeepTogether,
+    PageBreak,
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
@@ -72,6 +74,7 @@ def build_reportlab_styles(config: ExportConfig):
         fontName="Helvetica-Bold",
         spaceBefore=8,
         spaceAfter=6,
+        keepWithNext=True,  # TASK-311: Ngăn tiêu đề rớt đáy trang (Orphan Heading Prevention)
     )
 
     h2_style = ParagraphStyle(
@@ -83,6 +86,19 @@ def build_reportlab_styles(config: ExportConfig):
         fontName="Helvetica-Bold",
         spaceBefore=6,
         spaceAfter=4,
+        keepWithNext=True,  # TASK-311: Ngăn tiêu đề rớt đáy trang
+    )
+
+    h3_style = ParagraphStyle(
+        "ND30H3",
+        parent=body_style,
+        fontSize=config.font_size_pt,
+        leading=config.font_size_pt * 1.35,
+        alignment=0,
+        fontName="Helvetica-Bold",
+        spaceBefore=4,
+        spaceAfter=2,
+        keepWithNext=True,  # TASK-311: Ngăn tiêu đề rớt đáy trang
     )
 
     return {
@@ -92,6 +108,7 @@ def build_reportlab_styles(config: ExportConfig):
         "justify": justify_style,
         "h1": h1_style,
         "h2": h2_style,
+        "h3": h3_style,
     }
 
 
@@ -153,7 +170,22 @@ def html_to_reportlab_story(html_content: str, config: ExportConfig) -> List[any
             else:
                 continue
 
-            rl_table = RLTable(table_data, colWidths=col_widths)
+            # TASK-311: Kiểm tra xem có phải khối chữ ký / Nơi nhận NĐ 30 hay không
+            table_text = elem.get_text().lower()
+            table_type = elem.get("data-table-type", "general")
+            is_signature_block = (
+                table_type in ("footer", "signature")
+                or "nơi nhận" in table_text
+                or "thủ trưởng" in table_text
+                or "giám đốc" in table_text
+                or "chủ tịch" in table_text
+                or "hiệu trưởng" in table_text
+                or "người lập biểu" in table_text
+            )
+
+            # Với bảng dữ liệu nhiều hàng: tự động lặp lại hàng tiêu đề khi ngắt sang trang mới
+            repeat_rows = 1 if len(table_data) > 3 and not is_signature_block else 0
+            rl_table = RLTable(table_data, colWidths=col_widths, repeatRows=repeat_rows)
             # Bảng ẩn NĐ 30: triệt tiêu viền (border: none)
             rl_table.setStyle(
                 TableStyle([
@@ -164,12 +196,26 @@ def html_to_reportlab_story(html_content: str, config: ExportConfig) -> List[any
                     ("RIGHTPADDING", (0, 0), (-1, -1), 2),
                 ])
             )
-            story.append(rl_table)
+
+            if is_signature_block:
+                # TASK-311: Giữ nguyên vẹn toàn bộ khối chữ ký trong một trang, không bị xé đôi
+                story.append(KeepTogether(rl_table))
+            else:
+                story.append(rl_table)
+
             story.append(Spacer(1, 4 * mm))
 
-        elif tag in ("h1", "h2"):
-            h_style = styles["h1"] if tag == "h1" else styles["h2"]
+        elif tag in ("h1", "h2", "h3"):
+            h_style = styles.get(tag, styles["h2"])
             story.append(Paragraph(clean_html_for_reportlab(str(elem)), h_style))
+
+        elif tag == "div" and (
+            "page-break" in elem.get("class", [])
+            or "page-break-after" in elem.get("style", "").lower()
+            or "break-after" in elem.get("style", "").lower()
+        ):
+            # TASK-311: Hỗ trợ ngắt trang thủ công chủ động
+            story.append(PageBreak())
 
         elif tag == "p":
             p_style = styles["body"]
@@ -187,7 +233,10 @@ def html_to_reportlab_story(html_content: str, config: ExportConfig) -> List[any
                 story.append(Spacer(1, 1.5 * mm))
 
         elif tag == "hr":
-            story.append(HRFlowable(width="60%", thickness=0.8, color=colors.black, spaceAfter=8, spaceBefore=4))
+            if "page-break" in elem.get("class", []):
+                story.append(PageBreak())
+            else:
+                story.append(HRFlowable(width="60%", thickness=0.8, color=colors.black, spaceAfter=8, spaceBefore=4))
 
     return story
 

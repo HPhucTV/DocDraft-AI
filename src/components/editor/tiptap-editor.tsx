@@ -31,6 +31,7 @@ import { LegalAutocompleteDialog } from "./legal-autocomplete-dialog";
 import { ComplianceDialog } from "./compliance-dialog";
 import { ShareDialog } from "./share-dialog";
 import { CommentsPanel, type CommentAnchor } from "./comments-panel";
+import { AIFeedbackWidget } from "./ai-feedback-widget";
 import { checkCompliance } from "@/lib/compliance/compliance-engine";
 import {
   Sparkles,
@@ -323,6 +324,7 @@ export function TiptapEditor({
         onOpenSuggestionsPanel={() => setIsSuggestionsPanelOpen(!isSuggestionsPanelOpen)}
         suggestionsCount={suggestions.length}
         isSuggestionsPanelOpen={isSuggestionsPanelOpen}
+        draftId={draftId}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
@@ -344,9 +346,18 @@ export function TiptapEditor({
                   <Sparkles className="h-3.5 w-3.5" />
                   <span>Đề xuất chỉnh sửa:</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground capitalize">
-                  {inlineSuggestion.command}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground capitalize">
+                    {inlineSuggestion.command}
+                  </span>
+                  <AIFeedbackWidget
+                    draftId={draftId}
+                    actionType="INLINE_EDIT"
+                    promptSnippet={inlineSuggestion.originalText.slice(0, 100)}
+                    completionSnippet={inlineSuggestion.resultText.slice(0, 100)}
+                    size="sm"
+                  />
+                </div>
               </div>
 
               <p className="text-xs bg-muted/40 p-2 rounded border border-border/50 max-h-36 overflow-y-auto leading-relaxed font-serif">

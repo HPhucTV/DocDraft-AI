@@ -3110,5 +3110,672 @@ Kính đề nghị Tư vấn Giám sát bố trí cán bộ thường trực ngh
     isPublished: true,
     avgRating: 5.0,
   },
+
+  // ==========================================
+  // 19. GÓI EDU: KẾ HOẠCH GIẢNG DẠY VÀ CHUYÊN MÔN
+  // ==========================================
+  {
+    id: "edu-teaching-plan",
+    categoryId: "education",
+    industryPack: "EDU",
+    title: "Kế hoạch giảng dạy và công tác chuyên môn",
+    description:
+      "Kế hoạch phân công giảng dạy, công tác bồi dưỡng học sinh và hoạt động chuyên môn theo từng học kỳ / năm học của trường học.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Kế hoạch giảng dạy và công tác chuyên môn với thông tin sau:
+- Cơ quan chủ quản: {{ten_co_quan_chu_quan}}
+- Tên trường / Cơ sở giáo dục: {{ten_truong}}
+- Năm học: {{nam_hoc}}
+- Học kỳ / Giai đoạn: {{hoc_ky}}
+- Tổ bộ môn / Khoa chuyên môn: {{to_chuyen_mon}}
+- Mục tiêu chung: {{muc_tieu_chung}}
+- Nội dung & nhiệm vụ trọng tâm: {{noi_dung_nhiem_vu}}
+- Biện pháp thực hiện: {{bien_phap_thuc_hien}}
+- Chức danh người ký: {{chuc_danh_nguoi_ky}}
+- Họ tên người ký: {{ho_ten_nguoi_ky}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_co_quan_chu_quan",
+          label: "Cơ quan chủ quản (Sở / Phòng GD&ĐT)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: SỞ GIÁO DỤC VÀ ĐÀO TẠO THÀNH PHỐ HÀ NỘI",
+        },
+        {
+          name: "ten_truong",
+          label: "Tên trường / Đơn vị",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TRƯỜNG THPT CHUYÊN HÀ NỘI - AMSTERDAM",
+        },
+        {
+          name: "nam_hoc",
+          label: "Năm học",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 2026 - 2027",
+        },
+        {
+          name: "hoc_ky",
+          label: "Học kỳ / Giai đoạn kế hoạch",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Học kỳ I năm học 2026 - 2027",
+        },
+        {
+          name: "to_chuyen_mon",
+          label: "Tổ chuyên môn / Khoa",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tổ Toán - Tin học",
+        },
+        {
+          name: "muc_tieu_chung",
+          label: "Mục tiêu trọng tâm",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Nâng cao chất lượng dạy học theo Chương trình GDPT 2018; Phấn đấu 100% học sinh đạt yêu cầu, 65% đạt Giỏi và Xuất sắc.",
+        },
+        {
+          name: "noi_dung_nhiem_vu",
+          label: "Nhiệm vụ cụ thể & Phân công chuyên môn",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Thực hiện nghiêm túc phân phối chương trình; Tổ chức 04 chuyên đề đổi mới phương pháp dạy học; Bồi dưỡng đội tuyển HSG cấp tỉnh/thành phố.",
+        },
+        {
+          name: "bien_phap_thuc_hien",
+          label: "Biện pháp thực hiện",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Tăng cường ứng dụng CNTT và AI trong soạn giảng; Dự giờ thăm lớp định kỳ 2 tiết/giáo viên/tháng; Kiểm tra đánh giá công bằng khách quan.",
+        },
+        {
+          name: "chuc_danh_nguoi_ky",
+          label: "Chức danh người ký duyệt",
+          type: "text",
+          required: true,
+          placeholder: "Vd: HIỆU TRƯỞNG",
+        },
+        {
+          name: "ho_ten_nguoi_ky",
+          label: "Họ và tên người ký duyệt",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TS. Bùi Thị Minh Hằng",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Kế hoạch giảng dạy học kỳ I môn Toán THPT",
+        input: {
+          ten_co_quan_chu_quan: "SỞ GIÁO DỤC VÀ ĐÀO TẠO TP. HÀ NỘI",
+          ten_truong: "TRƯỜNG THPT CHUYÊN HÀ NỘI - AMSTERDAM",
+          nam_hoc: "2026 - 2027",
+          hoc_ky: "Học kỳ I",
+          to_chuyen_mon: "Tổ Toán - Tin học",
+          muc_tieu_chung: "Đảm bảo tiến độ chương trình GDPT 2018, phát triển năng lực tư duy toán học và đạt giải cao tại kỳ thi HSG quốc gia.",
+          noi_dung_nhiem_vu: "Triển khai dạy học 18 tuần thực học; Tổ chức 02 hội thảo chuyên đề ứng dụng Geogebra trong giảng dạy hình học không gian.",
+          bien_phap_thuc_hien: "Đẩy mạnh sinh hoạt chuyên môn theo nghiên cứu bài học; Tổ chức kiểm tra khảo sát chất lượng giữa kỳ nghiêm túc.",
+          chuc_danh_nguoi_ky: "HIỆU TRƯỞNG",
+          ho_ten_nguoi_ky: "Trần Thị Mai Phương",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:45%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">SỞ GIÁO DỤC VÀ ĐÀO TẠO TP. HÀ NỘI</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">TRƯỜNG THPT CHUYÊN HN - AMSTERDAM</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Số: 45/KH-THPT</p>
+    </td>
+    <td style="width:55%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:15pt; margin:20px 0 5px 0;">KẾ HOẠCH</h2>
+<p style="text-align:center; font-weight:bold; margin-bottom:20px;">Công tác giảng dạy và hoạt động chuyên môn Học kỳ I Năm học 2026 - 2027</p>
+
+<p><em>- Căn cứ Chỉ thị nhiệm vụ năm học 2026 - 2027 của Bộ Giáo dục và Đào tạo;</em></p>
+<p><em>- Căn cứ Hướng dẫn thực hiện nhiệm vụ giáo dục trung học của Sở GD&ĐT Hà Nội;</em></p>
+<p><em>- Căn cứ Kế hoạch giáo dục nhà trường năm học 2026 - 2027 của Trường THPT Chuyên Hà Nội - Amsterdam.</em></p>
+
+<p>Trường THPT Chuyên Hà Nội - Amsterdam ban hành Kế hoạch công tác giảng dạy và hoạt động chuyên môn Học kỳ I với các nội dung trọng tâm sau:</p>
+
+<p><strong>I. MỤC TIÊU VÀ CHỈ TIÊU PHẤN ĐẤU</strong><br/>
+1. 100% cán bộ, giáo viên thực hiện nghiêm túc Quy chế chuyên môn và chương trình giáo dục đã phê duyệt.<br/>
+2. Tỷ lệ học sinh xếp loại kết quả học tập Tốt (Giỏi, Xuất sắc) đạt trên 95%; không có học sinh Chưa đạt.<br/>
+3. Phấn đấu 100% học sinh đội tuyển dự thi Học sinh giỏi các cấp đạt giải.</p>
+
+<p><strong>II. NHIỆM VỤ VÀ NỘI DUNG CÔNG TÁC TRỌNG TÂM</strong><br/>
+1. Thực hiện nghiêm túc tiến độ chương trình 18 tuần thực học theo biên chế thời gian năm học.<br/>
+2. Đổi mới phương pháp dạy học và hình thức kiểm tra đánh giá theo định hướng phát triển phẩm chất, năng lực người học.<br/>
+3. Tổ chức định kỳ sinh hoạt tổ chuyên môn 2 tuần/lần; chú trọng đổi mới sinh hoạt chuyên môn theo nghiên cứu bài học.</p>
+
+<p><strong>III. BIỆN PHÁP TỔ CHỨC THỰC HIỆN</strong><br/>
+1. Ban Giám hiệu trực tiếp chỉ đạo, kiểm tra định kỳ và đột xuất hoạt động sư phạm của giáo viên.<br/>
+2. Tổ trưởng chuyên môn chịu trách nhiệm trước Hiệu trưởng về chất lượng giảng dạy của tổ.<br/>
+3. Đẩy mạnh ứng dụng công nghệ thông tin và chuyển đổi số trong quản lý hồ sơ sổ sách điện tử.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Sở GD&ĐT Hà Nội (để b/c);<br/>
+      - Các Tổ chuyên môn (để t/h);<br/>
+      - Lưu: VT, CM.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>HIỆU TRƯỞNG</strong><br/>
+      <em>(Ký và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Trần Thị Mai Phương</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ==========================================
+  // 20. GÓI EDU: ĐỀ XUẤT TỔ CHỨC HỘI THẢO KHOA HỌC / CHUYÊN ĐỀ SƯ PHẠM
+  // ==========================================
+  {
+    id: "edu-scientific-seminar-proposal",
+    categoryId: "education",
+    industryPack: "EDU",
+    title: "Đề xuất tổ chức Hội thảo khoa học / Chuyên đề sư phạm",
+    description:
+      "Tờ trình / Đề xuất của Khoa / Tổ bộ môn trình Ban Giám hiệu phê duyệt kế hoạch tổ chức Hội thảo khoa học hoặc Hội thi giáo viên dạy giỏi.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Đề xuất tổ chức Hội thảo khoa học / Chuyên đề sư phạm với thông tin sau:
+- Tên trường / Cơ sở giáo dục: {{ten_truong}}
+- Đơn vị đề xuất: {{don_vi_de_xuat}}
+- Tên hội thảo / Chuyên đề: {{ten_hoi_thao}}
+- Mục đích & ý nghĩa: {{muc_dich_y_nghia}}
+- Thời gian & địa điểm dự kiến: {{thoi_gian_dia_diem}}
+- Thành phần tham dự: {{thanh_phan_tham_du}}
+- Dự toán kinh phí: {{du_toan_kinh_phi}}
+- Chức danh người đề xuất: {{chuc_danh_nguoi_ky}}
+- Họ tên người đề xuất: {{ho_ten_nguoi_ky}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_truong",
+          label: "Tên trường / Viện đào tạo",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TRƯỜNG ĐẠI HỌC SƯ PHẠM HÀ NỘI",
+        },
+        {
+          name: "don_vi_de_xuat",
+          label: "Khoa / Tổ chuyên môn đề xuất",
+          type: "text",
+          required: true,
+          placeholder: "Vd: KHOA CÔNG NGHỆ THÔNG TIN",
+        },
+        {
+          name: "ten_hoi_thao",
+          label: "Tên Hội thảo / Chuyên đề sư phạm",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ứng dụng Trí tuệ Nhân tạo (AI) tạo sinh trong đổi mới phương pháp giảng dạy đại học",
+        },
+        {
+          name: "muc_dich_y_nghia",
+          label: "Mục đích và ý nghĩa khoa học",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Tạo diễn đàn học thuật trao đổi kinh nghiệm ứng dụng AI; Nâng cao năng lực số cho giảng viên.",
+        },
+        {
+          name: "thoi_gian_dia_diem",
+          label: "Thời gian & địa điểm tổ chức",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 08h00 ngày 25 tháng 10 năm 2026 tại Hội trường K1",
+        },
+        {
+          name: "thanh_phan_tham_du",
+          label: "Thành phần tham dự và diễn giả",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Khoảng 150 đại biểu gồm Ban Giám hiệu, chuyên gia Viện CNTT, toàn thể giảng viên và học viên cao học",
+        },
+        {
+          name: "du_toan_kinh_phi",
+          label: "Dự toán kinh phí dự kiến",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 45.000.000 đ (Bốn mươi lăm triệu đồng từ nguồn kinh phí NCKH của trường)",
+        },
+        {
+          name: "chuc_danh_nguoi_ky",
+          label: "Chức danh người đề xuất",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TRƯỞNG KHOA",
+        },
+        {
+          name: "ho_ten_nguoi_ky",
+          label: "Họ và tên người đề xuất",
+          type: "text",
+          required: true,
+          placeholder: "Vd: PGS.TS. Nguyễn Văn Hoà",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Tờ trình xin phép tổ chức hội thảo khoa học cấp trường",
+        input: {
+          ten_truong: "TRƯỜNG ĐẠI HỌC KHOA HỌC XÃ HỘI VÀ NHÂN VĂN",
+          don_vi_de_xuat: "KHOA BÁO CHÍ VÀ TRUYỀN THÔNG",
+          ten_hoi_thao: "Chuyển đổi số và đạo đức báo chí trong kỷ nguyên AI",
+          muc_dich_y_nghia: "Thảo luận các thách thức pháp lý và chuẩn mực đạo đức nghề nghiệp khi ứng dụng AI trong sáng tạo nội dung.",
+          thoi_gian_dia_diem: "08h30 ngày 18 tháng 11 năm 2026 tại Hội trường Tầng 8 nhà E",
+          thanh_phan_tham_du: "Ban Giám hiệu, đại diện Hội Nhà báo Việt Nam, các cơ quan báo chí và giảng viên trong trường.",
+          du_toan_kinh_phi: "35.000.000 đ (Ba mươi lăm triệu đồng)",
+          chuc_danh_nguoi_ky: "TRƯỞNG KHOA",
+          ho_ten_nguoi_ky: "PGS.TS. Đặng Thị Thu Hương",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:45%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">ĐẠI HỌC QUỐC GIA HÀ NỘI</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">TRƯỜNG ĐH KHXH&NV</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Số: 19/TTr-BC&TT</p>
+    </td>
+    <td style="width:55%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:15pt; margin:20px 0 5px 0;">TỜ TRÌNH</h2>
+<p style="text-align:center; font-style:italic; margin-bottom:20px;">V/v Đề xuất tổ chức Hội thảo khoa học: &ldquo;Chuyển đổi số và đạo đức báo chí trong kỷ nguyên AI&rdquo;</p>
+
+<p style="margin-left:40px;"><strong>Kính gửi:</strong> Ban Giám hiệu Trường Đại học Khoa học Xã hội và Nhân văn.</p>
+
+<p><em>- Căn cứ Kế hoạch hoạt động Khoa học và Công nghệ năm học 2026 - 2027 của Nhà trường;</em></p>
+<p><em>- Căn cứ nhu cầu nghiên cứu, giảng dạy thực tiễn của Khoa Báo chí và Truyền thông.</em></p>
+
+<p>Khoa Báo chí và Truyền thông kính trình Ban Giám hiệu xem xét và phê duyệt kế hoạch tổ chức Hội thảo khoa học cấp trường với các nội dung chi tiết sau:</p>
+
+<p><strong>1. Tên hội thảo:</strong> &ldquo;Chuyển đổi số và đạo đức báo chí trong kỷ nguyên AI&rdquo;.</p>
+<p><strong>2. Mục đích và ý nghĩa:</strong><br/>
+Tạo diễn đàn trao đổi giữa các nhà khoa học, chuyên gia công nghệ và các nhà báo uy tín nhằm làm rõ những cơ hội, thách thức và chuẩn mực đạo đức nghề nghiệp khi ứng dụng các mô hình ngôn ngữ lớn (LLM) trong sáng tạo báo chí truyền thông.</p>
+
+<p><strong>3. Thời gian và địa điểm:</strong><br/>
+- Thời gian: 08 giờ 30 phút, ngày 18 tháng 11 năm 2026.<br/>
+- Địa điểm: Hội trường Tầng 8 nhà E, Trường ĐH KHXH&NV (336 Nguyễn Trãi, Thanh Xuân, Hà Nội).</p>
+
+<p><strong>4. Dự toán kinh phí thực hiện:</strong><br/>
+Tổng kinh phí dự kiến: <strong>35.000.000 đ</strong> (Ba mươi lăm triệu đồng chẵn). Đề nghị trích từ nguồn Quỹ phát triển hoạt động khoa học và công nghệ của Nhà trường.</p>
+
+<p>Kính đề nghị Ban Giám hiệu xem xét, phê duyệt chủ trương và giao các Phòng chức năng phối hợp thực hiện.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Như trên;<br/>
+      - Phòng KH&CN (phối hợp);<br/>
+      - Lưu: VT, Khoa.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>TRƯỞNG KHOA</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Đặng Thị Thu Hương</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ==========================================
+  // 21. GÓI EDU: BÁO CÁO TỔNG KẾT THI ĐUA VÀ KẾT QUẢ HỌC TẬP
+  // ==========================================
+  {
+    id: "edu-period-summary-report",
+    categoryId: "education",
+    industryPack: "EDU",
+    title: "Báo cáo tổng kết phong trào thi đua và kết quả học tập",
+    description:
+      "Báo cáo toàn diện kết quả thực hiện nhiệm vụ năm học, xếp loại hạnh kiểm, học lực và các thành tích nổi bật của nhà trường / khối lớp.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Báo cáo tổng kết phong trào thi đua và kết quả học tập với thông tin sau:
+- Tên trường học: {{ten_truong}}
+- Năm học báo cáo: {{nam_hoc}}
+- Tổng số học sinh: {{so_luong_hoc_sinh}}
+- Kết quả học tập: {{ket_qua_hoc_tap}}
+- Kết quả rèn luyện: {{ket_qua_ren_luyen}}
+- Thành tích nổi bật & Giải thưởng: {{thanh_tich_noi_bat}}
+- Tồn tại & Hạn chế: {{ton_tai_han_che}}
+- Phương hướng nhiệm vụ tiếp theo: {{phuong_huong_nhiem_vu}}
+- Họ tên Hiệu trưởng: {{ho_ten_hieu_truong}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_truong",
+          label: "Tên trường học",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TRƯỜNG TIỂU HỌC VÀ THCS ĐOÀN THỊ ĐIỂM",
+        },
+        {
+          name: "nam_hoc",
+          label: "Năm học báo cáo",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Năm học 2025 - 2026",
+        },
+        {
+          name: "so_luong_hoc_sinh",
+          label: "Quy mô số lớp & Tổng số học sinh",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Toàn trường có 45 lớp với tổng số 1.680 học sinh",
+        },
+        {
+          name: "ket_qua_hoc_tap",
+          label: "Kết quả học tập (Tỷ lệ % các mức xếp loại)",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Học sinh Xuất sắc: 520 em (30,95%), Học sinh Giỏi: 780 em (46,43%), Học sinh Khá: 350 em (20,83%), Đạt: 30 em (1,79%).",
+        },
+        {
+          name: "ket_qua_ren_luyen",
+          label: "Kết quả rèn luyện đạo đức / Hạnh kiểm",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Đạt mức Tốt: 1.612 em (96%), Khá: 68 em (4%), Không có học sinh xếp loại rèn luyện Chưa đạt.",
+        },
+        {
+          name: "thanh_tich_noi_bat",
+          label: "Thành tích thi đua nổi bật & Giải thưởng",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Đạt 15 huy chương cấp quốc gia môn Toán và Tiếng Anh; Tập thể trường nhận Cờ thi đua xuất sắc của UBND Thành phố.",
+        },
+        {
+          name: "ton_tai_han_che",
+          label: "Tồn tại, hạn chế cần khắc phục",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Một số học sinh còn thiếu kỹ năng tự học; CSVC phòng thí nghiệm STEM cần được đầu tư thêm.",
+        },
+        {
+          name: "phuong_huong_nhiem_vu",
+          label: "Phương hướng nhiệm vụ năm học tới",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Tiếp tục nâng cao chất lượng giáo dục toàn diện; Đẩy mạnh giáo dục kỹ năng số và ngoại ngữ chuẩn quốc tế.",
+        },
+        {
+          name: "ho_ten_hieu_truong",
+          label: "Họ và tên Hiệu trưởng",
+          type: "text",
+          required: true,
+          placeholder: "Vd: NGƯT. Nguyễn Hồng Thúy",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Báo cáo tổng kết năm học trường phổ thông liên cấp",
+        input: {
+          ten_truong: "TRƯỜNG PHỔ THÔNG LIÊN CẤP NGUYỄN SIÊU",
+          nam_hoc: "2025 - 2026",
+          so_luong_hoc_sinh: "1.450 học sinh (52 lớp)",
+          ket_qua_hoc_tap: "Học sinh Xuất sắc: 35%; Học sinh Tiêu biểu: 55%; Hoàn thành: 10%.",
+          ket_qua_ren_luyen: "Hạnh kiểm Tốt đạt 98,5%, không có vi phạm kỷ luật.",
+          thanh_tich_noi_bat: "Đạt giải Nhất cuộc thi Sáng tạo Robot trẻ cấp Quốc gia; 100% học sinh khối 12 đỗ đại học nguyện vọng 1.",
+          ton_tai_han_che: "Áp lực học tập giai đoạn thi chuyển cấp còn cao ở một bộ phận học sinh.",
+          phuong_huong_nhiem_vu: "Tăng cường tư vấn tâm lý học đường, mở rộng câu lạc bộ kỹ năng mềm.",
+          ho_ten_hieu_truong: "ThS. Nguyễn Thị Minh Thúy",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:45%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">SỞ GIÁO DỤC VÀ ĐÀO TẠO TP. HÀ NỘI</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">TRƯỜNG NGUYỄN SIÊU</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Số: 88/BC-THPT</p>
+    </td>
+    <td style="width:55%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:15pt; margin:20px 0 5px 0;">BÁO CÁO</h2>
+<p style="text-align:center; font-weight:bold; margin-bottom:20px;">Tổng kết phong trào thi đua và kết quả học tập Năm học 2025 - 2026</p>
+
+<p>Thực hiện nhiệm vụ năm học theo hướng dẫn của ngành Giáo dục, Trường Phổ thông Liên cấp Nguyễn Siêu trân trọng báo cáo kết quả phong trào thi đua và học tập của học sinh như sau:</p>
+
+<p><strong>1. Quy mô trường lớp và học sinh:</strong><br/>
+- Tổng số lớp học: 52 lớp với 1.450 học sinh.<br/>
+- Tỷ lệ duy trì sĩ số học sinh đạt 100%, không có học sinh bỏ học giữa chừng.</p>
+
+<p><strong>2. Kết quả học tập và rèn luyện:</strong><br/>
+- Kết quả học tập: Học sinh Xuất sắc chiếm 35%; Học sinh Tiêu biểu chiếm 55%; Hoàn thành chiếm 10%.<br/>
+- Kết quả rèn luyện (Hạnh kiểm): Tỷ lệ Tốt đạt 98,5%; Khá đạt 1,5%; Không có học sinh Chưa đạt.</p>
+
+<p><strong>3. Thành tích nổi bật:</strong><br/>
+- Đạt Giải Nhất cuộc thi Sáng tạo Robot trẻ cấp Quốc gia năm 2026.<br/>
+- 100% học sinh khối 12 tốt nghiệp THPT và trúng tuyển vào các trường đại học uy tín trong nước và quốc tế.</p>
+
+<p><strong>4. Phương hướng năm học 2026 - 2027:</strong><br/>
+Tiếp tục đổi mới mạnh mẽ phương pháp dạy học, tăng cường hoạt động trải nghiệm sáng tạo, tư vấn tâm lý học đường và xây dựng mô hình trường học hạnh phúc.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Sở GD&ĐT Hà Nội (để b/c);<br/>
+      - HĐQT & BGH nhà trường;<br/>
+      - Lưu: VT, ĐT.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>HIỆU TRƯỞNG</strong><br/>
+      <em>(Ký và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Thị Minh Thúy</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // ==========================================
+  // 22. GÓI EDU: GIẤY MỜI HỌP PHỤ HUYNH HỌC SINH
+  // ==========================================
+  {
+    id: "edu-parent-invitation",
+    categoryId: "education",
+    industryPack: "EDU",
+    title: "Giấy mời họp phụ huynh học sinh",
+    description:
+      "Giấy mời trang trọng gửi tới cha mẹ học sinh tham dự phiên họp phụ huynh đầu năm / sơ kết học kỳ / tổng kết năm học.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Giấy mời họp phụ huynh học sinh với thông tin sau:
+- Tên trường: {{ten_truong}}
+- Lớp học: {{ten_lop}}
+- Năm học: {{nam_hoc}}
+- Kính gửi phụ huynh em: {{ten_phu_huynh}}
+- Thời gian tổ chức: {{thoi_gian_hop}}
+- Địa điểm: {{dia_diem_hop}}
+- Nội dung cuộc họp: {{noi_dung_cuoc_hop}}
+- Giáo viên chủ nhiệm: {{thong_tin_giao_vien}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_truong",
+          label: "Tên trường học",
+          type: "text",
+          required: true,
+          placeholder: "Vd: TRƯỜNG THPT CHU VĂN AN",
+        },
+        {
+          name: "ten_lop",
+          label: "Lớp học",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Lớp 10A1",
+        },
+        {
+          name: "nam_hoc",
+          label: "Năm học",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 2026 - 2027",
+        },
+        {
+          name: "ten_phu_huynh",
+          label: "Kính gửi Phụ huynh em (Học sinh)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Phụ huynh em Nguyễn Hoàng Nam",
+        },
+        {
+          name: "thoi_gian_hop",
+          label: "Thời gian tổ chức họp",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Vào hồi 08 giờ 30 phút, Chủ Nhật ngày 13 tháng 09 năm 2026",
+        },
+        {
+          name: "dia_diem_hop",
+          label: "Địa điểm / Phòng học",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Phòng học số 204, Nhà A, Trường THPT Chu Văn An",
+        },
+        {
+          name: "noi_dung_cuoc_hop",
+          label: "Nội dung chính cuộc họp",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Báo cáo kế hoạch năm học 2026 - 2027; Bầu Ban đại diện Cha mẹ học sinh lớp; Thống nhất các biện pháp phối hợp giáo dục giữa gia đình và nhà trường.",
+        },
+        {
+          name: "thong_tin_giao_vien",
+          label: "Họ tên & SĐT Giáo viên chủ nhiệm",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Cô giáo Lê Thanh Nga - SĐT: 0912.345.678",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Giấy mời họp phụ huynh đầu năm học lớp 10",
+        input: {
+          ten_truong: "TRƯỜNG THPT CHU VĂN AN",
+          ten_lop: "Lớp 10 Chuyên Toán",
+          nam_hoc: "2026 - 2027",
+          ten_phu_huynh: "Phụ huynh em Nguyễn Đình Phong",
+          thoi_gian_hop: "08h30, Chủ Nhật ngày 13/09/2026",
+          dia_diem_hop: "Phòng học 302, Khu nhà Bát Giác",
+          noi_dung_cuoc_hop: "Triển khai phương hướng năm học; Thông qua quy chế thi đua và thành lập Ban Đại diện Cha mẹ học sinh.",
+          thong_tin_giao_vien: "Thầy giáo Hoàng Trọng Thắng - SĐT: 0988.112.233",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:45%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-size:12pt;">SỞ GIÁO DỤC VÀ ĐÀO TẠO HÀ NỘI</p>
+      <p style="margin:0; font-weight:bold; font-size:12pt;">TRƯỜNG THPT CHU VĂN AN</p>
+      <p style="margin:2px auto; width:120px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-size:12pt;">Lớp: 10 Chuyên Toán</p>
+    </td>
+    <td style="width:55%; text-align:center; vertical-align:top; border:none;">
+      <p style="margin:0; font-weight:bold; font-size:12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+      <p style="margin:0; font-weight:bold; font-size:13pt;">Độc lập - Tự do - Hạnh phúc</p>
+      <p style="margin:2px auto; width:160px; border-bottom:1px solid #000;"></p>
+      <p style="margin:0; font-style:italic; font-size:12pt;">Hà Nội, ngày 05 tháng 09 năm 2026</p>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-weight:bold; font-size:16pt; margin:20px 0 5px 0;">GIẤY MỜI</h2>
+<p style="text-align:center; font-weight:bold; font-size:13pt; margin-bottom:20px;">Tham dự phiên họp Cha mẹ học sinh đầu Năm học 2026 - 2027</p>
+
+<p style="text-align:center; margin-bottom:20px;"><strong>Kính gửi:</strong> Ông/Bà Phụ huynh em <strong>[TÊN HỌC SINH]</strong> - Học sinh lớp 10 Chuyên Toán.</p>
+
+<p>Giáo viên chủ nhiệm và Ban Giám hiệu Trường THPT Chu Văn An trân trọng kính mời Ông/Bà tới tham dự phiên họp Cha mẹ học sinh đầu năm học:</p>
+
+<p><strong>1. Thời gian:</strong> Vào hồi <strong>08 giờ 30 phút, Chủ Nhật, ngày 13 tháng 09 năm 2026</strong>.<br/>
+<strong>2. Địa điểm:</strong> Phòng học 302, Khu nhà Bát Giác, Trường THPT Chu Văn An (Số 10 phố Thụy Khuê, Tây Hồ, Hà Nội).<br/>
+<strong>3. Nội dung cuộc họp:</strong><br/>
+- Báo cáo phương hướng, kế hoạch giáo dục và chỉ tiêu phấn đấu của nhà trường và lớp trong năm học 2026 - 2027;<br/>
+- Thảo luận các giải pháp phối hợp chặt chẽ giữa gia đình và nhà trường trong việc quản lý và định hướng học tập cho học sinh;<br/>
+- Bầu Ban Đại diện Cha mẹ học sinh của lớp năm học 2026 - 2027.</p>
+
+<p>Vì tính chất quan trọng của cuộc họp, rất mong Ông/Bà sắp xếp thời gian tham dự đầy đủ và đúng giờ để buổi họp đạt kết quả tốt đẹp.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Ghi chú:</em><br/>
+      - Phụ huynh mang theo giấy mời khi đến họp;<br/>
+      - Liên hệ GVCN: <strong>0988.112.233</strong>.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>GIÁO VIÊN CHỦ NHIỆM</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Hoàng Trọng Thắng</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
 ];
+
 

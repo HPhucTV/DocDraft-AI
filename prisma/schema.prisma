@@ -47,6 +47,7 @@ model User {
   comments          Comment[]
   sharedLinks       SharedLink[]
   exportHistory     ExportHistory[]
+  aiFeedbacks       AIFeedback[]
 
   @@map("users")
 }
@@ -167,6 +168,7 @@ model DocumentDraft {
   sharedLinks         SharedLink[]
   comments            Comment[]
   exportHistory       ExportHistory[]
+  aiFeedbacks         AIFeedback[]
 
   @@index([userId], map: "idx_drafts_user_id")
   @@index([folderId], map: "idx_drafts_folder_id")
@@ -328,4 +330,28 @@ model ExportHistory {
   user               User          @relation(fields: [userId], references: [id])
 
   @@map("export_history")
+}
+
+// ------------------------------------------------------------------------------
+// 13. ĐÁNH GIÁ PHẢN HỒI AI (AI FEEDBACK LOOP - TASK-310)
+// ------------------------------------------------------------------------------
+model AIFeedback {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId           String?        @map("draft_id") @db.Uuid
+  userId            String?        @map("user_id") @db.Uuid
+  actionType        String         @map("action_type") @db.VarChar(50) // 'RAW_TO_DOC', 'INLINE_EDIT', 'CHAT_COPILOT', 'AUTO_FIX'
+  rating            Int            // 1: Thích / Hài lòng, -1: Không thích / Cần cải thiện
+  tags              String[]       @default([])
+  comment           String?        @db.Text
+  modelName         String         @default("deepseek-v4-flash") @map("model_name") @db.VarChar(50)
+  promptSnippet     String?        @map("prompt_snippet") @db.Text
+  completionSnippet String?        @map("completion_snippet") @db.Text
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  draft             DocumentDraft? @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  user              User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([actionType], map: "idx_ai_feedback_action")
+  @@index([rating], map: "idx_ai_feedback_rating")
+  @@map("ai_feedback")
 }

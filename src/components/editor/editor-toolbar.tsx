@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { AIFeedbackWidget } from "./ai-feedback-widget";
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -56,6 +57,7 @@ interface EditorToolbarProps {
   onOpenSuggestionsPanel?: () => void;
   suggestionsCount?: number;
   isSuggestionsPanelOpen?: boolean;
+  draftId?: string;
 }
 
 export function EditorToolbar({
@@ -75,6 +77,7 @@ export function EditorToolbar({
   onOpenSuggestionsPanel,
   suggestionsCount,
   isSuggestionsPanelOpen,
+  draftId,
 }: EditorToolbarProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -465,7 +468,16 @@ export function EditorToolbar({
         )}
       </Button>
 
-      {/* Group 13: Safe Placeholders [...] Navigator (TASK-112) */}
+      {/* Group 13: Thumbs Up/Down AI Feedback Loop (TASK-310) */}
+      <div className="flex items-center pl-1 border-l border-border/40">
+        <AIFeedbackWidget
+          actionType="RAW_TO_DOC"
+          draftId={draftId}
+          size="default"
+        />
+      </div>
+
+      {/* Group 14: Safe Placeholders [...] Navigator (TASK-112) */}
       <div className="ml-auto flex items-center gap-2">
         {placeholderCount > 0 ? (
           <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-900 dark:text-amber-200">

@@ -2,13 +2,13 @@ import { SEED_TEMPLATES } from "../../prisma/data/templates";
 import { buildZodSchema } from "../../src/lib/dynamic-form-schema";
 
 function runTemplateTests() {
-  console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 18 Mẫu biểu (TASK-106, TASK-212, TASK-308)...");
+  console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 22 Mẫu biểu (TASK-106, TASK-212, TASK-308, TASK-309)...");
 
-  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 mẫu SME Pack + 4 mẫu PMO Pack)
-  if (SEED_TEMPLATES.length !== 18) {
-    throw new Error(`Kỳ vọng 18 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
+  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 SME + 4 PMO + 4 EDU)
+  if (SEED_TEMPLATES.length !== 22) {
+    throw new Error(`Kỳ vọng 22 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
   }
-  console.log(`✓ Đã xác thực đủ 18 mẫu văn bản (kèm 4 mẫu SME Pack & 4 mẫu PMO Pack).`);
+  console.log(`✓ Đã xác thực đủ 22 mẫu văn bản (kèm 4 mẫu SME, 4 mẫu PMO & 4 mẫu EDU Pack).`);
 
   // 2. Kiểm tra tính duy nhất của ID
   const ids = new Set<string>();
@@ -18,7 +18,7 @@ function runTemplateTests() {
     }
     ids.add(t.id);
   }
-  console.log(`✓ 18 mẫu có ID duy nhất.`);
+  console.log(`✓ 22 mẫu có ID duy nhất.`);
 
   // 3. Kiểm tra từng mẫu: formSchema, Zod compilation, fewShotExamples, Nghị định 30 HTML
   for (const t of SEED_TEMPLATES) {
@@ -58,7 +58,11 @@ function runTemplateTests() {
         ex.output_html.includes("HỢP ĐỒNG") ||
         ex.output_html.includes("THƯ BÁO GIÁ") ||
         ex.output_html.includes("BIÊN BẢN") ||
-        ex.output_html.includes("THỎA THUẬN");
+        ex.output_html.includes("THỎA THUẬN") ||
+        ex.output_html.includes("KẾ HOẠCH") ||
+        ex.output_html.includes("TỜ TRÌNH") ||
+        ex.output_html.includes("BÁO CÁO") ||
+        ex.output_html.includes("GIẤY MỜI");
       if (!hasNationalOrOrg) {
         throw new Error(`Mẫu [${t.id}] thiếu Quốc hiệu/Tiêu ngữ hoặc Tiêu đề pháp lý chuẩn!`);
       }
@@ -72,7 +76,10 @@ function runTemplateTests() {
         ex.output_html.includes("THƯ KÝ") ||
         ex.output_html.includes("CHỦ TỌA") ||
         ex.output_html.includes("CHỈ HUY TRƯỞNG") ||
-        ex.output_html.includes("TƯ VẤN GIÁM SÁT");
+        ex.output_html.includes("TƯ VẤN GIÁM SÁT") ||
+        ex.output_html.includes("HIỆU TRƯỞNG") ||
+        ex.output_html.includes("TRƯỞNG KHOA") ||
+        ex.output_html.includes("GIÁO VIÊN");
       if (!hasSignatureBlock) {
         throw new Error(`Mẫu [${t.id}] thiếu khối chữ ký chuẩn!`);
       }

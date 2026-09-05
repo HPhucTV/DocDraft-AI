@@ -62,6 +62,13 @@ async function main() {
       icon: "Briefcase",
       sortOrder: 5,
     },
+    {
+      id: "education",
+      name: "Trường học & Cơ sở Giáo dục",
+      description: "Kế hoạch giảng dạy, Đề xuất hội thảo khoa học, Báo cáo tổng kết thi đua, Giấy mời phụ huynh",
+      icon: "GraduationCap",
+      sortOrder: 6,
+    },
   ];
 
   for (const cat of categories) {
