@@ -81,9 +81,9 @@ export default async function DashboardPage() {
 
             <div className="flex items-center gap-3">
               <Button asChild className="gap-2 shadow">
-                <Link href="/editor/new">
-                  <PlusCircle className="h-4 w-4" />
-                  <span>Soạn thảo văn bản mới</span>
+                <Link href="/templates/demo">
+                  <Sparkles className="h-4 w-4" />
+                  <span>Biểu mẫu động (Form Engine)</span>
                 </Link>
               </Button>
               <Button variant="outline" asChild className="gap-2">
