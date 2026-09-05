@@ -262,7 +262,7 @@ function LoginForm() {
         {/* Demo Fast Account Fill */}
         <div className="mt-5 pt-4 border-t border-border/60">
           <div className="text-[11px] font-medium text-muted-foreground text-center mb-2">
-            Tài khoản mẫu trải nghiệm nhanh:
+            Tài khoản mẫu trải nghiệm nhanh (Mật khẩu: Admin@123456):
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -280,6 +280,22 @@ function LoginForm() {
             >
               <Users className="h-3 w-3 text-indigo-500" />
               <span>Lãnh đạo duyệt</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoAccount("chuyenvien@docdraft.vn")}
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-muted/50 hover:bg-muted text-[11px] text-muted-foreground hover:text-foreground border border-border/50 transition-all"
+            >
+              <FileText className="h-3 w-3 text-emerald-500" />
+              <span>Chuyên viên soạn</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoAccount("khach@docdraft.vn")}
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-muted/50 hover:bg-muted text-[11px] text-muted-foreground hover:text-foreground border border-border/50 transition-all"
+            >
+              <Eye className="h-3 w-3 text-amber-500" />
+              <span>Độc giả chỉ xem</span>
             </button>
           </div>
         </div>

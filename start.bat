@@ -69,7 +69,7 @@ echo   * Quan tri Mau van ban:  http://localhost:3000/admin/templates
 echo   * Thong ke Phan tich:    http://localhost:3000/admin/analytics
 echo   * Document API Docs:     http://localhost:8000/docs
 echo   * Kiem tra suc khoe:     http://localhost:8000/health
-echo.
+echo   Meo: Ban co the nhap dup chuot vao tep seed.bat de nap 4 tai khoan mau va 26 mau bieu.
 echo   Meo: Ban co the nhap dup chuot vao tep stop.bat de tat toan bo he thong.
 echo.
 echo Dang tu dong mo trinh duyet sau 4 giay...

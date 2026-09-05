@@ -7,9 +7,10 @@
 ## 📋 MỤC LỤC NHANH
 1. [Chuẩn bị 2 phần mềm nền tảng (Cài 1 lần duy nhất)](#1-chuẩn-bị-2-phần-mềm-nền-tảng-cài-1-lần-duy-nhất)
 2. [Khởi động dự án chỉ với 1 cú nhấp chuột (Khuyên dùng)](#2-khởi-động-dự-án-chỉ-với-1-cú-nhấp-chuột-khuyên-dùng)
-3. [Cách sử dụng và cấu hình AI để soạn thảo văn bản](#3-cách-sử-dụng-và-cấu-hình-ai-để-soạn-thảo-văn-bản)
-4. [Cách tắt hệ thống khi dùng xong](#4-cách-tắt-hệ-thống-khi-dùng-xong)
-5. [Khắc phục các lỗi thường gặp (FAQ)](#5-khắc-phục-các-lỗi-thường-gặp-faq)
+3. [Nạp dữ liệu mẫu & tài khoản dùng thử (Chạy Seed Database)](#3-nạp-dữ-liệu-mẫu--tài-khoản-dùng-thử-chạy-seed-database)
+4. [Cách sử dụng và cấu hình AI để soạn thảo văn bản](#4-cách-sử-dụng-và-cấu-hình-ai-để-soạn-thảo-văn-bản)
+5. [Cách tắt hệ thống khi dùng xong](#5-cách-tắt-hệ-thống-khi-dùng-xong)
+6. [Khắc phục các lỗi thường gặp (FAQ)](#6-khắc-phục-các-lỗi-thường-gặp-faq)
 
 ---
 
@@ -52,6 +53,7 @@ Hệ thống đã được lập trình sẵn kịch bản tự động hóa to�
 ### 🌐 Các địa chỉ truy cập quan trọng:
 Sau khi khởi động thành công, bạn có thể truy cập các đường link sau trên trình duyệt:
 * **Trang chủ hệ thống:** [http://localhost:3000](http://localhost:3000)
+* **Trang Đăng nhập:** [http://localhost:3000/login](http://localhost:3000/login)
 * **Trình soạn thảo văn bản A4 chuẩn NĐ 30:** [http://localhost:3000/editor](http://localhost:3000/editor)
 * **Kho 26 Biểu mẫu Hành chính & Doanh nghiệp:** [http://localhost:3000/admin/templates](http://localhost:3000/admin/templates)
 * **Trang Cấu hình Khóa AI (BYOK):** [http://localhost:3000/settings](http://localhost:3000/settings)
@@ -59,7 +61,44 @@ Sau khi khởi động thành công, bạn có thể truy cập các đường l
 
 ---
 
-## 3. Cách sử dụng và cấu hình AI để soạn thảo văn bản
+## 3. Nạp dữ liệu mẫu & tài khoản dùng thử (Chạy Seed Database)
+
+> 💡 **Tại sao cần bước này?**  
+> Khi bạn vừa tải dự án về hoặc kết nối với cơ sở dữ liệu mới, database ban đầu sẽ hoàn toàn trống.  
+> Chạy lệnh **Seed** sẽ tự động nạp sẵn vào hệ thống:
+> - **4 tài khoản mẫu** cho 4 vai trò *(Admin, Lãnh đạo duyệt, Chuyên viên soạn, Độc giả xem)*.
+> - **26 mẫu biểu văn bản chuẩn Nghị định 30/2020/NĐ-CP** thuộc 9 ngành nghề.
+> - **9 danh mục biểu mẫu** chuyên nghiệp.
+
+### Cách 1: Chạy bằng 1 cú nhấp chuột (Khuyên dùng - Không cần gõ lệnh)
+1. Mở thư mục dự án **`DOCDRAFT AI`**.
+2. Tìm tệp tin có tên **`seed.bat`**.
+3. **Nhấp đúp chuột (Double-click)** vào tệp **`seed.bat`**.
+4. Cửa sổ màu đen sẽ chạy trong khoảng 3 đến 5 giây và hiện thông báo:  
+   `[OK] Nap du lieu mau thanh cong!`
+5. Giờ bạn có thể vào trang đăng nhập và sử dụng ngay các tài khoản mẫu!
+
+### Cách 2: Chạy bằng dòng lệnh (Terminal / Command Prompt)
+Mở cửa sổ dòng lệnh tại thư mục dự án và chạy:
+```bash
+npm run prisma:seed
+```
+
+---
+
+### 👥 Danh sách Tài khoản Mẫu theo từng Vai trò (Roles)
+Sau khi chạy seed, bạn có thể đăng nhập bằng các tài khoản sau (hoặc bấm vào 4 nút gợi ý nhanh trên trang [Đăng nhập](http://localhost:3000/login) để tự động điền):
+
+| Vai trò (Role) | Email đăng nhập | Mật khẩu mặc định | Thẩm quyền & Chức năng chính |
+|---|---|---|---|
+| 🛡️ **Quản trị viên (ADMIN)** | `admin@docdraft.vn` | `Admin@123456` | Quản trị hệ thống, Quản lý kho mẫu biểu (`/admin/templates`), Xem Dashboard thống kê (`/admin/analytics`). |
+| ✍️ **Lãnh đạo Phê duyệt (APPROVER)** | `lanhdao@docdraft.vn` | `Admin@123456` | Thẩm quyền phê duyệt tờ trình/công văn, ký số điện tử, ký nháy, trả lời góp ý văn bản. |
+| 📝 **Chuyên viên Soạn thảo (USER)** | `chuyenvien@docdraft.vn` | `Admin@123456` | Soạn thảo A4 với AI Copilot, nạp mẫu biểu, gửi văn bản lên luồng trình ký, xuất file Word. |
+| 👁️ **Độc giả Chỉ xem (VIEWER)** | `khach@docdraft.vn` | `Admin@123456` | Chỉ xem văn bản được chia sẻ, tra cứu biểu mẫu dùng chung (quyền Read-only). |
+
+---
+
+## 4. Cách sử dụng và cấu hình AI để soạn thảo văn bản
 
 Để Trợ lý AI có thể tự động viết tờ trình, công văn, quyết định thay bạn, bạn chỉ cần nạp khóa API cá nhân (hoàn toàn miễn phí):
 
@@ -76,7 +115,7 @@ Sau khi khởi động thành công, bạn có thể truy cập các đường l
 
 ---
 
-## 4. Cách tắt hệ thống khi dùng xong
+## 5. Cách tắt hệ thống khi dùng xong
 
 Khi làm việc xong và muốn tắt chương trình để giải phóng bộ nhớ máy tính:
 * **Cách 1 (Nhanh nhất):** Tìm tệp tin **`stop.bat`** trong thư mục dự án và **nhấp đúp chuột** vào đó. Hệ thống sẽ tự động đóng toàn bộ các tiến trình đang chạy ngầm một cách an toàn.
@@ -84,7 +123,7 @@ Khi làm việc xong và muốn tắt chương trình để giải phóng bộ n
 
 ---
 
-## 5. Khắc phục các lỗi thường gặp (FAQ)
+## 6. Khắc phục các lỗi thường gặp (FAQ)
 
 ### ❓ Lỗi 1: Mở `start.bat` báo lỗi "Khong tim thay Node.js" hoặc "Khong tim thay Python"
 * **Nguyên nhân:** Bạn chưa cài đặt hoặc khi cài đặt Python quên chưa tích chọn ô *"Add Python to PATH"*.

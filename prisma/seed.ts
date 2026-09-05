@@ -1,20 +1,23 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Bắt đầu gieo dữ liệu khởi tạo (Seeding Database)...");
 
-  // 1. Tạo tài khoản Quản trị viên mặc định (Admin)
-  const adminUser = await prisma.user.upsert({
-    where: { email: "admin@docdraft.vn" },
-    update: {},
-    create: {
+  // Mật khẩu mặc định cho toàn bộ tài khoản mẫu
+  const defaultPasswordHash = await bcrypt.hash("Admin@123456", 10);
+
+  // 1. Tạo đầy đủ 4 tài khoản mẫu đại diện cho 4 vai trò cốt lõi (ADMIN, APPROVER, USER, VIEWER)
+  const seedUsers = [
+    {
       email: "admin@docdraft.vn",
-      fullName: "Quản trị viên Hệ thống",
-      organization: "Ban Cơ yếu Chính phủ / Cục Văn thư Lưu trữ",
-      jobTitle: "Quản trị cấp cao",
+      fullName: "Nguyễn Văn An (Quản trị viên)",
+      organization: "Cục Văn thư và Lưu trữ Nhà nước",
+      jobTitle: "Quản trị viên Cấp cao",
       role: "ADMIN",
+      passwordHash: defaultPasswordHash,
       locale: "vi",
       preferences: {
         theme: "system",
@@ -22,8 +25,69 @@ async function main() {
         fontFamily: "Times New Roman",
       },
     },
-  });
-  console.log(`✓ Đã tạo/cập nhật Admin: ${adminUser.email} (${adminUser.id})`);
+    {
+      email: "lanhdao@docdraft.vn",
+      fullName: "Trần Thị Bích (Lãnh đạo Phê duyệt)",
+      organization: "Ủy ban Nhân dân Thành phố",
+      jobTitle: "Phó Giám đốc / Cán bộ Ký duyệt",
+      role: "APPROVER",
+      passwordHash: defaultPasswordHash,
+      locale: "vi",
+      preferences: {
+        theme: "system",
+        fontSize: 14,
+        fontFamily: "Times New Roman",
+      },
+    },
+    {
+      email: "chuyenvien@docdraft.vn",
+      fullName: "Lê Hoàng Cường (Chuyên viên Soạn thảo)",
+      organization: "Sở Thông tin và Truyền thông",
+      jobTitle: "Chuyên viên Tổng hợp",
+      role: "USER",
+      passwordHash: defaultPasswordHash,
+      locale: "vi",
+      preferences: {
+        theme: "system",
+        fontSize: 14,
+        fontFamily: "Times New Roman",
+      },
+    },
+    {
+      email: "khach@docdraft.vn",
+      fullName: "Phạm Thị Dung (Khách Xem Văn bản)",
+      organization: "Đơn vị Liên kết Ngoài ngành",
+      jobTitle: "Cán bộ Tra cứu",
+      role: "VIEWER",
+      passwordHash: defaultPasswordHash,
+      locale: "vi",
+      preferences: {
+        theme: "system",
+        fontSize: 14,
+        fontFamily: "Times New Roman",
+      },
+    },
+  ];
+
+  let adminUser: any = null;
+
+  for (const u of seedUsers) {
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
+      update: {
+        fullName: u.fullName,
+        organization: u.organization,
+        jobTitle: u.jobTitle,
+        role: u.role,
+        passwordHash: u.passwordHash,
+      },
+      create: u,
+    });
+    if (u.role === "ADMIN") {
+      adminUser = user;
+    }
+    console.log(`✓ Đã tạo/cập nhật tài khoản [${u.role}]: ${user.email} (${user.id})`);
+  }
 
   // 2. Tạo 5 danh mục mẫu chuẩn
   const categories = [
