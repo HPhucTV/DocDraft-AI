@@ -25,10 +25,12 @@ import {
   DollarSign,
   Calendar,
   Building,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
+import { AIChatSidebar } from "@/components/editor/ai-chat-sidebar";
 import { DynamicFormEngine } from "@/components/forms/dynamic-form-engine";
 import { FormSchema } from "@/types/form-schema";
 import { streamDocumentGeneration } from "@/lib/ai/stream-client";
@@ -94,6 +96,11 @@ function EditorContentComponent() {
 
   // State cho Audit Trail Panel (TASK-204)
   const [isAuditPanelOpen, setIsAuditPanelOpen] = useState(false);
+
+  // State cho AI Chat Sidebar & In-line Copilot (TASK-206)
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isImportingDocx, setIsImportingDocx] = useState(false);
+  const insertTextRef = useRef<((text: string) => void) | null>(null);
 
   const [copied, setCopied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -444,6 +451,46 @@ function EditorContentComponent() {
     }
   };
 
+  // 10. Xử lý Nhập khẩu tệp Word (.docx) sang Tiptap Canvas (TASK-207)
+  const handleImportDocx = async (file: File) => {
+    setIsImportingDocx(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/parse/docx", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Không thể đọc tệp Word (.docx)");
+      }
+
+      const data = await res.json();
+      if (data.html) {
+        setEditorContent(data.html);
+      }
+      if (data.content_json) {
+        setEditorJson(data.content_json);
+      }
+      const inferredTitle = file.name.replace(/\.[^/.]+$/, "");
+      setDocumentTitle(inferredTitle);
+
+      logAuditEvent("IMPORT_DOCX", "HUMAN", {
+        file_name: file.name,
+        file_size: file.size,
+      });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Lỗi import Word:", err);
+      alert(`Lỗi import Word: ${errMsg}`);
+    } finally {
+      setIsImportingDocx(false);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top Header & Toolbar Bar */}
@@ -533,6 +580,18 @@ function EditorContentComponent() {
           >
             <History className="h-3.5 w-3.5 text-primary" />
             <span className="hidden sm:inline">Audit Trail</span>
+          </Button>
+
+          {/* Nút mở AI Copilot Chat (TASK-206) */}
+          <Button
+            variant={isChatOpen ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="gap-1.5 h-8 text-xs font-medium"
+            title="Mở bảng trợ lý AI Copilot ngữ cảnh văn bản"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">AI Copilot</span>
           </Button>
 
           {currentDraftId && (
@@ -802,14 +861,28 @@ function EditorContentComponent() {
         </aside>
 
         {/* Right Side: A4 Canvas Editor (Tiptap) */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden relative">
           <TiptapEditor
             initialContent={editorContent}
             onChange={(html, json) => {
               setEditorContent(html);
               setEditorJson(json);
             }}
+            onImportDocx={handleImportDocx}
+            isImportingDocx={isImportingDocx}
+            onApplyTextRef={insertTextRef}
             className="flex-1 overflow-y-auto"
+          />
+
+          {/* AI Chat Sidebar Drawer (TASK-206) */}
+          <AIChatSidebar
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            documentTitle={documentTitle}
+            documentContent={editorContent}
+            onApplyText={(text) => {
+              insertTextRef.current?.(text);
+            }}
           />
         </main>
       </div>

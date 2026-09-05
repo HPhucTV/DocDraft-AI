@@ -21,6 +21,8 @@ import {
   ArrowRight,
   AlertTriangle,
   Columns2,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,14 +37,29 @@ interface EditorToolbarProps {
   editor: Editor | null;
   placeholderCount: number;
   onJumpToNextPlaceholder: () => void;
+  onImportDocx?: (file: File) => void;
+  isImportingDocx?: boolean;
 }
 
 export function EditorToolbar({
   editor,
   placeholderCount,
   onJumpToNextPlaceholder,
+  onImportDocx,
+  isImportingDocx = false,
 }: EditorToolbarProps) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   if (!editor) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onImportDocx?.(file);
+      // Reset input value so same file can be selected again
+      e.target.value = "";
+    }
+  };
 
   return (
     <div className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-1.5 border-b bg-background/95 px-4 py-2 backdrop-blur shadow-xs">
@@ -313,7 +330,34 @@ export function EditorToolbar({
         </DropdownMenu>
       </div>
 
-      {/* Group 7: Safe Placeholders [...] Navigator (TASK-112) */}
+      {/* Group 7: Import .docx (TASK-207) */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".docx"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isImportingDocx}
+        className="h-8 text-xs gap-1.5 text-primary hover:bg-primary/10"
+        title="Tải lên tệp Word (.docx) để bóc tách thành văn bản (Nghị định 30)"
+      >
+        {isImportingDocx ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+        ) : (
+          <Upload className="h-3.5 w-3.5 text-primary" />
+        )}
+        <span className="hidden sm:inline">
+          {isImportingDocx ? "Đang đọc Word..." : "Nhập Word (.docx)"}
+        </span>
+      </Button>
+
+      {/* Group 8: Safe Placeholders [...] Navigator (TASK-112) */}
       <div className="ml-auto flex items-center gap-2">
         {placeholderCount > 0 ? (
           <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-900 dark:text-amber-200">
