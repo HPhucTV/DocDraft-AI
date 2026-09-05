@@ -4,11 +4,11 @@ import { buildZodSchema } from "../../src/lib/dynamic-form-schema";
 function runTemplateTests() {
   console.log("🔍 Đang kiểm thử bộ dữ liệu hạt giống 10 Mẫu biểu (TASK-106)...");
 
-  // 1. Kiểm tra số lượng mẫu
-  if (SEED_TEMPLATES.length !== 10) {
-    throw new Error(`Kỳ vọng 10 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
+  // 1. Kiểm tra số lượng mẫu (10 mẫu ban đầu + 4 mẫu SME Pack mới)
+  if (SEED_TEMPLATES.length !== 14) {
+    throw new Error(`Kỳ vọng 14 mẫu nhưng nhận được ${SEED_TEMPLATES.length}`);
   }
-  console.log(`✓ Đã xác thực đủ 10 mẫu văn bản.`);
+  console.log(`✓ Đã xác thực đủ 14 mẫu văn bản (kèm 4 mẫu SME Pack).`);
 
   // 2. Kiểm tra tính duy nhất của ID
   const ids = new Set<string>();
@@ -51,11 +51,14 @@ function runTemplateTests() {
         throw new Error(`Mẫu [${t.id}] output_html vi phạm quy chuẩn bảng ẩn border:none!`);
       }
 
-      // Kiểm tra HTML có bảng Quốc hiệu hoặc Tiêu ngữ
+      // Kiểm tra HTML có bảng Quốc hiệu hoặc Tiêu ngữ hoặc Tiêu đề văn bản
       const hasNationalOrOrg =
         ex.output_html.includes("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM") ||
         ex.output_html.includes("Độc lập - Tự do - Hạnh phúc") ||
-        ex.output_html.includes("HỢP ĐỒNG");
+        ex.output_html.includes("HỢP ĐỒNG") ||
+        ex.output_html.includes("THƯ BÁO GIÁ") ||
+        ex.output_html.includes("BIÊN BẢN") ||
+        ex.output_html.includes("THỎA THUẬN");
       if (!hasNationalOrOrg) {
         throw new Error(`Mẫu [${t.id}] thiếu Quốc hiệu/Tiêu ngữ hoặc Tiêu đề pháp lý chuẩn!`);
       }

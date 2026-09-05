@@ -1778,4 +1778,637 @@ Kính đề nghị UBND tỉnh chỉ đạo Trung tâm Phát triển Quỹ đấ
     isPublished: true,
     avgRating: 5.0,
   },
+
+  // 11. THỎA THUẬN BẢO MẬT THÔNG TIN (NDA) - SME PACK (TASK-212)
+  {
+    id: "thoa-thuan-bao-mat-nda",
+    categoryId: "enterprise",
+    industryPack: "SME",
+    title: "Thỏa thuận bảo mật thông tin (NDA)",
+    description: "Thỏa thuận bảo mật thông tin kinh doanh, dữ liệu kỹ thuật và bí mật thương mại giữa hai doanh nghiệp đối tác theo Bộ luật Dân sự 2015.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Thỏa thuận bảo mật thông tin (NDA) theo các thông tin sau:
+- Tên Bên tiết lộ (Bên A): {{ben_a_ten}}
+- Mã số thuế Bên A: {{ben_a_mst}}
+- Đại diện Bên A: {{ben_a_dai_dien}} (Chức vụ: {{ben_a_chuc_vu}})
+- Tên Bên tiếp nhận (Bên B): {{ben_b_ten}}
+- Mã số thuế Bên B: {{ben_b_mst}}
+- Đại diện Bên B: {{ben_b_dai_dien}} (Chức vụ: {{ben_b_chuc_vu}})
+- Mục đích hợp tác: {{muc_dich_hop_tac}}
+- Phạm vi thông tin bảo mật: {{pham_vi_thong_tin}}
+- Thời hạn bảo mật: {{thoi_han_bao_mat}} năm
+- Chế tài vi phạm: {{che_tai_vi_pham}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ben_a_ten",
+          label: "Bên tiết lộ thông tin (Bên A)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM",
+          validation: { min_length: 3, max_length: 200 },
+        },
+        {
+          name: "ben_a_mst",
+          label: "Mã số thuế Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 0109876543",
+        },
+        {
+          name: "ben_a_dai_dien",
+          label: "Đại diện Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Nguyễn Văn An",
+        },
+        {
+          name: "ben_a_chuc_vu",
+          label: "Chức vụ đại diện Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tổng Giám đốc",
+        },
+        {
+          name: "ben_b_ten",
+          label: "Bên tiếp nhận thông tin (Bên B)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: CÔNG TY TNHH GIẢI PHÁP PHẦN MỀM TECHPRO",
+          validation: { min_length: 3, max_length: 200 },
+        },
+        {
+          name: "ben_b_mst",
+          label: "Mã số thuế Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 0312345678",
+        },
+        {
+          name: "ben_b_dai_dien",
+          label: "Đại diện Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Bà Trần Thị Mai",
+        },
+        {
+          name: "ben_b_chuc_vu",
+          label: "Chức vụ đại diện Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Giám đốc điều hành",
+        },
+        {
+          name: "muc_dich_hop_tac",
+          label: "Mục đích chia sẻ thông tin",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Đánh giá khả thi tích hợp giải pháp DocDraft AI vào hạ tầng doanh nghiệp",
+        },
+        {
+          name: "pham_vi_thong_tin",
+          label: "Phạm vi thông tin bảo mật",
+          type: "textarea",
+          required: false,
+          placeholder: "Vd: Mã nguồn, cấu trúc dữ liệu, tài liệu API, bảng giá chiết khấu, danh sách khách hàng...",
+        },
+        {
+          name: "thoi_han_bao_mat",
+          label: "Thời hạn hiệu lực bảo mật (năm)",
+          type: "number",
+          required: true,
+          placeholder: "3",
+        },
+        {
+          name: "che_tai_vi_pham",
+          label: "Mức phạt hoặc chế tài vi phạm",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Phạt 200.000.000 đ và bồi thường 100% thiệt hại thực tế phát sinh",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Thỏa thuận bảo mật thông tin giữa DocDraft và đối tác công nghệ",
+        input: {
+          ben_a_ten: "CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM",
+          ben_a_mst: "0109876543",
+          ben_a_dai_dien: "Ông Nguyễn Văn An",
+          ben_a_chuc_vu: "Tổng Giám đốc",
+          ben_b_ten: "CÔNG TY TNHH GIẢI PHÁP PHẦN MỀM TECHPRO",
+          ben_b_mst: "0312345678",
+          ben_b_dai_dien: "Bà Trần Thị Mai",
+          ben_b_chuc_vu: "Giám đốc điều hành",
+          muc_dich_hop_tac: "Đánh giá khả thi tích hợp giải pháp DocDraft AI",
+          pham_vi_thong_tin: "Mã nguồn, thuật toán AST OpenXML, tài liệu kiến trúc hệ thống",
+          thoi_han_bao_mat: 3,
+          che_tai_vi_pham: "Phạt 200.000.000 đ và bồi thường toàn bộ thiệt hại",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:100%; text-align:center; vertical-align:top; border:none;">
+      <span style="font-size:12pt; font-weight:bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</span><br/>
+      <span style="font-size:13pt; font-weight:bold; text-decoration:underline;">Độc lập - Tự do - Hạnh phúc</span><br/>
+      <span style="font-size:12pt; font-style:italic;">Hà Nội, ngày 05 tháng 9 năm 2026</span>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-size:15pt; font-weight:bold; margin-top:15px; margin-bottom:5px;">THỎA THUẬN BẢO MẬT THÔNG TIN</h2>
+<p style="text-align:center; font-style:italic; margin-top:0; margin-bottom:20px;">(Số: 01/2026/TTBM-DOCDRAFT-TECHPRO)</p>
+
+<p><em>Căn cứ Bộ luật Dân sự ngày 24 tháng 11 năm 2015;</em></p>
+<p><em>Căn cứ Luật Thương mại ngày 14 tháng 6 năm 2005;</em></p>
+<p><em>Căn cứ nhu cầu và sự tự nguyện thỏa thuận của hai Bên,</em></p>
+
+<p>Hôm nay, ngày 05 tháng 9 năm 2026, tại trụ sở Công ty Cổ phần Công nghệ DocDraft Việt Nam, chúng tôi gồm:</p>
+
+<p><strong>BÊN TIẾT LỘ THÔNG TIN (BÊN A): CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM</strong><br/>
+- Mã số doanh nghiệp: 0109876543<br/>
+- Đại diện: <strong>Ông Nguyễn Văn An</strong> - Chức vụ: Tổng Giám đốc</p>
+
+<p><strong>BÊN TIẾP NHẬN THÔNG TIN (BÊN B): CÔNG TY TNHH GIẢI PHÁP PHẦN MỀM TECHPRO</strong><br/>
+- Mã số doanh nghiệp: 0312345678<br/>
+- Đại diện: <strong>Bà Trần Thị Mai</strong> - Chức vụ: Giám đốc điều hành</p>
+
+<p>Hai Bên đồng ý ký kết Thỏa thuận bảo mật thông tin (sau đây gọi tắt là &quot;Thỏa thuận&quot;) với các điều khoản sau:</p>
+
+<p><strong>Điều 1. Phạm vi Thông tin bảo mật</strong><br/>
+Thông tin bảo mật bao gồm: Mã nguồn, thuật toán AST OpenXML, tài liệu kiến trúc hệ thống và mọi dữ liệu kinh doanh mà Bên A cung cấp cho Bên B nhằm mục đích: Đánh giá khả thi tích hợp giải pháp DocDraft AI.</p>
+
+<p><strong>Điều 2. Nghĩa vụ của Bên tiếp nhận</strong><br/>
+1. Bên B cam kết giữ bí mật tuyệt đối các Thông tin bảo mật và chỉ sử dụng cho Mục đích hợp tác nêu tại Điều 1.<br/>
+2. Không sao chép, phân phối hoặc cung cấp cho bất kỳ bên thứ ba nào khi chưa có văn bản đồng ý của Bên A.</p>
+
+<p><strong>Điều 3. Thời hạn và Chế tài vi phạm</strong><br/>
+1. Thỏa thuận này có hiệu lực trong vòng <strong>3 năm</strong> kể từ ngày ký.<br/>
+2. Trường hợp Bên B vi phạm nghĩa vụ bảo mật, Bên B phải chịu mức phạt vi phạm là <strong>200.000.000 đ</strong> và có trách nhiệm bồi thường toàn bộ thiệt hại thực tế phát sinh cho Bên A.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN A</strong><br/>
+      <em>(Ký, ghi rõ họ tên và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Văn An</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN B</strong><br/>
+      <em>(Ký, ghi rõ họ tên và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Trần Thị Mai</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // 12. HỢP ĐỒNG CUNG CẤP DỊCH VỤ (SERVICE AGREEMENT) - SME PACK (TASK-212)
+  {
+    id: "hop-dong-dich-vu-sme",
+    categoryId: "enterprise",
+    industryPack: "SME",
+    title: "Hợp đồng cung cấp dịch vụ công nghệ & tư vấn",
+    description: "Hợp đồng kinh tế cung cấp giải pháp phần mềm, tư vấn chuyển đổi số giữa các doanh nghiệp vừa và nhỏ (SME) chuẩn Luật Thương mại.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Hợp đồng dịch vụ với các thông tin sau:
+- Tên dịch vụ: {{ten_dich_vu}}
+- Bên A (Bên thuê): {{ben_a_ten}} (Đại diện: {{ben_a_dai_dien}}, Chức vụ: {{ben_a_chuc_vu}})
+- Bên B (Bên cung cấp): {{ben_b_ten}} (Đại diện: {{ben_b_dai_dien}}, Chức vụ: {{ben_b_chuc_vu}})
+- Giá trị hợp đồng: {{gia_tri_hop_dong}}
+- Phương thức thanh toán: {{phuong_thuc_thanh_toan}}
+- Thời gian bàn giao: {{thoi_gian_ban_giao}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "ten_dich_vu",
+          label: "Tên gói dịch vụ / Hạng mục triển khai",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Triển khai phần mềm soạn thảo văn bản hành chính DocDraft AI Enterprise",
+        },
+        {
+          name: "ben_a_ten",
+          label: "Bên sử dụng dịch vụ (Bên A)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: CÔNG TY CỔ PHẦN BẤT ĐỘNG SẢN AN GIA",
+        },
+        {
+          name: "ben_a_dai_dien",
+          label: "Đại diện Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Lê Hoàng Quân",
+        },
+        {
+          name: "ben_a_chuc_vu",
+          label: "Chức vụ đại diện Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Phó Tổng Giám đốc",
+        },
+        {
+          name: "ben_b_ten",
+          label: "Bên cung ứng dịch vụ (Bên B)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM",
+        },
+        {
+          name: "ben_b_dai_dien",
+          label: "Đại diện Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Nguyễn Văn An",
+        },
+        {
+          name: "ben_b_chuc_vu",
+          label: "Chức vụ đại diện Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tổng Giám đốc",
+        },
+        {
+          name: "gia_tri_hop_dong",
+          label: "Tổng giá trị hợp đồng (VNĐ)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 350.000.000 đ (Ba trăm năm mươi triệu đồng chẵn)",
+        },
+        {
+          name: "phuong_thuc_thanh_toan",
+          label: "Tiến độ thanh toán",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tạm ứng 40% sau khi ký, thanh toán 60% còn lại sau nghiệm thu bàn giao",
+        },
+        {
+          name: "thoi_gian_ban_giao",
+          label: "Thời hạn hoàn thành bàn giao",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 45 ngày làm việc kể từ ngày tạm ứng",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Hợp đồng cung cấp dịch vụ phần mềm DocDraft AI",
+        input: {
+          ten_dich_vu: "Triển khai phần mềm soạn thảo văn bản hành chính DocDraft AI",
+          ben_a_ten: "CÔNG TY CỔ PHẦN BẤT ĐỘNG SẢN AN GIA",
+          ben_a_dai_dien: "Ông Lê Hoàng Quân",
+          ben_a_chuc_vu: "Phó Tổng Giám đốc",
+          ben_b_ten: "CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM",
+          ben_b_dai_dien: "Ông Nguyễn Văn An",
+          ben_b_chuc_vu: "Tổng Giám đốc",
+          gia_tri_hop_dong: "350.000.000 đ (Ba trăm năm mươi triệu đồng chẵn)",
+          phuong_thuc_thanh_toan: "Đợt 1: 40% sau khi ký; Đợt 2: 60% sau khi ký biên bản nghiệm thu",
+          thoi_gian_ban_giao: "45 ngày làm việc",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:100%; text-align:center; vertical-align:top; border:none;">
+      <span style="font-size:12pt; font-weight:bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</span><br/>
+      <span style="font-size:13pt; font-weight:bold; text-decoration:underline;">Độc lập - Tự do - Hạnh phúc</span><br/>
+      <span style="font-size:12pt; font-style:italic;">Hà Nội, ngày 05 tháng 9 năm 2026</span>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-size:15pt; font-weight:bold; margin-top:15px; margin-bottom:5px;">HỢP ĐỒNG DỊCH VỤ CÔNG NGHỆ</h2>
+<p style="text-align:center; font-style:italic; margin-top:0; margin-bottom:20px;">(Số: 26/2026/HĐDV/ANGIA-DOCDRAFT)</p>
+
+<p><em>Căn cứ Bộ luật Dân sự ngày 24 tháng 11 năm 2015;</em></p>
+<p><em>Căn cứ Luật Thương mại ngày 14 tháng 6 năm 2005;</em></p>
+<p><em>Căn cứ thỏa thuận thương mại giữa hai Bên,</em></p>
+
+<p><strong>BÊN A (BÊN THUÊ DỊCH VỤ): CÔNG TY CỔ PHẦN BẤT ĐỘNG SẢN AN GIA</strong><br/>
+- Đại diện: <strong>Ông Lê Hoàng Quân</strong> - Chức vụ: Phó Tổng Giám đốc</p>
+
+<p><strong>BÊN B (BÊN CUNG CẤP DỊCH VỤ): CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM</strong><br/>
+- Đại diện: <strong>Ông Nguyễn Văn An</strong> - Chức vụ: Tổng Giám đốc</p>
+
+<p><strong>Điều 1. Nội dung dịch vụ</strong><br/>
+Bên B nhận cung cấp và triển khai cho Bên A hạng mục: Triển khai phần mềm soạn thảo văn bản hành chính DocDraft AI theo đúng yêu cầu kỹ thuật đính kèm.</p>
+
+<p><strong>Điều 2. Giá trị hợp đồng và Phương thức thanh toán</strong><br/>
+1. Tổng giá trị hợp đồng là: <strong>350.000.000 đ (Ba trăm năm mươi triệu đồng chẵn)</strong> (đã bao gồm thuế GTGT).<br/>
+2. Phương thức thanh toán: Chuyển khoản ngân hàng theo tiến độ:<br/>
+- Đợt 1: Thanh toán 40% giá trị hợp đồng trong vòng 05 ngày làm việc sau khi ký kết.<br/>
+- Đợt 2: Thanh toán 60% còn lại trong vòng 07 ngày làm việc sau khi hai Bên ký Biên bản nghiệm thu bàn giao hệ thống.</p>
+
+<p><strong>Điều 3. Thời gian thực hiện</strong><br/>
+Thời gian bàn giao hệ thống hoàn chỉnh là <strong>45 ngày làm việc</strong> kể từ ngày Bên B nhận được tiền tạm ứng đợt 1.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN A</strong><br/>
+      <em>(Ký tên và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Lê Hoàng Quân</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN B</strong><br/>
+      <em>(Ký tên và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Văn An</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // 13. BIÊN BẢN NGHIỆM THU VÀ BÀN GIAO (SME PACK) (TASK-212)
+  {
+    id: "bien-ban-nghiem-thu-sme",
+    categoryId: "enterprise",
+    industryPack: "SME",
+    title: "Biên bản nghiệm thu và bàn giao dịch vụ",
+    description: "Biên bản ghi nhận kết quả nghiệm thu hoàn thành công việc, bàn giao sản phẩm/dịch vụ làm căn cứ thanh toán và thanh lý hợp đồng.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Biên bản nghiệm thu và bàn giao dịch vụ:
+- Số hợp đồng căn cứ: {{so_hop_dong}}
+- Tên hạng mục nghiệm thu: {{hang_muc_nghiem_thu}}
+- Đại diện Bên A (Khách hàng): {{ben_a_dai_dien}} (Chức vụ: {{ben_a_chuc_vu}})
+- Đại diện Bên B (Đơn vị thực hiện): {{ben_b_dai_dien}} (Chức vụ: {{ben_b_chuc_vu}})
+- Kết quả đánh giá: {{ket_qua_danh_gia}}
+- Ý kiến kết luận: {{ket_luan}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "so_hop_dong",
+          label: "Số hiệu hợp đồng căn cứ",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Số 26/2026/HĐDV/ANGIA-DOCDRAFT ngày 05/09/2026",
+        },
+        {
+          name: "hang_muc_nghiem_thu",
+          label: "Hạng mục công việc bàn giao",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Triển khai và đào tạo người dùng phần mềm DocDraft AI",
+        },
+        {
+          name: "ben_a_dai_dien",
+          label: "Người phụ trách nghiệm thu Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Lê Hoàng Quân",
+        },
+        {
+          name: "ben_a_chuc_vu",
+          label: "Chức vụ Bên A",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Phó Tổng Giám đốc",
+        },
+        {
+          name: "ben_b_dai_dien",
+          label: "Người bàn giao Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Ông Nguyễn Văn An",
+        },
+        {
+          name: "ben_b_chuc_vu",
+          label: "Chức vụ Bên B",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Tổng Giám đốc",
+        },
+        {
+          name: "ket_qua_danh_gia",
+          label: "Đánh giá chất lượng bàn giao",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: Hệ thống vận hành ổn định 100%, đáp ứng đầy đủ yêu cầu tính năng theo phụ lục kỹ thuật.",
+        },
+        {
+          name: "ket_luan",
+          label: "Ý kiến kết luận hai bên",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Đồng ý nghiệm thu toàn bộ và tiến hành thủ tục thanh quyết toán",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Biên bản nghiệm thu phần mềm DocDraft AI",
+        input: {
+          so_hop_dong: "Số 26/2026/HĐDV/ANGIA-DOCDRAFT ngày 05/09/2026",
+          hang_muc_nghiem_thu: "Triển khai phần mềm DocDraft AI Enterprise",
+          ben_a_dai_dien: "Ông Lê Hoàng Quân",
+          ben_a_chuc_vu: "Phó Tổng Giám đốc",
+          ben_b_dai_dien: "Ông Nguyễn Văn An",
+          ben_b_chuc_vu: "Tổng Giám đốc",
+          ket_qua_danh_gia: "Hệ thống vận hành ổn định, bàn giao đầy đủ mã nguồn và tài liệu hướng dẫn vận hành.",
+          ket_luan: "Đồng ý nghiệm thu đạt yêu cầu, làm cơ sở giải ngân đợt cuối.",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:100%; text-align:center; vertical-align:top; border:none;">
+      <span style="font-size:12pt; font-weight:bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</span><br/>
+      <span style="font-size:13pt; font-weight:bold; text-decoration:underline;">Độc lập - Tự do - Hạnh phúc</span><br/>
+      <span style="font-size:12pt; font-style:italic;">Hà Nội, ngày 20 tháng 10 năm 2026</span>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-size:15pt; font-weight:bold; margin-top:15px; margin-bottom:5px;">BIÊN BẢN NGHIỆM THU VÀ BÀN GIAO</h2>
+<p style="text-align:center; font-style:italic; margin-top:0; margin-bottom:20px;">(Căn cứ Hợp đồng số: 26/2026/HĐDV/ANGIA-DOCDRAFT ngày 05/09/2026)</p>
+
+<p>Hôm nay, ngày 20 tháng 10 năm 2026, các bên gồm có:</p>
+<p><strong>BÊN A (BÊN NGHIỆM THU): CÔNG TY CỔ PHẦN BẤT ĐỘNG SẢN AN GIA</strong><br/>
+- Đại diện: <strong>Ông Lê Hoàng Quân</strong> - Chức vụ: Phó Tổng Giám đốc</p>
+
+<p><strong>BÊN B (BÊN BÀN GIAO): CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM</strong><br/>
+- Đại diện: <strong>Ông Nguyễn Văn An</strong> - Chức vụ: Tổng Giám đốc</p>
+
+<p>Hai bên cùng tiến hành nghiệm thu và bàn giao hạng mục: <strong>Triển khai phần mềm DocDraft AI Enterprise</strong> với nội dung chi tiết:</p>
+
+<p><strong>1. Nội dung công việc hoàn thành:</strong><br/>
+- Hoàn thành cài đặt máy chủ và cấu hình tích hợp LLM DeepSeek Gateway.<br/>
+- Hoàn thành tổ chức 03 buổi đào tạo chuyên môn soạn thảo văn bản Nghị định 30.<br/>
+- Bàn giao tài liệu hướng dẫn sử dụng và chứng chỉ bản quyền phần mềm.</p>
+
+<p><strong>2. Đánh giá chất lượng:</strong><br/>
+Hệ thống vận hành ổn định, bàn giao đầy đủ mã nguồn và tài liệu hướng dẫn vận hành.</p>
+
+<p><strong>3. Kết luận:</strong><br/>
+Đồng ý nghiệm thu đạt yêu cầu, làm cơ sở giải ngân đợt cuối theo quy định của Hợp đồng.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN A</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Lê Hoàng Quân</strong>
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>ĐẠI DIỆN BÊN B</strong><br/>
+      <em>(Ký và ghi rõ họ tên)</em><br/><br/><br/><br/>
+      <strong>Nguyễn Văn An</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
+
+  // 14. THƯ BÁO GIÁ CHÍNH THỨC (QUOTATION) - SME PACK (TASK-212)
+  {
+    id: "thu-bao-gia-thuong-mai",
+    categoryId: "enterprise",
+    industryPack: "SME",
+    title: "Thư báo giá thương mại chính thức",
+    description: "Thư chào giá sản phẩm, giải pháp phần mềm và điều khoản thanh toán gửi khách hàng doanh nghiệp chuẩn mực chuyên nghiệp.",
+    systemPrompt: NGHIDINH30_BASE_SYSTEM_PROMPT,
+    userPromptTemplate: `Soạn thảo Thư báo giá chính thức:
+- Đơn vị gửi báo giá: {{don_vi_gui}}
+- Khách hàng nhận báo giá: {{khach_hang_nhan}}
+- Tên gói sản phẩm/dịch vụ: {{ten_san_pham}}
+- Đơn giá & Số lượng: {{don_gia_so_luong}}
+- Tổng giá trị chào giá: {{tong_gia_tri}}
+- Thời hạn hiệu lực báo giá: {{thoi_han_hieu_luc}}`,
+    formSchema: {
+      fields: [
+        {
+          name: "don_vi_gui",
+          label: "Doanh nghiệp phát hành báo giá",
+          type: "text",
+          required: true,
+          placeholder: "Vd: CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM",
+        },
+        {
+          name: "khach_hang_nhan",
+          label: "Tên cơ quan / Công ty nhận báo giá",
+          type: "text",
+          required: true,
+          placeholder: "Vd: NGÂN HÀNG THƯƠNG MẠI CỔ PHẦN PHÁT TRIỂN VIỆT",
+        },
+        {
+          name: "ten_san_pham",
+          label: "Tên giải pháp / Sản phẩm chào giá",
+          type: "text",
+          required: true,
+          placeholder: "Vd: Bản quyền DocDraft AI Enterprise On-Premise (50 người dùng)",
+        },
+        {
+          name: "don_gia_so_luong",
+          label: "Chi tiết đơn giá và hạng mục",
+          type: "textarea",
+          required: true,
+          placeholder: "Vd: 50 License Enterprise x 5.000.000 đ/năm = 250.000.000 đ. Phí triển khai: 50.000.000 đ.",
+        },
+        {
+          name: "tong_gia_tri",
+          label: "Tổng tiền chào giá (VNĐ)",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 300.000.000 đ (Chưa bao gồm thuế GTGT)",
+        },
+        {
+          name: "thoi_han_hieu_luc",
+          label: "Thời hạn hiệu lực của thư báo giá",
+          type: "text",
+          required: true,
+          placeholder: "Vd: 30 ngày kể từ ngày phát hành",
+        },
+      ],
+    },
+    fewShotExamples: [
+      {
+        description: "Thư chào giá DocDraft AI Enterprise",
+        input: {
+          don_vi_gui: "CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM",
+          khach_hang_nhan: "NGÂN HÀNG THƯƠNG MẠI CỔ PHẦN PHÁT TRIỂN VIỆT",
+          ten_san_pham: "Giải pháp DocDraft AI Enterprise On-Premise",
+          don_gia_so_luong: "50 License x 5.000.000 đ = 250.000.000 đ; Phí hỗ trợ triển khai = 50.000.000 đ",
+          tong_gia_tri: "300.000.000 đ (Chưa bao gồm VAT)",
+          thoi_han_hieu_luc: "30 ngày kể từ ngày phát hành",
+        },
+        output_html: `<table style="width:100%; border:none; margin-bottom:20px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <strong>CÔNG TY CỔ PHẦN CÔNG NGHỆ DOCDRAFT VIỆT NAM</strong><br/>
+      <span>Tầng 8, Tòa nhà Văn phòng Tech Tower, Hà Nội</span><br/>
+      <span>Hotline: 1900 6868 - Email: contact@docdraft.vn</span>
+    </td>
+    <td style="width:50%; text-align:right; vertical-align:top; border:none;">
+      <span style="font-style:italic;">Hà Nội, ngày 05 tháng 9 năm 2026</span><br/>
+      <span>Số: 88/2026/BG-DOCDRAFT</span>
+    </td>
+  </tr>
+</table>
+
+<h2 style="text-align:center; font-size:15pt; font-weight:bold; margin-top:20px; margin-bottom:10px;">THƯ BÁO GIÁ DỊCH VỤ</h2>
+
+<p><strong>Kính gửi: BAN LÃNH ĐẠO NGÂN HÀNG THƯƠNG MẠI CỔ PHẦN PHÁT TRIỂN VIỆT</strong></p>
+
+<p>Công ty Cổ phần Công nghệ DocDraft Việt Nam xin gửi lời chào trân trọng và lời chúc phát triển thịnh vượng đến Quý Ngân hàng. Căn cứ nhu cầu số hóa quy trình soạn thảo văn bản chuẩn thể thức, chúng tôi xin trân trọng gửi bảng báo giá như sau:</p>
+
+<p><strong>1. Hạng mục chào giá:</strong> Giải pháp DocDraft AI Enterprise On-Premise</p>
+<p><strong>2. Chi tiết đơn giá:</strong><br/>
+- 50 License bản quyền hệ thống: 250.000.000 đ.<br/>
+- Dịch vụ tích hợp LLM nội bộ và đào tạo: 50.000.000 đ.</p>
+
+<p><strong>3. Tổng giá trị chào giá: 300.000.000 đ (Chưa bao gồm VAT)</strong></p>
+
+<p><strong>4. Điều khoản thương mại:</strong><br/>
+- Thời hạn hiệu lực báo giá: <strong>30 ngày kể từ ngày phát hành</strong>.<br/>
+- Thời gian bảo hành và nâng cấp: 12 tháng liên tục 24/7.</p>
+
+<table style="width:100%; border:none; margin-top:35px;">
+  <tr>
+    <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+      <em>Nơi nhận:</em><br/>
+      - Như trên;<br/>
+      - Lưu: Ban Kinh doanh.
+    </td>
+    <td style="width:50%; text-align:center; vertical-align:top; border:none;">
+      <strong>GIÁM ĐỐC KINH DOANH</strong><br/>
+      <em>(Ký và đóng dấu)</em><br/><br/><br/><br/>
+      <strong>Phan Nhật Minh</strong>
+    </td>
+  </tr>
+</table>`,
+      },
+    ],
+    exportConfig: {
+      margins: { top: 20, bottom: 20, left: 30, right: 15 },
+      defaultFont: "Times New Roman",
+      fontSize: 13,
+    },
+    isBuiltin: true,
+    isPublished: true,
+    avgRating: 5.0,
+  },
 ];
