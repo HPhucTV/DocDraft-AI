@@ -61,7 +61,9 @@ ${cleanDocText ? cleanDocText.slice(0, 4000) : "(Văn bản hiện đang trống
 QUY TẮC PHẢN HỒI:
 1. Khi người dùng yêu cầu soạn thảo một điều khoản, đoạn văn hoặc căn cứ, hãy trả về nội dung chuẩn mực và có thể copy/áp dụng ngay vào bài.
 2. Tuân thủ 100% quy chuẩn thể thức của Nghị định 30/2020/NĐ-CP.
-3. Luôn giữ thái độ chuyên nghiệp, hành chính, mạch lạc.`;
+3. Luôn giữ thái độ chuyên nghiệp, hành chính, mạch lạc.
+4. ĐẶC BIỆT KHI SOẠN THẢO MẪU VĂN BẢN HOẶC ĐIỀU KHOẢN: Không mở đầu hoặc kết thúc bằng lời chào/hỏi han dư thừa (như "Dưới đây là mẫu...", "Chào bạn...", "Nếu bạn cần thêm..."). Hãy xuất trực tiếp nội dung văn bản để người dùng có thể áp dụng trực tiếp vào tài liệu một cách chuẩn xác nhất.
+5. Sử dụng ký hiệu ngoặc vuông [...] cho các thông tin biến đổi cần người dùng điền bổ sung (ví dụ: [ĐỊA DANH], [NGÀY], [TÊN CƠ QUAN]).`;
 
     const keyInfo = await resolveAIKey(session.user.id, preferredProvider);
 

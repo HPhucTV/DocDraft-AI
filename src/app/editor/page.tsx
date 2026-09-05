@@ -105,6 +105,7 @@ function EditorContentComponent() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isImportingDocx, setIsImportingDocx] = useState(false);
   const insertTextRef = useRef<((text: string) => void) | null>(null);
+  const setEditorContentRef = useRef<((content: string | object) => void) | null>(null);
 
   const [copied, setCopied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -159,6 +160,10 @@ function EditorContentComponent() {
             }
             if (draft.contentJson) {
               setEditorJson(draft.contentJson);
+              setEditorContentRef.current?.(draft.contentJson);
+            } else if (draft.content) {
+              setEditorContent(draft.content);
+              setEditorContentRef.current?.(draft.content);
             }
           }
         }
@@ -183,12 +188,12 @@ function EditorContentComponent() {
     };
   }, [documentTitle, editorJson, editorContent]);
 
-  const { isSaving, isDirty, lastSavedAt, hasConflict, saveNow } = useAutoSave(
+  const { isSaving, isDirty, lastSavedAt, hasConflict, saveNow, resolveConflict } = useAutoSave(
     autoSavePayload,
     {
       draftId: currentDraftId,
       initialVersion: currentVersion,
-      intervalMs: 30000,
+      intervalMs: 60000, // Chu kỳ 1 phút (60 giây), chỉ lưu khi có thay đổi thực tế
       onSaveSuccess: ({ version }) => {
         setCurrentVersion(version);
       },
@@ -197,6 +202,18 @@ function EditorContentComponent() {
       },
     }
   );
+
+  // Phím tắt Ctrl+S / Cmd+S để lưu chủ động bất cứ lúc nào
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        saveNow();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [saveNow]);
 
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId) || templates[0];
 
@@ -266,6 +283,9 @@ function EditorContentComponent() {
           template_id: currentTemplate?.id,
         });
 
+        // Đảm bảo editor đồng bộ nội dung hoàn chỉnh
+        setEditorContentRef.current?.(accumulatedHtml);
+
         // Tạo draft nếu chưa có
         if (!currentDraftId) {
           fetch("/api/drafts", {
@@ -275,6 +295,7 @@ function EditorContentComponent() {
               title: documentTitle,
               templateId: currentTemplate?.id || null,
               wordCount: stats.word_count,
+              rawInputData: formData,
             }),
           })
             .then((r) => r.json())
@@ -282,6 +303,7 @@ function EditorContentComponent() {
               if (d.id) {
                 setCurrentDraftId(d.id);
                 setCurrentVersion(d.currentVersion || 1);
+                window.history.replaceState(null, "", `/editor?id=${d.id}`);
               }
             })
             .catch((e) => console.error("Lỗi tạo bản nháp:", e));
@@ -353,6 +375,8 @@ function EditorContentComponent() {
           mode: "RAW_TO_DOC",
         });
 
+        setEditorContentRef.current?.(accumulatedHtml);
+
         if (!currentDraftId) {
           fetch("/api/drafts", {
             method: "POST",
@@ -361,6 +385,7 @@ function EditorContentComponent() {
               title: documentTitle,
               wordCount: stats.word_count,
               mode: "RAW",
+              rawInputData: { rawText, rawTargetDocType },
             }),
           })
             .then((r) => r.json())
@@ -368,6 +393,7 @@ function EditorContentComponent() {
               if (d.id) {
                 setCurrentDraftId(d.id);
                 setCurrentVersion(d.currentVersion || 1);
+                window.history.replaceState(null, "", `/editor?id=${d.id}`);
               }
             })
             .catch((e) => console.error("Lỗi tự động tạo draft:", e));
@@ -532,23 +558,42 @@ function EditorContentComponent() {
           {currentDraftId && (
             <div className="hidden lg:flex items-center gap-2 pl-2 border-l text-xs">
               {hasConflict ? (
-                <span className="flex items-center gap-1 text-destructive font-medium bg-destructive/10 px-2 py-0.5 rounded border border-destructive/20">
+                <button
+                  type="button"
+                  onClick={() => {
+                    resolveConflict(currentVersion);
+                    saveNow();
+                  }}
+                  className="flex items-center gap-1 text-destructive font-medium bg-destructive/10 px-2 py-0.5 rounded border border-destructive/20 hover:bg-destructive/20 transition-colors cursor-pointer"
+                  title="Nhấn để đồng bộ phiên bản mới nhất và thử lưu lại"
+                >
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  Xung đột phiên bản (409)
-                </span>
+                  Xung đột phiên bản (409) — Nhấn để giải quyết
+                </button>
               ) : isSaving ? (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin text-primary" />
                   Đang lưu...
+                </span>
+              ) : isDirty ? (
+                <span
+                  className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20"
+                  title="Có chỉnh sửa mới chưa lưu. Hệ thống tự động lưu sau 1 phút, hoặc nhấn Ctrl+S để lưu ngay."
+                >
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                  Có thay đổi (tự lưu sau 1 phút)
                 </span>
               ) : lastSavedAt ? (
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
                   Đã lưu {lastSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                 </span>
-              ) : isDirty ? (
-                <span className="text-amber-500 font-medium">Chưa lưu</span>
-              ) : null}
+              ) : (
+                <span className="flex items-center gap-1 text-muted-foreground/80">
+                  <Check className="h-3.5 w-3.5 text-emerald-500/80" />
+                  Đã đồng bộ
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -913,7 +958,11 @@ function EditorContentComponent() {
         {/* Right Side: A4 Canvas Editor (Tiptap) */}
         <main className={`${mobileActiveView === "canvas" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden relative`}>
           <TiptapEditor
+            draftId={currentDraftId || undefined}
+            draftTitle={documentTitle}
             initialContent={editorContent}
+            initialJson={editorJson}
+            onSetContentRef={setEditorContentRef}
             onChange={(html, json) => {
               setEditorContent(html);
               setEditorJson(json);
@@ -921,7 +970,7 @@ function EditorContentComponent() {
             onImportDocx={handleImportDocx}
             isImportingDocx={isImportingDocx}
             onApplyTextRef={insertTextRef}
-            className="flex-1 overflow-y-auto"
+            className="flex-1 overflow-hidden"
           />
 
           {/* AI Chat Sidebar Drawer (TASK-206) */}
@@ -963,6 +1012,8 @@ function EditorContentComponent() {
         onRollbackSuccess={(newVersion, contentJson) => {
           setCurrentVersion(newVersion);
           setEditorJson(contentJson);
+          setEditorContentRef.current?.(contentJson);
+          resolveConflict(newVersion);
         }}
       />
     </div>

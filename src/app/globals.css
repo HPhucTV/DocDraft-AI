@@ -148,14 +148,312 @@ body {
   display: none;
 }
 
+/* ==========================================================================
+   A4 Paper Canvas & Document Desk Styling (UI/UX Pro Max & NĐ 30/2020/NĐ-CP)
+   ========================================================================== */
 .a4-paper-canvas {
   width: 210mm;
   min-height: 297mm;
+  height: auto !important;
+  overflow: visible !important;
   padding-top: 20mm;
   padding-bottom: 20mm;
   padding-left: 30mm;
   padding-right: 15mm;
   font-family: 'Times New Roman', Times, serif;
+  font-size: 13pt;
+  line-height: 1.35;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Subscript & Superscript */
+.a4-paper-canvas sub {
+  vertical-align: sub;
+  font-size: 75%;
+  line-height: 0;
+}
+.a4-paper-canvas sup {
+  vertical-align: super;
+  font-size: 75%;
+  line-height: 0;
+}
+
+/* Visual A4 Page Break Divider (Word Page Gap & New A4 Sheet Separator) */
+.a4-paper-canvas hr.nd30-page-break {
+  border: none !important;
+  height: 52px !important;
+  margin-top: 24mm !important;
+  margin-bottom: 24mm !important;
+  margin-left: calc(-30mm - 20px) !important;
+  margin-right: calc(-15mm - 20px) !important;
+  width: calc(100% + 45mm + 40px) !important;
+  background: transparent !important;
+  position: relative !important;
+  display: block !important;
+  overflow: visible !important;
+  cursor: default !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Dải khoảng cách bàn làm việc (Desk Gap) cắt rời 2 tờ giấy A4 */
+.a4-paper-canvas.paper-sheet-white hr.nd30-page-break::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  bottom: 6px;
+  background-color: #f1f5f9;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -4px rgba(0, 0, 0, 0.05),
+    inset 0 3px 6px rgba(0, 0, 0, 0.03),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.03);
+}
+
+.a4-paper-canvas.paper-sheet-dark hr.nd30-page-break::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  bottom: 6px;
+  background-color: #070b13;
+  border-top: 1px solid #334155;
+  border-bottom: 1px solid #334155;
+  box-shadow: 
+    0 12px 20px -4px rgba(0, 0, 0, 0.6),
+    inset 0 4px 8px rgba(0, 0, 0, 0.5),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Huy hiệu ngắt trang hiển thị giữa khoảng cách 2 tờ A4 */
+.a4-paper-canvas.paper-sheet-white hr.nd30-page-break::after {
+  content: "📄 Trang mới (A4: 210 × 297 mm) — Phím tắt: Ctrl+Enter";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  padding: 4px 18px;
+  border-radius: 9999px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+  z-index: 5;
+  letter-spacing: 0.2px;
+}
+
+.a4-paper-canvas.paper-sheet-dark hr.nd30-page-break::after {
+  content: "📄 Trang mới (A4: 210 × 297 mm) — Phím tắt: Ctrl+Enter";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #1e293b;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  padding: 4px 18px;
+  border-radius: 9999px;
+  border: 1px solid #475569;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  z-index: 5;
+  letter-spacing: 0.2px;
+}
+
+@media print {
+  .a4-paper-canvas hr.nd30-page-break {
+    page-break-after: always !important;
+    break-after: page !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    display: block !important;
+  }
+  .a4-paper-canvas hr.nd30-page-break::before,
+  .a4-paper-canvas hr.nd30-page-break::after {
+    display: none !important;
+  }
+}
+
+/* Chuẩn hóa Đoạn văn bản hành chính NĐ 30: Giãn đoạn 8px, căn đều 2 bên (Justify) */
+.a4-paper-canvas p {
+  margin-top: 0;
+  margin-bottom: 8px;
+  line-height: 1.35;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* Thụt đầu dòng từ 1cm đến 1.27cm theo Mục II Phụ lục I Nghị định 30 */
+.a4-paper-canvas .prose > p:not(.text-center):not([style*="text-align: center"]):not([style*="text-align: right"]):not([data-no-indent="true"]) {
+  text-indent: 1.2cm;
+}
+
+/* Tiêu đề mục & Bảng số liệu: Triệt tiêu thụt lề */
+.a4-paper-canvas h1,
+.a4-paper-canvas h2,
+.a4-paper-canvas h3,
+.a4-paper-canvas table p,
+.a4-paper-canvas ul p,
+.a4-paper-canvas ol p {
+  text-indent: 0 !important;
+}
+
+/* Bảng ẩn Tiêu ngữ (40/60) & Chữ ký (50/50): Khoảng cách dòng khít, margin 0 */
+.a4-paper-canvas table[data-nd30-table="true"] p,
+.a4-paper-canvas .nd30-table p {
+  text-indent: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 2px !important;
+  line-height: 1.2 !important;
+}
+
+.a4-paper-canvas table[data-nd30-table="true"] td,
+.a4-paper-canvas .nd30-table td {
+  padding: 2px 4px !important;
+  vertical-align: top;
+  border: none !important;
+}
+
+/* Đường kẻ ngang nét liền dưới Quốc hiệu & Tiêu ngữ (NĐ 30/2020/NĐ-CP) */
+.nd30-rule-national {
+  border: none !important;
+  border-top: 1.5px solid currentColor !important;
+  width: 140px;
+  margin: 3px auto 5px auto !important;
+  display: block;
+}
+
+/* Đường kẻ ngang nét liền dưới Tên cơ quan ban hành (dài 1/3 - 1/2 tên cơ quan) */
+.nd30-rule-org {
+  border: none !important;
+  border-top: 1.5px solid currentColor !important;
+  width: 80px;
+  margin: 3px auto 5px auto !important;
+  display: block;
+}
+
+/* Khối Nơi nhận: Cỡ chữ 11pt, các gạch đầu dòng khít nhau */
+.a4-paper-canvas [data-table-type="signature"] td:first-child p:not(:first-child) {
+  font-size: 11pt !important;
+  line-height: 1.15 !important;
+  margin-bottom: 2px !important;
+}
+
+/* White Paper Mode (WYSIWYG Print Document Appearance) */
+.a4-paper-canvas.paper-sheet-white {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.a4-paper-canvas.paper-sheet-white .prose {
+  color: #0f172a !important;
+}
+
+.a4-paper-canvas.paper-sheet-white .ProseMirror h1,
+.a4-paper-canvas.paper-sheet-white .ProseMirror h2,
+.a4-paper-canvas.paper-sheet-white .ProseMirror h3,
+.a4-paper-canvas.paper-sheet-white .ProseMirror p,
+.a4-paper-canvas.paper-sheet-white .ProseMirror span:not(.docdraft-placeholder-badge):not(.ai-copilot-bubble-menu *),
+.a4-paper-canvas.paper-sheet-white .ProseMirror td,
+.a4-paper-canvas.paper-sheet-white .ProseMirror th,
+.a4-paper-canvas.paper-sheet-white .ProseMirror li {
+  color: #0f172a !important;
+}
+
+.a4-paper-canvas.paper-sheet-white .docdraft-placeholder-badge {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #92400e !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Dark Paper Mode (High-contrast Slate Paper) */
+.a4-paper-canvas.paper-sheet-dark {
+  background-color: #121824 !important;
+  color: #f1f5f9 !important;
+}
+
+.a4-paper-canvas.paper-sheet-dark .prose {
+  color: #f1f5f9 !important;
+}
+
+.a4-paper-canvas.paper-sheet-dark .ProseMirror h1,
+.a4-paper-canvas.paper-sheet-dark .ProseMirror h2,
+.a4-paper-canvas.paper-sheet-dark .ProseMirror h3,
+.a4-paper-canvas.paper-sheet-dark .ProseMirror p,
+.a4-paper-canvas.paper-sheet-dark .ProseMirror span:not(.docdraft-placeholder-badge):not(.ai-copilot-bubble-menu *),
+.a4-paper-canvas.paper-sheet-dark .ProseMirror td,
+.a4-paper-canvas.paper-sheet-dark .ProseMirror th,
+.a4-paper-canvas.paper-sheet-dark .ProseMirror li {
+  color: #f1f5f9 !important;
+}
+
+/* AI Copilot Floating Bubble Menu - High-contrast Light & Dark Theme */
+.ai-copilot-bubble-menu {
+  isolation: isolate;
+}
+
+.ai-copilot-bubble-menu .menu-title {
+  color: #1e293b !important;
+}
+
+.dark .ai-copilot-bubble-menu .menu-title {
+  color: #f8fafc !important;
+}
+
+.ai-copilot-bubble-menu .menu-subtitle {
+  color: #64748b !important;
+}
+
+.dark .ai-copilot-bubble-menu .menu-subtitle {
+  color: #94a3b8 !important;
+}
+
+.ai-copilot-bubble-menu .menu-badge {
+  color: #2563eb !important;
+}
+
+.dark .ai-copilot-bubble-menu .menu-badge {
+  color: #60a5fa !important;
+}
+
+/* Elegant Slim Custom Scrollbar */
+.editor-canvas-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.editor-canvas-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor-canvas-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+.editor-canvas-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  scrollbar-width: none;
 }
 
 @media (max-width: 1023px) {

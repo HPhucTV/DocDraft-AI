@@ -35,6 +35,12 @@ import { AIFeedbackWidget } from "./ai-feedback-widget";
 import { SubmitApprovalDialog } from "./submit-approval-dialog";
 import { ApprovalBanner } from "./approval-banner";
 import { checkCompliance } from "@/lib/compliance/compliance-engine";
+import { PageBreak } from "./extensions/page-break";
+import { FontFamily } from "./extensions/font-family";
+import { FontSize } from "./extensions/font-size";
+import { TextColor } from "./extensions/text-color";
+import { Subscript, Superscript } from "./extensions/subscript-superscript";
+import { WordRuler } from "./word-ruler";
 import {
   Sparkles,
   Wand2,
@@ -46,11 +52,19 @@ import {
   Loader2,
   MessageSquare,
   GitPullRequest,
+  ZoomIn,
+  ZoomOut,
+  Sun,
+  Moon,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cleanAndFormatAiContentForEditor } from "@/lib/ai/ai-text-formatter";
 
 export interface TiptapEditorProps {
   initialContent?: string;
+  initialJson?: object | null;
+  onSetContentRef?: React.MutableRefObject<((content: string | object) => void) | null>;
   onChange?: (html: string, json: object) => void;
   onImportDocx?: (file: File) => void;
   isImportingDocx?: boolean;
@@ -83,6 +97,8 @@ interface InlineSuggestionState {
  */
 export function TiptapEditor({
   initialContent = "",
+  initialJson = null,
+  onSetContentRef,
   onChange,
   onImportDocx,
   isImportingDocx = false,
@@ -128,6 +144,24 @@ export function TiptapEditor({
   // State cho Luồng Trình ký & Phê duyệt nội bộ (TASK-401, TASK-402)
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
 
+  // State cho Giao diện trang giấy A4 (UI/UX Pro Max)
+  const [paperTheme, setPaperTheme] = useState<"white" | "dark">("white");
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [lineSpacing, setLineSpacing] = useState<number>(1.25);
+  const [showRuler, setShowRuler] = useState<boolean>(true);
+
+  // Cứu hộ dữ liệu khẩn cấp qua LocalStorage (TASK-118 Recovery)
+  const [localBackup, setLocalBackup] = useState<{ time: string; content: object } | null>(null);
+
+  const handleRestoreLocalBackup = () => {
+    if (!editor || !localBackup) return;
+    editor.commands.setContent(localBackup.content as Content);
+    const html = editor.getHTML();
+    const json = editor.getJSON();
+    onChange?.(html, json);
+    setLocalBackup(null);
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -153,13 +187,19 @@ export function TiptapEditor({
       SafePlaceholderHighlight,
       SuggestionDeletion,
       SuggestionInsertion,
+      PageBreak,
+      FontFamily,
+      FontSize,
+      TextColor,
+      Subscript,
+      Superscript,
     ],
     content: initialContent,
     editable,
     editorProps: {
       attributes: {
         class:
-          "prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[842px] font-times text-[13pt] leading-[1.35]",
+          "prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[250mm] h-auto font-times text-[13pt] leading-[1.35]",
         style: "font-family: 'Times New Roman', Times, serif;",
       },
     },
@@ -167,6 +207,15 @@ export function TiptapEditor({
       const html = ed.getHTML();
       const json = ed.getJSON();
       onChange?.(html, json);
+
+      // Lưu ngay vào LocalStorage để bảo vệ dữ liệu khi mất mạng hoặc tắt tab đột ngột
+      try {
+        const storageKey = `docdraft_backup_${draftId || "new"}`;
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ content: json, time: Date.now() })
+        );
+      } catch {}
 
       // Cập nhật số lượng placeholder [...]
       const found = extractPlaceholders(ed.state.doc);
@@ -186,15 +235,123 @@ export function TiptapEditor({
     },
   });
 
+  const stats = React.useMemo(() => {
+    if (!editor) return { words: 0, characters: 0 };
+    const text = editor.state.doc.textContent || "";
+    const trimmed = text.trim();
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
+    return { words, characters: text.length };
+  }, [editor?.state.doc]);
+
+  // Tính số trang hiện tại và tổng số trang (Word Multi-Page Pagination)
+  const pageInfo = React.useMemo(() => {
+    if (!editor) return { currentPage: 1, totalPages: 1 };
+    const { from } = editor.state.selection;
+    let totalBreaks = 0;
+    let breaksBeforeCursor = 0;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === "pageBreak") {
+        totalBreaks++;
+        if (pos < from) {
+          breaksBeforeCursor++;
+        }
+      }
+    });
+
+    const charEstimate = Math.ceil((stats.characters || 0) / 2500);
+    const totalPages = Math.max(1, totalBreaks + 1, charEstimate);
+    const currentPage = Math.min(totalPages, breaksBeforeCursor + 1);
+    return { currentPage, totalPages };
+  }, [editor?.state.doc, editor?.state.selection, stats.characters]);
+
+  // Tự động quét LocalStorage tìm bản sao lưu có nội dung khi tài liệu bị trống (0 ký tự)
+  useEffect(() => {
+    if (typeof window === "undefined" || !editor) return;
+    if (stats.characters === 0) {
+      try {
+        let foundBackup: { time: string; content: object } | null = null;
+        const currentKey = `docdraft_backup_${draftId || "new"}`;
+        const directSaved = localStorage.getItem(currentKey);
+        if (directSaved) {
+          const parsed = JSON.parse(directSaved);
+          if (parsed?.content && parsed?.time) {
+            const rawStr = JSON.stringify(parsed.content);
+            if (rawStr.length > 60) {
+              const d = new Date(parsed.time);
+              const timeStr = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+              foundBackup = { time: timeStr, content: parsed.content };
+            }
+          }
+        }
+
+        if (!foundBackup) {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith("docdraft_backup_")) {
+              const val = localStorage.getItem(k);
+              if (val) {
+                try {
+                  const p = JSON.parse(val);
+                  if (p?.content && p?.time && JSON.stringify(p.content).length > 60) {
+                    const d = new Date(p.time);
+                    const timeStr = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                    foundBackup = { time: timeStr, content: p.content };
+                    break;
+                  }
+                } catch {}
+              }
+            }
+          }
+        }
+
+        if (foundBackup) {
+          setLocalBackup(foundBackup);
+        }
+      } catch (e) {
+        console.warn("Lỗi đọc local backup:", e);
+      }
+    }
+  }, [stats.characters, draftId, editor]);
+
   // Expose hàm chèn văn bản từ bên ngoài (cho AI Chat Sidebar - TASK-206)
   useEffect(() => {
     if (onApplyTextRef) {
       onApplyTextRef.current = (text: string) => {
         if (!editor) return;
-        editor.chain().focus().insertContent(text).run();
+        const formatted = text.includes('<table data-nd30-table="true"') || text.startsWith("<p") || text.startsWith("<h")
+          ? text
+          : cleanAndFormatAiContentForEditor(text);
+
+        const isEffectivelyEmpty = editor.isEmpty || editor.getText().trim() === "";
+        if (isEffectivelyEmpty) {
+          editor.commands.setContent(formatted);
+        } else {
+          editor.chain().focus().insertContent(formatted).run();
+        }
       };
     }
   }, [editor, onApplyTextRef]);
+
+  // Expose hàm nạp lại nội dung tức thời (Dùng cho Rollback phiên bản & LoadDraft)
+  useEffect(() => {
+    if (onSetContentRef) {
+      onSetContentRef.current = (content: string | object) => {
+        if (!editor) return;
+        editor.commands.setContent(content as Content);
+        const html = editor.getHTML();
+        const json = editor.getJSON();
+        onChange?.(html, json);
+        try {
+          const storageKey = `docdraft_backup_${draftId || "new"}`;
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({ content: json, time: Date.now() })
+          );
+        } catch {}
+      };
+    }
+  }, [editor, onSetContentRef, onChange, draftId]);
 
   // Lắng nghe cập nhật văn bản để tự động tính lại số lượng placeholder [...]
   useEffect(() => {
@@ -211,12 +368,26 @@ export function TiptapEditor({
     };
   }, [editor]);
 
-  // Cập nhật nội dung từ ngoài vào (khi sinh stream AI)
+  // Cập nhật nội dung từ ngoài vào (khi sinh stream AI hoặc load draft, không can thiệp khi người dùng đang soạn)
   useEffect(() => {
-    if (editor && initialContent && editor.getHTML() !== initialContent) {
+    if (editor && initialContent && !editor.isFocused && editor.getHTML() !== initialContent) {
       editor.commands.setContent(initialContent, { emitUpdate: false });
     }
   }, [editor, initialContent]);
+
+  // Cập nhật khi initialJson thay đổi
+  useEffect(() => {
+    if (editor && initialJson && !editor.isFocused) {
+      editor.commands.setContent(initialJson as Content, { emitUpdate: false });
+    }
+  }, [editor, initialJson]);
+
+  // Chuẩn hóa Thể thức 1-Click theo Nghị định 30/2020/NĐ-CP
+  const handleAutoFormatND30 = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().selectAll().setTextAlign("justify").run();
+    editor.chain().setTextSelection(0).scrollIntoView().run();
+  }, [editor]);
 
   // Di chuyển và bôi đen placeholder tiếp theo để người dùng nhập thông tin
   const handleJumpToNextPlaceholder = useCallback(() => {
@@ -326,7 +497,7 @@ export function TiptapEditor({
   };
 
   return (
-    <div className={`flex flex-col w-full ${className}`}>
+    <div className={`flex flex-col w-full h-full overflow-hidden bg-background ${className}`}>
       {/* Banner tiến độ luồng trình ký & phê duyệt nội bộ (TASK-401, TASK-402, TASK-403) */}
       <ApprovalBanner
         draftId={draftId || ""}
@@ -359,29 +530,38 @@ export function TiptapEditor({
         draftId={draftId}
         draftStatus={draftStatus}
         onOpenSubmitApproval={() => setIsApprovalDialogOpen(true)}
+        lineSpacing={lineSpacing}
+        onChangeLineSpacing={setLineSpacing}
+        onAutoFormatND30={handleAutoFormatND30}
+        onInsertPageBreak={() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (editor.chain().focus() as any).insertPageBreak().run();
+        }}
+        showRuler={showRuler}
+        onToggleRuler={() => setShowRuler(!showRuler)}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
       {editor && (
         <BubbleMenu
           editor={editor}
-          className="z-50 flex items-center rounded-xl border border-border/80 bg-background/95 p-1.5 shadow-2xl backdrop-blur animate-in fade-in zoom-in-95"
+          className="z-50 flex items-center animate-in fade-in zoom-in-95"
         >
           {isInlineLoading ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span>DeepSeek đang tối ưu câu chữ...</span>
+            <div className="ai-copilot-bubble-menu flex items-center gap-2 px-3.5 py-2 text-xs bg-white/95 dark:bg-slate-900/98 border border-slate-200/90 dark:border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-md">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+              <span className="menu-title font-medium">DeepSeek đang tối ưu câu chữ...</span>
             </div>
           ) : inlineSuggestion ? (
             /* Hiển thị bản xem trước gợi ý kèm nút [Chấp nhận / Bác bỏ] */
-            <div className="flex flex-col gap-2 p-2 max-w-sm">
-              <div className="flex items-center justify-between gap-2 border-b pb-1 text-xs font-semibold text-primary">
+            <div className="ai-copilot-bubble-menu flex flex-col gap-2.5 p-3 max-w-sm bg-white/95 dark:bg-slate-900/98 border border-slate-200/90 dark:border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-md text-slate-800 dark:text-slate-100">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>Đề xuất chỉnh sửa:</span>
+                  <span className="menu-title">Đề xuất chỉnh sửa:</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground capitalize">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
                     {inlineSuggestion.command}
                   </span>
                   <AIFeedbackWidget
@@ -394,7 +574,7 @@ export function TiptapEditor({
                 </div>
               </div>
 
-              <p className="text-xs bg-muted/40 p-2 rounded border border-border/50 max-h-36 overflow-y-auto leading-relaxed font-serif">
+              <p className="text-xs bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 max-h-36 overflow-y-auto leading-relaxed font-serif text-slate-800 dark:text-slate-200">
                 {inlineSuggestion.resultText}
               </p>
 
@@ -403,7 +583,7 @@ export function TiptapEditor({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-[11px] text-muted-foreground gap-1 px-2"
+                  className="h-6 text-[11px] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1 px-2"
                   onClick={() => setInlineSuggestion(null)}
                 >
                   <X className="h-3 w-3" />
@@ -413,7 +593,7 @@ export function TiptapEditor({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-6 text-[11px] text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-purple-200 dark:border-purple-800 gap-1 px-2 font-medium"
+                  className="h-6 text-[11px] text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-purple-200 dark:border-purple-800 gap-1 px-2 font-medium"
                   onClick={handleSuggestInline}
                   title="Ghi nhận dưới dạng đề xuất chỉnh sửa để xem xét sau (TASK-307)"
                 >
@@ -423,7 +603,7 @@ export function TiptapEditor({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-6 text-[11px] gap-1 px-2.5 shadow-xs"
+                  className="h-6 text-[11px] gap-1 px-2.5 shadow-xs bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleAcceptInline}
                 >
                   <Check className="h-3 w-3" />
@@ -432,87 +612,199 @@ export function TiptapEditor({
               </div>
             </div>
           ) : (
-            /* Toolbar 4 nút bấm AI Copilot nhanh */
-            <div className="flex items-center gap-1 text-xs">
-              <div className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-primary border-r pr-2">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">AI Copilot</span>
+            /* Toolbar AI Copilot khi bôi đen đoạn văn bản */
+            <div className="ai-copilot-bubble-menu flex items-center gap-1.5 p-1 bg-white/95 dark:bg-slate-900/98 border border-slate-200/90 dark:border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-md text-slate-800 dark:text-slate-100">
+              {/* Badge AI Header */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 shrink-0">
+                <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 animate-pulse" />
+                <span className="menu-badge hidden sm:inline font-semibold">AI Copilot</span>
               </div>
 
-              <Button
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700/80 mx-0.5" />
+
+              {/* Nút 1: Hành chính hóa NĐ 30 */}
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => handleInlineCommand("formalize")}
-                className="h-7 text-xs gap-1 px-2 hover:text-primary hover:bg-primary/10"
-                title="Hành chính hóa sang phong cách công vụ Nghị định 30"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-left transition-all hover:bg-purple-50/80 dark:hover:bg-slate-800 hover:border-purple-200 dark:hover:border-purple-500/40 border border-transparent group cursor-pointer"
+                title="Hành chính hóa: Viết lại đoạn văn này theo đúng văn phong công vụ, trang trọng và chuẩn mực Nghị định 30"
               >
-                <Wand2 className="h-3.5 w-3.5 text-primary" />
-                <span>Hành chính hóa</span>
-              </Button>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 group-hover:bg-purple-200 dark:group-hover:bg-purple-500/30 group-hover:scale-105 transition-all shrink-0">
+                  <Wand2 className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="menu-title text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors leading-tight">
+                    Hành chính hóa
+                  </span>
+                  <span className="menu-subtitle text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Văn phong NĐ 30
+                  </span>
+                </div>
+              </button>
 
-              <Button
+              {/* Nút 2: Rút gọn */}
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => handleInlineCommand("shorten")}
-                className="h-7 text-xs gap-1 px-2 hover:text-amber-600 hover:bg-amber-500/10"
-                title="Rút gọn súc tích, giữ nguyên số liệu"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-left transition-all hover:bg-amber-50/80 dark:hover:bg-slate-800 hover:border-amber-200 dark:hover:border-amber-500/40 border border-transparent group cursor-pointer"
+                title="Rút gọn: Rút ngắn câu từ, cô đọng nội dung nhưng giữ nguyên số liệu và ý nghĩa cốt lõi"
               >
-                <Scissors className="h-3.5 w-3.5 text-amber-500" />
-                <span>Rút gọn</span>
-              </Button>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 group-hover:bg-amber-200 dark:group-hover:bg-amber-500/30 group-hover:scale-105 transition-all shrink-0">
+                  <Scissors className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="menu-title text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors leading-tight">
+                    Rút gọn
+                  </span>
+                  <span className="menu-subtitle text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Ngắn gọn, súc tích
+                  </span>
+                </div>
+              </button>
 
-              <Button
+              {/* Nút 3: Mở rộng */}
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => handleInlineCommand("expand")}
-                className="h-7 text-xs gap-1 px-2 hover:text-blue-600 hover:bg-blue-500/10"
-                title="Viết chi tiết, bổ sung diễn giải hành chính"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-left transition-all hover:bg-blue-50/80 dark:hover:bg-slate-800 hover:border-blue-200 dark:hover:border-blue-500/40 border border-transparent group cursor-pointer"
+                title="Mở rộng: Bổ sung thêm luận cứ, lập luận hành chính và chi tiết diễn giải cho đoạn này"
               >
-                <Maximize2 className="h-3.5 w-3.5 text-blue-500" />
-                <span>Chi tiết</span>
-              </Button>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 group-hover:bg-blue-200 dark:group-hover:bg-blue-500/30 group-hover:scale-105 transition-all shrink-0">
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="menu-title text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors leading-tight">
+                    Mở rộng
+                  </span>
+                  <span className="menu-subtitle text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Viết thêm chi tiết
+                  </span>
+                </div>
+              </button>
 
-              <Button
+              {/* Nút 4: Sửa chính tả */}
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => handleInlineCommand("fix_spelling")}
-                className="h-7 text-xs gap-1 px-2 hover:text-emerald-600 hover:bg-emerald-500/10"
-                title="Sửa lỗi chính tả & Thể thức dấu câu"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-left transition-all hover:bg-emerald-50/80 dark:hover:bg-slate-800 hover:border-emerald-200 dark:hover:border-emerald-500/40 border border-transparent group cursor-pointer"
+                title="Sửa chính tả: Tự động kiểm tra và sửa lỗi chính tả, dấu câu, viết hoa và ngữ pháp tiếng Việt"
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Chính tả</span>
-              </Button>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500/30 group-hover:scale-105 transition-all shrink-0">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="menu-title text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors leading-tight">
+                    Sửa chính tả
+                  </span>
+                  <span className="menu-subtitle text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Lỗi gõ & ngữ pháp
+                  </span>
+                </div>
+              </button>
 
-              <div className="h-4 w-px bg-border/60 mx-0.5" />
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700/80 mx-0.5" />
 
-              <Button
+              {/* Nút 5: Bình luận */}
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={handleAddCommentFromSelection}
-                className="h-7 text-xs gap-1 px-2 hover:text-amber-600 hover:bg-amber-500/10"
-                title="Thêm bình luận cho đoạn văn bản này (TASK-306)"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-left transition-all hover:bg-amber-50/80 dark:hover:bg-slate-800 hover:border-amber-200 dark:hover:border-amber-500/40 border border-transparent group cursor-pointer"
+                title="Bình luận: Đính kèm nhận xét hoặc yêu cầu chỉnh sửa cho đoạn văn bản này để cùng trao đổi"
               >
-                <MessageSquare className="h-3.5 w-3.5 text-amber-500" />
-                <span>Bình luận</span>
-              </Button>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 group-hover:bg-amber-200 dark:group-hover:bg-amber-500/30 group-hover:scale-105 transition-all shrink-0">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="menu-title text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors leading-tight">
+                    Bình luận
+                  </span>
+                  <span className="menu-subtitle text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Thêm ghi chú ý kiến
+                  </span>
+                </div>
+              </button>
             </div>
           )}
         </BubbleMenu>
       )}
 
       {/* Khu vực Canvas A4 và Bảng bình luận / Đề xuất cộng tác (TASK-306, TASK-307) */}
-      <div className="flex-1 flex overflow-hidden min-h-[900px]">
-        {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP (TASK-110, TASK-412) */}
-        <div className="flex-1 bg-muted/40 p-2 sm:p-6 md:p-10 lg:p-12 overflow-x-auto flex justify-center">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Không gian Bàn làm việc (The Desk) cuộn mượt mà */}
+        <div className="flex-1 bg-slate-100/90 dark:bg-[#070b13] p-3 sm:p-6 md:p-8 lg:p-10 overflow-y-auto overflow-x-auto flex flex-col items-center editor-canvas-scroll select-text">
+          {/* Thanh chỉ số lề giấy & Khổ văn bản A4 chuẩn NĐ 30 */}
+          <div className="w-full max-w-[210mm] flex items-center justify-between text-[11px] text-muted-foreground/80 mb-3 px-1 font-mono select-none">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Khổ A4 (210 × 297 mm)</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2.5 text-[10px]">
+              <span>Lề trái: 30mm</span>
+              <span>•</span>
+              <span>Lề phải: 15mm</span>
+              <span>•</span>
+              <span>Lề trên/dưới: 20mm</span>
+            </div>
+            <div className="flex items-center gap-1.5 font-sans">
+              <span className="font-medium text-foreground/70">Nghị định 30/2020/NĐ-CP</span>
+            </div>
+          </div>
+
+          {/* Banner Cứu hộ Dữ liệu khẩn cấp khi người dùng lỡ thoát chưa bấm Lưu (LocalStorage Recovery) */}
+          {localBackup && stats.characters === 0 && (
+            <div className="w-full max-w-[210mm] mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 animate-bounce" />
+                <span>
+                  Tìm thấy bản nháp tự động sao lưu lúc <strong>{localBackup.time}</strong> trên trình duyệt của bạn.
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs text-muted-foreground hover:text-foreground px-2"
+                  onClick={() => setLocalBackup(null)}
+                >
+                  Bỏ qua
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-6 text-xs bg-amber-600 hover:bg-amber-700 text-white font-semibold px-2.5 shadow-xs"
+                  onClick={handleRestoreLocalBackup}
+                >
+                  Khôi phục ngay
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Thước đo căn lề khổ A4 (Word Ruler) */}
+          {showRuler && <WordRuler zoomLevel={zoomLevel} />}
+
+          {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP */}
           <div
-            className="a4-paper-canvas bg-white dark:bg-card text-foreground shadow-xl lg:shadow-2xl rounded-sm border border-border/60 transition-all box-border w-full lg:w-[210mm]"
+            style={{
+              transform: zoomLevel !== 100 ? `scale(${zoomLevel / 100})` : undefined,
+              transformOrigin: "top center",
+              lineHeight: lineSpacing,
+              minHeight:
+                pageInfo.totalPages > 1
+                  ? `calc(297mm * ${pageInfo.totalPages} + ${(pageInfo.totalPages - 1) * 100}px)`
+                  : "297mm",
+            }}
+            className={`a4-paper-canvas ${
+              paperTheme === "white"
+                ? "paper-sheet-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.06),0_16px_40px_-4px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.7)] border border-slate-300 dark:border-slate-700/80"
+                : "paper-sheet-dark shadow-[0_20px_50px_rgba(0,0,0,0.75)] border border-slate-800"
+            } rounded-xs sm:rounded-sm transition-transform duration-150 box-border`}
           >
             <EditorContent editor={editor} />
+          </div>
+
+          {/* Vạch kết thúc trang tài liệu */}
+          <div className="w-full max-w-[210mm] text-center text-[10px] text-muted-foreground/50 mt-6 mb-4 select-none">
+            — Hết trang văn bản —
           </div>
         </div>
 
@@ -545,6 +837,71 @@ export function TiptapEditor({
           />
         )}
       </div>
+
+      {/* Thanh trạng thái chân trang (Document Status Bar) */}
+      <footer className="shrink-0 h-9 border-t border-border/80 bg-background/95 backdrop-blur px-3 sm:px-4 flex items-center justify-between text-xs text-muted-foreground select-none z-10">
+        <div className="flex items-center gap-3">
+          <span className="font-semibold text-foreground/95 bg-muted/60 px-2 py-0.5 rounded border border-border/40 font-mono text-[11px]">
+            📄 Trang {pageInfo.currentPage} / {pageInfo.totalPages}
+          </span>
+          <span>•</span>
+          <span className="font-medium text-foreground/90">{stats.words} từ</span>
+          <span>•</span>
+          <span>{stats.characters} ký tự</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="text-[11px] font-medium text-muted-foreground">Chuẩn thể thức Nghị định 30/2020/NĐ-CP</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Paper Theme Toggle */}
+          <button
+            type="button"
+            onClick={() => setPaperTheme(paperTheme === "white" ? "dark" : "white")}
+            className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-muted text-[11px] font-medium transition-colors"
+            title="Chuyển đổi giao diện trang giấy (Giấy in trắng / Giấy tối)"
+          >
+            {paperTheme === "white" ? (
+              <>
+                <Sun className="h-3.5 w-3.5 text-amber-500" />
+                <span className="hidden sm:inline">Giấy in trắng</span>
+              </>
+            ) : (
+              <>
+                <Moon className="h-3.5 w-3.5 text-blue-400" />
+                <span className="hidden sm:inline">Giấy tối</span>
+              </>
+            )}
+          </button>
+
+          <div className="h-3.5 w-px bg-border mx-1" />
+
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={zoomLevel <= 70}
+              onClick={() => setZoomLevel((z) => Math.max(70, z - 10))}
+              className="p-1 rounded hover:bg-muted disabled:opacity-40 transition-colors"
+              title="Thu nhỏ trang"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <span className="w-10 text-center font-mono text-[11px]">{zoomLevel}%</span>
+            <button
+              type="button"
+              disabled={zoomLevel >= 150}
+              onClick={() => setZoomLevel((z) => Math.min(150, z + 10))}
+              className="p-1 rounded hover:bg-muted disabled:opacity-40 transition-colors"
+              title="Phóng to trang"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </footer>
 
       {/* Legal RAG Citation Autocomplete Dialog (TASK-210, TASK-211) */}
       <LegalAutocompleteDialog

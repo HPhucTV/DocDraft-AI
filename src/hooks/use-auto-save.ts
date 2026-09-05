@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 export interface AutoSaveOptions {
   draftId?: string | null;
   initialVersion?: number;
-  intervalMs?: number; // Mặc định 30,000ms (30 giây) theo NĐ 30 / ADR
+  intervalMs?: number; // Mặc định 60,000ms (1 phút), chỉ lưu khi có thay đổi
   onSaveSuccess?: (savedData: { version: number; updatedAt: string }) => void;
   onConflict?: (conflictInfo: { serverVersion: number; clientVersion: number }) => void;
   onError?: (error: Error) => void;
@@ -19,8 +19,8 @@ export interface SavePayload {
 
 /**
  * Hook tự động lưu văn bản (Auto-save) kèm Kiểm soát khóa lạc quan (Optimistic Locking) (TASK-118).
- * Tự động gửi dữ liệu lên server sau một khoảng thời gian trì hoãn (debounce / interval)
- * và xử lý xung đột phiên bản (409 Conflict) khi có nhiều phiên làm việc cùng lúc.
+ * Tự động gửi dữ liệu lên server sau 1 phút kể từ khi có thay đổi (chỉ lưu khi có sửa đổi thực tế).
+ * Tránh hoàn toàn việc lưu dư thừa khi người dùng treo máy hoặc không chỉnh sửa.
  */
 export function useAutoSave(
   currentData: SavePayload,
@@ -29,7 +29,7 @@ export function useAutoSave(
   const {
     draftId,
     initialVersion = 1,
-    intervalMs = 30000,
+    intervalMs = 60000, // Chu kỳ 1 phút (60 giây), chỉ lưu khi có thay đổi thực tế
     onSaveSuccess,
     onConflict,
     onError,
@@ -41,15 +41,30 @@ export function useAutoSave(
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [hasConflict, setHasConflict] = useState(false);
 
+  // Đồng bộ lại version khi initialVersion từ bên ngoài thay đổi (ví dụ: sau khi Rollback phiên bản mới)
+  useEffect(() => {
+    setVersion(initialVersion);
+    setHasConflict(false);
+  }, [initialVersion]);
+
   // Tham chiếu dữ liệu đã lưu gần nhất để so sánh dirty
   const lastSavedDataRef = useRef<string>("");
   const currentDataRef = useRef<SavePayload>(currentData);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const firstChangeTimeRef = useRef<number | null>(null);
+  const draftIdRef = useRef<string | null | undefined>(draftId);
 
   useEffect(() => {
     currentDataRef.current = currentData;
   }, [currentData]);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Giải tỏa trạng thái xung đột 409 khi người dùng đồng ý nạp phiên bản mới
+  const resolveConflict = useCallback((newServerVersion?: number) => {
+    setHasConflict(false);
+    if (typeof newServerVersion === "number") {
+      setVersion(newServerVersion);
+    }
+  }, []);
 
   // Hàm thực hiện lưu ngay lập tức
   const saveNow = useCallback(
@@ -59,11 +74,23 @@ export function useAutoSave(
       const payloadToSave = manualPayload || currentDataRef.current;
       const serialized = JSON.stringify(payloadToSave);
 
-      // Nếu không có gì thay đổi so với bản đã lưu, bỏ qua
+      // Nếu không có gì thay đổi so với bản đã lưu, bỏ qua hoàn toàn
       if (serialized === lastSavedDataRef.current) {
         setIsDirty(false);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        firstChangeTimeRef.current = null;
         return;
       }
+
+      // Xóa timer đang chờ nếu có
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      firstChangeTimeRef.current = null;
 
       setIsSaving(true);
       try {
@@ -73,15 +100,20 @@ export function useAutoSave(
           body: JSON.stringify({
             ...payloadToSave,
             currentVersion: version,
-            createSnapshot: false,
+            createSnapshot: true,
+            changeSummary: `Tự động lưu phiên bản ${version + 1}`,
           }),
         });
 
         if (res.status === 409) {
-          const conflictData = await res.json();
+          const conflictData = await res.json().catch(() => ({}));
           setHasConflict(true);
+          // Tự động nâng version để không bị kẹt 409 ở các lần lưu tiếp theo
+          if (typeof conflictData.serverVersion === "number") {
+            setVersion(conflictData.serverVersion);
+          }
           onConflict?.({
-            serverVersion: conflictData.serverVersion,
+            serverVersion: conflictData.serverVersion || version + 1,
             clientVersion: version,
           });
           return;
@@ -115,30 +147,76 @@ export function useAutoSave(
     [draftId, version, onConflict, onError, onSaveSuccess]
   );
 
-  // Theo dõi sự thay đổi dữ liệu để đánh dấu dirty và kích hoạt timer
+  // Khi draftId thay đổi (chuyển đổi văn bản), thiết lập lại baseline
+  useEffect(() => {
+    if (draftId !== draftIdRef.current) {
+      draftIdRef.current = draftId;
+      if (currentData && (currentData.contentJson || currentData.title)) {
+        lastSavedDataRef.current = JSON.stringify(currentData);
+      } else {
+        lastSavedDataRef.current = "";
+      }
+      setIsDirty(false);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      firstChangeTimeRef.current = null;
+    }
+  }, [draftId, currentData]);
+
+  // Khởi tạo baseline ở lần đầu nạp dữ liệu thành công từ server
+  useEffect(() => {
+    if (!lastSavedDataRef.current && currentData && (currentData.contentJson || currentData.title)) {
+      lastSavedDataRef.current = JSON.stringify(currentData);
+    }
+  }, [currentData]);
+
+  // Theo dõi sự thay đổi dữ liệu: CHỈ KÍCH HOẠT KHI THỰC SỰ CÓ SỰ THAY ĐỔI
   useEffect(() => {
     if (!draftId) return;
 
     const serialized = JSON.stringify(currentData);
+
+    // Nếu chưa có baseline, khởi tạo và không đánh dấu dirty
+    if (!lastSavedDataRef.current) {
+      lastSavedDataRef.current = serialized;
+      return;
+    }
+
+    // So sánh dữ liệu hiện tại với dữ liệu đã lưu
     if (serialized !== lastSavedDataRef.current) {
       setIsDirty(true);
 
-      // Thiết lập timer debounced tự động lưu
+      // Nếu chưa có timer đang đếm (bắt đầu chu kỳ 1 phút kể từ thay đổi đầu tiên)
+      if (!timerRef.current) {
+        firstChangeTimeRef.current = Date.now();
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          firstChangeTimeRef.current = null;
+          saveNow();
+        }, intervalMs);
+      }
+    } else {
+      // Nếu người dùng hoàn tác (Undo) về đúng trạng thái đã lưu, hủy cờ dirty & timer
+      setIsDirty(false);
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+        timerRef.current = null;
+        firstChangeTimeRef.current = null;
       }
-
-      timerRef.current = setTimeout(() => {
-        saveNow();
-      }, intervalMs);
     }
+  }, [currentData, draftId, intervalMs, saveNow]);
 
+  // Dọn dẹp timer khi component unmount
+  useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, [currentData, draftId, intervalMs, saveNow]);
+  }, []);
 
   return {
     version,
@@ -147,5 +225,6 @@ export function useAutoSave(
     lastSavedAt,
     hasConflict,
     saveNow,
+    resolveConflict,
   };
 }

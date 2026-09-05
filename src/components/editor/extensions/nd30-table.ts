@@ -119,13 +119,13 @@ export const ND30TableHelpers = Extension.create({
                   <td data-col-width="40%" style="width: 40%; text-align: center; vertical-align: top; border: none; padding: 4px;">
                     <p style="text-align: center; margin: 0; font-size: 12pt;"><strong>[TÊN CƠ QUAN CHỦ QUẢN]</strong></p>
                     <p style="text-align: center; margin: 0; font-size: 13pt;"><strong>[TÊN ĐƠN VỊ SOẠN THẢO]</strong></p>
-                    <p style="text-align: center; margin: 2px 0 4px 0;">───────────</p>
+                    <hr class="nd30-rule-org" />
                     <p style="text-align: center; margin: 0; font-size: 12pt;">Số: [SỐ KÝ HIỆU]/[LOẠI VĂN BẢN]</p>
                   </td>
                   <td data-col-width="60%" style="width: 60%; text-align: center; vertical-align: top; border: none; padding: 4px;">
                     <p style="text-align: center; margin: 0; font-size: 13pt;"><strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong></p>
                     <p style="text-align: center; margin: 0; font-size: 14pt;"><strong><u>Độc lập - Tự do - Hạnh phúc</u></strong></p>
-                    <p style="text-align: center; margin: 2px 0 4px 0;">─────────────────</p>
+                    <hr class="nd30-rule-national" />
                     <p style="text-align: center; margin: 0; font-size: 13pt; font-style: italic;">[ĐỊA DANH], ngày [NGÀY] tháng [THÁNG] năm [NĂM]</p>
                   </td>
                 </tr>

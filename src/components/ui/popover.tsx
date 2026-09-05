@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 interface PopoverContextType {
@@ -79,7 +80,7 @@ export interface PopoverTriggerProps extends React.HTMLAttributes<HTMLDivElement
 }
 
 export const PopoverTrigger = React.forwardRef<HTMLDivElement, PopoverTriggerProps>(
-  ({ children, className, onClick, ...props }, ref) => {
+  ({ children, className, onClick, asChild = false, ...props }, ref) => {
     const context = React.useContext(PopoverContext);
     if (!context) {
       throw new Error("PopoverTrigger must be used within a Popover");
@@ -90,15 +91,17 @@ export const PopoverTrigger = React.forwardRef<HTMLDivElement, PopoverTriggerPro
       context.setOpen(!context.open);
     };
 
+    const Comp = asChild ? Slot : "div";
+
     return (
-      <div
+      <Comp
         ref={ref}
         onClick={handleClick}
         className={cn("inline-flex cursor-pointer", className)}
         {...props}
       >
         {children}
-      </div>
+      </Comp>
     );
   }
 );

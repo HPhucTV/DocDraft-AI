@@ -11,8 +11,10 @@ import {
   Bot,
   User,
   Square,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cleanAndFormatAiContentForEditor } from "@/lib/ai/ai-text-formatter";
 
 export interface ChatMessage {
   id: string;
@@ -36,6 +38,121 @@ const QUICK_PROMPTS = [
   "Bổ sung căn cứ Luật Đấu thầu và Luật Ngân sách",
 ];
 
+function renderInlineStyles(text: string): React.ReactNode[] {
+  const regex = /(\*\*.*?\*\*|\*.*?\*|\[[A-Z0-9_À-Ỹa-z0-9_\s/.\-]+\])/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
+      return (
+        <strong key={i} className="font-semibold text-foreground">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length >= 2 && !part.startsWith("**")) {
+      return (
+        <em key={i} className="italic text-muted-foreground">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    if (part.startsWith("[") && part.endsWith("]") && part.length >= 2) {
+      return (
+        <span
+          key={i}
+          className="inline-block px-1 py-0.5 mx-0.5 text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded"
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
+function renderFormattedChatMessage(content: string, isStreamingThis: boolean) {
+  if (!content) {
+    if (isStreamingThis) {
+      return (
+        <div className="flex items-center gap-2.5 py-1 px-1">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+            <span className="h-2 w-2 rounded-full bg-primary/80 animate-bounce [animation-delay:-0.15s]" />
+            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" />
+          </div>
+          <span className="text-[11px] font-medium text-muted-foreground animate-pulse flex items-center gap-1.5 ml-1">
+            <Sparkles className="h-3 w-3 text-primary animate-spin" style={{ animationDuration: "3s" }} />
+            AI đang suy nghĩ &amp; soạn thảo...
+          </span>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  const lines = content.split("\n");
+
+  return (
+    <div className="space-y-1.5 leading-relaxed">
+      {lines.map((line, idx) => {
+        const isLastLine = idx === lines.length - 1;
+        const trimmed = line.trim();
+
+        if (trimmed === "---") {
+          return (
+            <div key={idx} className="my-2 border-t border-border/60">
+              {isLastLine && isStreamingThis && (
+                <span className="inline-block w-1.5 h-3.5 ml-1 bg-primary align-middle animate-pulse rounded-xs" />
+              )}
+            </div>
+          );
+        }
+
+        if (trimmed.startsWith("### ")) {
+          const titleText = trimmed.replace(/^###\s+/, "");
+          return (
+            <h4 key={idx} className="font-bold text-xs mt-2 mb-1 text-foreground">
+              {renderInlineStyles(titleText)}
+              {isLastLine && isStreamingThis && (
+                <span className="inline-block w-1.5 h-3.5 ml-1 bg-primary align-middle animate-pulse rounded-xs" />
+              )}
+            </h4>
+          );
+        }
+
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          const bulletText = trimmed.replace(/^[-*]\s+/, "");
+          return (
+            <div key={idx} className="flex items-start gap-1.5 pl-2 my-0.5">
+              <span className="text-primary font-bold">•</span>
+              <span className="flex-1">
+                {renderInlineStyles(bulletText)}
+                {isLastLine && isStreamingThis && (
+                  <span className="inline-block w-1.5 h-3.5 ml-1 bg-primary align-middle animate-pulse rounded-xs" />
+                )}
+              </span>
+            </div>
+          );
+        }
+
+        if (!trimmed) {
+          return <div key={idx} className="h-1.5" />;
+        }
+
+        return (
+          <p key={idx}>
+            {renderInlineStyles(line)}
+            {isLastLine && isStreamingThis && (
+              <span className="inline-block w-1.5 h-3.5 ml-1 bg-primary align-middle animate-pulse rounded-xs shadow-xs" />
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function AIChatSidebar({
   isOpen,
   onClose,
@@ -54,14 +171,18 @@ export function AIChatSidebar({
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [appliedId, setAppliedId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const idCounterRef = useRef(1);
   const accumulatedContentRef = useRef("");
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -243,9 +364,11 @@ export function AIChatSidebar({
       </div>
 
       {/* Messages Timeline */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg, idx) => {
           const isAi = msg.role === "assistant";
+          const isCurrentStreamingAi = isStreaming && isAi && idx === messages.length - 1;
+
           return (
             <div
               key={msg.id}
@@ -254,7 +377,7 @@ export function AIChatSidebar({
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                   isAi
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted text-foreground border"
                 }`}
               >
@@ -268,10 +391,14 @@ export function AIChatSidebar({
                     : "bg-primary text-primary-foreground shadow-xs"
                 }`}
               >
-                <div className="whitespace-pre-wrap">{msg.content || (isStreaming ? "..." : "")}</div>
+                {isAi ? (
+                  renderFormattedChatMessage(msg.content, isCurrentStreamingAi)
+                ) : (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                )}
 
-                {/* Assistant Action Buttons */}
-                {isAi && msg.content && (
+                {/* Assistant Action Buttons (Hiển thị khi đã hoàn thành sinh văn bản) */}
+                {isAi && msg.content && !isCurrentStreamingAi && (
                   <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between gap-2">
                     <Button
                       size="sm"
@@ -290,11 +417,25 @@ export function AIChatSidebar({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => onApplyText(msg.content)}
-                      className="h-6 text-[11px] gap-1 px-2.5 text-primary border-primary/30 hover:bg-primary/5"
+                      onClick={() => {
+                        const cleanHtml = cleanAndFormatAiContentForEditor(msg.content);
+                        onApplyText(cleanHtml);
+                        setAppliedId(msg.id);
+                        setTimeout(() => setAppliedId(null), 2000);
+                      }}
+                      className="h-6 text-[11px] gap-1 px-2.5 text-primary border-primary/30 hover:bg-primary/5 transition-all"
                     >
-                      <PlusCircle className="h-3 w-3" />
-                      <span>Áp dụng vào văn bản</span>
+                      {appliedId === msg.id ? (
+                        <>
+                          <Check className="h-3 w-3 text-emerald-500" />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">Đã áp dụng</span>
+                        </>
+                      ) : (
+                        <>
+                          <PlusCircle className="h-3 w-3" />
+                          <span>Áp dụng vào văn bản</span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
