@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   FileText,
   ArrowLeft,
@@ -10,11 +11,12 @@ import {
   Check,
   Download,
   Printer,
-  ChevronDown,
+  Save,
   Layers,
   HelpCircle,
   Brain,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -22,6 +24,7 @@ import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { DynamicFormEngine } from "@/components/forms/dynamic-form-engine";
 import { FormSchema } from "@/types/form-schema";
 import { streamDocumentGeneration } from "@/lib/ai/stream-client";
+import { useAutoSave } from "@/hooks/use-auto-save";
 
 interface TemplateItem {
   id: string;
@@ -32,7 +35,12 @@ interface TemplateItem {
   userPromptTemplate: string;
 }
 
-export default function EditorPage() {
+function EditorContentComponent() {
+  const searchParams = useSearchParams();
+  const draftIdFromUrl = searchParams.get("id");
+
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftIdFromUrl);
+  const [currentVersion, setCurrentVersion] = useState<number>(1);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [loadingTemplates, setLoadingTemplates] = useState(true);
@@ -62,8 +70,10 @@ export default function EditorPage() {
           const data = await res.json();
           if (!ignore && data.length > 0) {
             setTemplates(data);
-            setSelectedTemplateId(data[0].id);
-            setDocumentTitle(`Dự thảo ${data[0].title}`);
+            if (!draftIdFromUrl) {
+              setSelectedTemplateId(data[0].id);
+              setDocumentTitle(`Dự thảo ${data[0].title}`);
+            }
           }
         }
       } catch (err) {
@@ -76,11 +86,69 @@ export default function EditorPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [draftIdFromUrl]);
+
+  // 2. Nếu có `id` trên URL, tải dữ liệu bản nháp từ DB
+  useEffect(() => {
+    if (!draftIdFromUrl) return;
+
+    let ignore = false;
+    async function loadDraft() {
+      try {
+        const res = await fetch(`/api/drafts/${draftIdFromUrl}`);
+        if (res.ok) {
+          const draft = await res.json();
+          if (!ignore) {
+            setCurrentDraftId(draft.id);
+            setDocumentTitle(draft.title);
+            setCurrentVersion(draft.currentVersion);
+            if (draft.templateId) {
+              setSelectedTemplateId(draft.templateId);
+            }
+            if (draft.contentJson) {
+              setEditorJson(draft.contentJson);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải chi tiết bản nháp:", err);
+      }
+    }
+    loadDraft();
+    return () => {
+      ignore = true;
+    };
+  }, [draftIdFromUrl]);
+
+  // 3. Cơ chế Tự động lưu (Auto-save) và Kiểm soát khóa lạc quan (Optimistic Locking - TASK-118)
+  const autoSavePayload = useMemo(() => {
+    const rawText = editorContent ? editorContent.replace(/<[^>]*>/g, "") : "";
+    const words = rawText.trim() ? rawText.trim().split(/\s+/).length : 0;
+    return {
+      title: documentTitle,
+      contentJson: editorJson || undefined,
+      wordCount: words,
+    };
+  }, [documentTitle, editorJson, editorContent]);
+
+  const { isSaving, isDirty, lastSavedAt, hasConflict, saveNow } = useAutoSave(
+    autoSavePayload,
+    {
+      draftId: currentDraftId,
+      initialVersion: currentVersion,
+      intervalMs: 30000, // 30 giây theo đặc tả Nghị định 30 / ADR-005
+      onSaveSuccess: ({ version }) => {
+        setCurrentVersion(version);
+      },
+      onConflict: (info) => {
+        console.warn("Phát hiện xung đột phiên bản (409 Conflict):", info);
+      },
+    }
+  );
 
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId) || templates[0];
 
-  // 2. Xử lý gửi Form & Bắt đầu sinh văn bản qua AI SSE Stream
+  // 4. Xử lý gửi Form & Bắt đầu sinh văn bản qua AI SSE Stream
   const handleFormSubmit = async (formData: Record<string, unknown>) => {
     if (isStreaming) return;
 
@@ -114,6 +182,27 @@ export default function EditorPage() {
           durationMs: stats.duration_ms,
           modelUsed: stats.model_used,
         });
+
+        // Nếu chưa có draftId trong DB, tự động tạo mới để lưu giữ
+        if (!currentDraftId) {
+          fetch("/api/drafts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: documentTitle,
+              templateId: currentTemplate?.id || null,
+              wordCount: stats.word_count,
+            }),
+          })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.id) {
+                setCurrentDraftId(d.id);
+                setCurrentVersion(d.currentVersion || 1);
+              }
+            })
+            .catch((e) => console.error("Lỗi tự động tạo bản nháp:", e));
+        }
       },
       onError: (err) => {
         setIsStreaming(false);
@@ -122,7 +211,7 @@ export default function EditorPage() {
     });
   };
 
-  // 3. Dừng sinh (AbortController)
+  // 5. Dừng sinh (AbortController)
   const handleStopStreaming = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -130,7 +219,7 @@ export default function EditorPage() {
     }
   };
 
-  // 4. Sao chép HTML
+  // 6. Sao chép HTML
   const handleCopyHTML = () => {
     if (!editorContent) return;
     navigator.clipboard.writeText(editorContent);
@@ -138,7 +227,7 @@ export default function EditorPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 5. Xuất bản văn bản (Word .docx hoặc PDF) qua Next.js Proxy & Document Service
+  // 7. Xuất bản văn bản (Word .docx hoặc PDF) qua Next.js Proxy & Document Service (TASK-113, TASK-114, TASK-115)
   const handleExport = async (format: "docx" | "pdf") => {
     if (!editorContent) return;
     setExportingFormat(format);
@@ -212,10 +301,34 @@ export default function EditorPage() {
               type="text"
               value={documentTitle}
               onChange={(e) => setDocumentTitle(e.target.value)}
-              className="bg-transparent font-semibold text-sm sm:text-base border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5 max-w-[220px] sm:max-w-[340px] truncate"
+              className="bg-transparent font-semibold text-sm sm:text-base border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5 max-w-[200px] sm:max-w-[320px] truncate"
               placeholder="Nhập tên văn bản..."
             />
           </div>
+
+          {/* Trạng thái Auto-save & Khóa lạc quan (TASK-118) */}
+          {currentDraftId && (
+            <div className="hidden lg:flex items-center gap-2 pl-2 border-l text-xs">
+              {hasConflict ? (
+                <span className="flex items-center gap-1 text-destructive font-medium bg-destructive/10 px-2 py-0.5 rounded border border-destructive/20">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Xung đột phiên bản (409)
+                </span>
+              ) : isSaving ? (
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                  Đang lưu...
+                </span>
+              ) : lastSavedAt ? (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  Đã lưu lúc {lastSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+              ) : isDirty ? (
+                <span className="text-amber-500 font-medium">Chưa lưu</span>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* Stats & Actions */}
@@ -228,6 +341,20 @@ export default function EditorPage() {
               <span>&bull;</span>
               <span>{(streamStats.durationMs! / 1000).toFixed(1)}s</span>
             </div>
+          )}
+
+          {currentDraftId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => saveNow()}
+              disabled={isSaving}
+              className="gap-1.5 h-8 text-xs"
+              title="Lưu thủ công ngay bây giờ"
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Lưu</span>
+            </Button>
           )}
 
           <Button
@@ -306,61 +433,52 @@ export default function EditorPage() {
                       setDocumentTitle(`Dự thảo ${tmpl.title}`);
                     }
                   }}
-                  className="w-full appearance-none rounded-lg border bg-background px-3 py-2 text-sm font-medium pr-8 focus:outline-none focus:ring-2 focus:ring-primary truncate"
+                  className="w-full appearance-none rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {templates.map((tmpl) => (
                     <option key={tmpl.id} value={tmpl.id}>
-                      {tmpl.title} ({tmpl.industryPack === "hanh_chinh" ? "Hành chính" : "Doanh nghiệp"})
+                      {tmpl.title} {tmpl.industryPack ? `(${tmpl.industryPack})` : ""}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
-            )}
-
-            {currentTemplate && (
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {currentTemplate.description}
-              </p>
             )}
           </div>
 
-          {/* AI Thinking Stream Box (Nếu đang có reasoning_content) */}
-          {thinkingText && (
-            <div className="mx-4 mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-blue-800 dark:text-blue-300">
-                <Brain className="h-3.5 w-3.5 animate-pulse text-blue-600" />
-                <span>DeepSeek đang suy nghĩ & xây dựng thể thức...</span>
-              </div>
-              <p className="font-mono text-[11px] text-muted-foreground line-clamp-3 leading-relaxed">
-                {thinkingText}
-              </p>
-            </div>
-          )}
-
-          {/* Form Engine Scrollable Area */}
+          {/* Form Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {currentTemplate?.formSchema ? (
-              <div className="rounded-xl border bg-card p-5 shadow-xs">
-                <div className="flex items-center justify-between border-b pb-3 mb-4">
-                  <span className="font-semibold text-sm">Thông tin biến số</span>
-                  <span className="text-[11px] text-muted-foreground">Tự động gắn vào mẫu</span>
-                </div>
-
-                <DynamicFormEngine
-                  schema={currentTemplate.formSchema}
-                  onSubmit={handleFormSubmit}
-                  submitLabel={isStreaming ? "Đang sinh văn bản..." : "Sinh văn bản AI (DeepSeek)"}
-                  isSubmitting={isStreaming}
-                />
-              </div>
+            {currentTemplate ? (
+              <DynamicFormEngine
+                schema={currentTemplate.formSchema}
+                onSubmit={handleFormSubmit}
+                isSubmitting={isStreaming}
+              />
             ) : (
-              <div className="p-8 text-center text-muted-foreground text-sm">
-                Đang tải thông số biểu mẫu...
+              <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+                Đang tải cấu hình biểu mẫu...
               </div>
             )}
 
-            {/* Nút Hủy (Dừng sinh) khi đang stream */}
+            {/* Thinking / Reasoning Stream Indicator */}
+            {isStreaming && (
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3.5 space-y-2 animate-in fade-in">
+                <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                  <Brain className="h-4 w-4 animate-pulse" />
+                  <span>DeepSeek reasoning tokens...</span>
+                </div>
+                {thinkingText ? (
+                  <p className="text-xs font-mono text-muted-foreground whitespace-pre-wrap line-clamp-4 bg-background/50 p-2 rounded border border-border/50">
+                    {thinkingText}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground animate-pulse">
+                    Đang phân tích cấu trúc Nghị định 30 và chuẩn hóa điều khoản...
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Stop Streaming Button */}
             {isStreaming && (
               <Button
                 type="button"
@@ -400,5 +518,19 @@ export default function EditorPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <EditorContentComponent />
+    </Suspense>
   );
 }

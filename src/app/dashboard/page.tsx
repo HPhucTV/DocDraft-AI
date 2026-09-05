@@ -2,9 +2,9 @@ import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { prisma } from "@/lib/prisma";
 import {
   FileText,
-  PlusCircle,
   KeyRound,
   ShieldCheck,
   LogOut,
@@ -12,15 +12,26 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 
 export default async function DashboardPage() {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 
   const { user } = session;
+
+  // Lấy chỉ số thực tế từ cơ sở dữ liệu
+  const [totalDrafts, totalFolders] = await Promise.all([
+    prisma.documentDraft.count({
+      where: { userId: user.id, deletedAt: null },
+    }),
+    prisma.folder.count({
+      where: { userId: user.id },
+    }),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/20">
@@ -64,7 +75,7 @@ export default async function DashboardPage() {
       {/* Main Dashboard Workspace */}
       <main className="flex-1 container mx-auto max-w-6xl p-6 md:p-8 space-y-8">
         {/* User Welcome Banner */}
-        <div className="rounded-2xl border bg-gradient-to-r from-blue-900/10 via-primary/5 to-transparent p-6 sm:p-8 shadow-sm">
+        <div className="rounded-2xl border bg-gradient-to-r from-blue-900/10 via-primary/5 to-transparent p-6 sm:p-8 shadow-xs">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary mb-2">
@@ -80,10 +91,10 @@ export default async function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button asChild className="gap-2 shadow">
+              <Button asChild className="gap-2 shadow-xs">
                 <Link href="/templates/demo">
                   <Sparkles className="h-4 w-4" />
-                  <span>Biểu mẫu động (Form Engine)</span>
+                  <span>Thư viện mẫu chuẩn</span>
                 </Link>
               </Button>
               <Button variant="outline" asChild className="gap-2">
@@ -98,16 +109,18 @@ export default async function DashboardPage() {
 
         {/* Quick Metrics */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Văn bản đã tạo</span>
+              <span className="text-xs font-medium text-muted-foreground">Văn bản đang soạn</span>
               <FileText className="h-4 w-4 text-primary" />
             </div>
-            <div className="mt-3 text-2xl font-bold">0</div>
-            <p className="mt-1 text-xs text-muted-foreground">Chưa có bản nháp nào</p>
+            <div className="mt-3 text-2xl font-bold">{totalDrafts}</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {totalDrafts > 0 ? "Đang quản lý trên hệ thống" : "Chưa có bản nháp nào"}
+            </p>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Điểm chuẩn thể thức</span>
               <ShieldCheck className="h-4 w-4 text-emerald-500" />
@@ -116,16 +129,16 @@ export default async function DashboardPage() {
             <p className="mt-1 text-xs text-muted-foreground">Tuân thủ Nghị định 30/2020</p>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Thư mục hồ sơ</span>
               <FolderKanban className="h-4 w-4 text-blue-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold">0</div>
-            <p className="mt-1 text-xs text-muted-foreground">0 hồ sơ lưu trữ</p>
+            <div className="mt-3 text-2xl font-bold">{totalFolders}</div>
+            <p className="mt-1 text-xs text-muted-foreground">Hồ sơ lưu trữ phân loại</p>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Chế độ AI Gateway</span>
               <KeyRound className="h-4 w-4 text-amber-500" />
@@ -135,25 +148,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Empty state list */}
-        <div className="rounded-xl border bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-4">
-            <FileText className="h-6 w-6" />
-          </div>
-          <h3 className="text-lg font-semibold">Chưa có văn bản dự thảo nào</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-            Bắt đầu tạo văn bản mới từ thư viện biểu mẫu chuẩn (Quyết định, Công văn, Tờ trình, Thông báo...)
-          </p>
-          <div className="mt-6">
-            <Button asChild className="gap-2">
-              <Link href="/editor/new">
-                <PlusCircle className="h-4 w-4" />
-                <span>Tạo dự thảo đầu tiên</span>
-              </Link>
-            </Button>
-          </div>
-        </div>
+        {/* Interactive Workspace (Grid/List View, Tabs, Search, Actions) */}
+        <DashboardWorkspace />
       </main>
     </div>
   );
 }
+
