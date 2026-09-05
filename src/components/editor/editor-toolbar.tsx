@@ -28,6 +28,7 @@ import {
   Share2,
   MessageSquare,
   GitPullRequest,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,8 @@ interface EditorToolbarProps {
   suggestionsCount?: number;
   isSuggestionsPanelOpen?: boolean;
   draftId?: string;
+  draftStatus?: string;
+  onOpenSubmitApproval?: () => void;
 }
 
 export function EditorToolbar({
@@ -78,6 +81,8 @@ export function EditorToolbar({
   suggestionsCount,
   isSuggestionsPanelOpen,
   draftId,
+  draftStatus,
+  onOpenSubmitApproval,
 }: EditorToolbarProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -467,6 +472,21 @@ export function EditorToolbar({
           </span>
         )}
       </Button>
+
+      {/* Group: Trình ký văn bản (TASK-401) */}
+      {onOpenSubmitApproval && (!draftStatus || draftStatus === "DRAFT") && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onOpenSubmitApproval}
+          className="h-8 text-xs gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 font-semibold"
+          title="Gửi trình ký & phê duyệt nội bộ tuần tự theo Nghị định 30 (TASK-401)"
+        >
+          <Send className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          <span className="hidden sm:inline">Trình ký</span>
+        </Button>
+      )}
 
       {/* Group 13: Thumbs Up/Down AI Feedback Loop (TASK-310) */}
       <div className="flex items-center pl-1 border-l border-border/40">

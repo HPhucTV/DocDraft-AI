@@ -32,6 +32,8 @@ import { ComplianceDialog } from "./compliance-dialog";
 import { ShareDialog } from "./share-dialog";
 import { CommentsPanel, type CommentAnchor } from "./comments-panel";
 import { AIFeedbackWidget } from "./ai-feedback-widget";
+import { SubmitApprovalDialog } from "./submit-approval-dialog";
+import { ApprovalBanner } from "./approval-banner";
 import { checkCompliance } from "@/lib/compliance/compliance-engine";
 import {
   Sparkles,
@@ -57,6 +59,13 @@ export interface TiptapEditorProps {
   className?: string;
   draftId?: string;
   draftTitle?: string;
+  draftStatus?: string;
+  qrVerifyCode?: string | null;
+  activeChainId?: string | null;
+  currentStep?: number;
+  totalSteps?: number;
+  isCurrentApprover?: boolean;
+  onWorkflowUpdate?: () => void;
 }
 
 interface InlineSuggestionState {
@@ -70,6 +79,7 @@ interface InlineSuggestionState {
 /**
  * Trình soạn thảo A4 Canvas Editor chuẩn Nghị định 30/2020/NĐ-CP (TASK-110, TASK-111, TASK-112).
  * Tích hợp AI In-line Copilot Toolbar bôi đen gọi lệnh (TASK-205).
+ * Tích hợp Luồng Trình ký & Phê duyệt nội bộ (TASK-401, TASK-402, TASK-403, TASK-404).
  */
 export function TiptapEditor({
   initialContent = "",
@@ -81,6 +91,13 @@ export function TiptapEditor({
   className = "",
   draftId,
   draftTitle,
+  draftStatus = "DRAFT",
+  qrVerifyCode,
+  activeChainId,
+  currentStep = 1,
+  totalSteps = 1,
+  isCurrentApprover = false,
+  onWorkflowUpdate,
 }: TiptapEditorProps) {
   const [placeholderCount, setPlaceholderCount] = useState(0);
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
@@ -107,6 +124,9 @@ export function TiptapEditor({
   // State cho Suggestion Mode (TASK-307)
   const [isSuggestionsPanelOpen, setIsSuggestionsPanelOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<DocumentSuggestion[]>([]);
+
+  // State cho Luồng Trình ký & Phê duyệt nội bộ (TASK-401, TASK-402)
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -307,6 +327,18 @@ export function TiptapEditor({
 
   return (
     <div className={`flex flex-col w-full ${className}`}>
+      {/* Banner tiến độ luồng trình ký & phê duyệt nội bộ (TASK-401, TASK-402, TASK-403) */}
+      <ApprovalBanner
+        draftId={draftId || ""}
+        status={draftStatus}
+        qrVerifyCode={qrVerifyCode}
+        activeChainId={activeChainId}
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        isCurrentApprover={isCurrentApprover}
+        onActionComplete={onWorkflowUpdate}
+      />
+
       {/* Thanh công cụ định dạng chuẩn văn thư */}
       <EditorToolbar
         editor={editor}
@@ -325,6 +357,8 @@ export function TiptapEditor({
         suggestionsCount={suggestions.length}
         isSuggestionsPanelOpen={isSuggestionsPanelOpen}
         draftId={draftId}
+        draftStatus={draftStatus}
+        onOpenSubmitApproval={() => setIsApprovalDialogOpen(true)}
       />
 
       {/* AI In-line Copilot Bubble Menu (TASK-205) */}
@@ -556,6 +590,20 @@ export function TiptapEditor({
           onOpenChange={setIsShareDialogOpen}
           draftId={draftId}
           draftTitle={draftTitle}
+        />
+      )}
+
+      {/* Sequential Approval Workflow Submission Dialog (TASK-401, TASK-402) */}
+      {draftId && (
+        <SubmitApprovalDialog
+          isOpen={isApprovalDialogOpen}
+          onClose={() => setIsApprovalDialogOpen(false)}
+          draftId={draftId}
+          draftTitle={draftTitle}
+          placeholderCount={placeholderCount}
+          onSubmitted={() => {
+            onWorkflowUpdate?.();
+          }}
         />
       )}
     </div>
