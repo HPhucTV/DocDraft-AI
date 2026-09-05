@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-serif: "Times New Roman", Times, serif;
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -25,6 +26,11 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+}
+
+.font-times,
+.font-nd30 {
+  font-family: "Times New Roman", Times, serif !important;
 }
 
 :root {

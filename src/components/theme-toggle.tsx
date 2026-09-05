@@ -11,13 +11,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function ThemeToggle() {
+import { cn } from "@/lib/utils";
+
+interface ThemeToggleProps {
+  className?: string;
+  variant?: "outline" | "ghost" | "default" | "secondary";
+}
+
+export function ThemeToggle({ className, variant = "ghost" }: ThemeToggleProps) {
   const { setTheme } = useTheme();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button
+          variant={variant}
+          size="icon"
+          className={cn(
+            "relative text-muted-foreground hover:text-foreground transition-colors",
+            className
+          )}
+        >
           <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Chuyển đổi giao diện</span>

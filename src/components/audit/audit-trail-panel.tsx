@@ -92,15 +92,15 @@ export function AuditTrailPanel({ draftId, isOpen, onClose }: AuditTrailPanelPro
 
   // Tính tỷ lệ trung bình AI Attribution
   const aiStats = React.useMemo(() => {
-    if (logs.length === 0) return { aiPct: 0, humanPct: 100, aiModel: "deepseek-v4-flash" };
+    if (logs.length === 0) return { aiPct: 0, humanPct: 100, aiModel: "DocDraft AI Core" };
 
     let totalAiWords = 0;
     let totalHumanWords = 0;
-    let detectedModel = "deepseek-v4-flash";
+    let detectedModel = "DocDraft AI Core";
 
     for (const log of logs) {
       if (log.details?.ai_model) {
-        detectedModel = log.details.ai_model;
+        detectedModel = "DocDraft AI Core";
       }
 
       if (log.source === "AI") {
@@ -162,7 +162,7 @@ export function AuditTrailPanel({ draftId, isOpen, onClose }: AuditTrailPanelPro
             <span>Tỷ lệ đóng góp nội dung</span>
           </span>
           <span className="text-muted-foreground text-[11px]">
-            Model: <strong className="text-foreground">{aiStats.aiModel}</strong>
+            Hệ thống: <strong className="text-foreground">{aiStats.aiModel}</strong>
           </span>
         </div>
 
@@ -246,7 +246,7 @@ export function AuditTrailPanel({ draftId, isOpen, onClose }: AuditTrailPanelPro
                     {isAi ? (
                       <>
                         <Sparkles className="h-3 w-3 text-primary" />
-                        <span>Trợ lý AI ({log.details?.ai_model || "deepseek-v4-flash"})</span>
+                        <span>Trợ lý DocDraft AI</span>
                       </>
                     ) : (
                       <>

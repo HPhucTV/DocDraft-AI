@@ -316,7 +316,7 @@ export function AIChatSidebar({
           </div>
           <div>
             <h3 className="font-bold text-sm sm:text-base leading-tight">
-              AI Chat Assistant (DeepSeek)
+              DocDraft AI Assistant
             </h3>
             <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">
               Ngữ cảnh: {documentTitle || "Văn bản hiện tại"}

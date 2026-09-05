@@ -70,7 +70,7 @@ export function AIFeedbackWidget({
           rating: newRating,
           promptSnippet: promptSnippet?.slice(0, 1000),
           completionSnippet: completionSnippet?.slice(0, 1000),
-          modelName: "deepseek-v4-flash",
+          modelName: "docdraft-ai-core",
         }),
       });
     } catch (err) {
@@ -96,7 +96,7 @@ export function AIFeedbackWidget({
           comment: comment.trim() || undefined,
           promptSnippet: promptSnippet?.slice(0, 1000),
           completionSnippet: completionSnippet?.slice(0, 1000),
-          modelName: "deepseek-v4-flash",
+          modelName: "docdraft-ai-core",
         }),
       });
 
@@ -175,7 +175,7 @@ export function AIFeedbackWidget({
               </div>
               <p className="font-semibold text-foreground">Cảm ơn bạn đã đóng góp!</p>
               <p className="text-[11px] text-muted-foreground">
-                Phản hồi giúp mô hình DeepSeek hoàn thiện văn phong chuẩn xác hơn.
+                Phản hồi giúp hệ thống DocDraft AI hoàn thiện văn phong chuẩn xác hơn.
               </p>
             </div>
           ) : (

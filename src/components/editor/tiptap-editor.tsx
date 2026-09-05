@@ -550,7 +550,7 @@ export function TiptapEditor({
           {isInlineLoading ? (
             <div className="ai-copilot-bubble-menu flex items-center gap-2 px-3.5 py-2 text-xs bg-white/95 dark:bg-slate-900/98 border border-slate-200/90 dark:border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-md">
               <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
-              <span className="menu-title font-medium">DeepSeek đang tối ưu câu chữ...</span>
+              <span className="menu-title font-medium">AI đang tối ưu câu chữ...</span>
             </div>
           ) : inlineSuggestion ? (
             /* Hiển thị bản xem trước gợi ý kèm nút [Chấp nhận / Bác bỏ] */

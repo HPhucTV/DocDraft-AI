@@ -281,7 +281,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-bold">DeepSeek API</h3>
                     <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full font-medium">
-                      Mô hình chính (deepseek-v4-flash)
+                      Mô hình chính (Tốc độ cao)
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -430,13 +430,13 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold">Google Gemini 3.7 Flash API</h3>
+                    <h3 className="text-lg font-bold">Google Gemini API</h3>
                     <span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded-full font-medium">
                       Dự phòng (Fallback)
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Tự động kích hoạt khi DeepSeek gặp sự cố gián đoạn hoặc quá tải 5xx
+                    Tự động kích hoạt khi cổng AI chính gặp sự cố gián đoạn hoặc quá tải mạng
                   </p>
                 </div>
               </div>
