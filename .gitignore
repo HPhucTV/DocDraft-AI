@@ -25,6 +25,7 @@ lerna-debug.log*
 out/
 build/
 dist/
+.exports/
 
 # --- PYTHON / FASTAPI (DOCUMENT SERVICE) ---
 __pycache__/

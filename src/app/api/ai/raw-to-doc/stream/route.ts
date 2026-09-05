@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { streamRestructuredDocument } from "@/lib/ai/raw-to-doc-service";
 import { AIProvider } from "@/lib/ai/ai-service";
+import { checkAiRateLimit, createRateLimitExceededResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,11 +11,18 @@ export const dynamic = "force-dynamic";
  * POST /api/ai/raw-to-doc/stream
  * Endpoint Server-Sent Events (SSE) chuẩn hóa nháp thô sang thể thức Nghị định 30 (TASK-201).
  * Áp dụng Prompt Chaining 2 bước: Bóc tách thực thể (Facts) → Tái cấu trúc văn bản.
+ * Tích hợp Rate Limiting & BYOK bypass (TASK-214).
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit check (TASK-214)
+  const rateLimitResult = await checkAiRateLimit(session.user.id);
+  if (!rateLimitResult.success) {
+    return createRateLimitExceededResponse(rateLimitResult);
   }
 
   const startTime = Date.now();

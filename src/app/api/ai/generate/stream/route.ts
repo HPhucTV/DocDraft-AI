@@ -7,6 +7,7 @@ import {
   generateDocumentStream,
   MASTER_SYSTEM_PROMPT,
 } from "@/lib/ai/ai-service";
+import { checkAiRateLimit, createRateLimitExceededResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,12 +16,18 @@ export const dynamic = "force-dynamic";
  * POST /api/ai/generate/stream
  * Endpoint Server-Sent Events (SSE) sinh văn bản theo thời gian thực (Typewriter Effect).
  * Hỗ trợ Heartbeat (mỗi 15s), AbortSignal khi người dùng bấm "Dừng sinh",
- * và cơ chế Fallback tự động sang Gemini 3.7 Flash.
+ * cơ chế Fallback tự động sang Gemini 3.7 Flash, và Rate Limiting (TASK-214).
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Kiểm tra Rate Limit (TASK-214: 20 req/giờ cho tài khoản miễn phí; bỏ qua nếu là BYOK)
+  const rateLimitResult = await checkAiRateLimit(session.user.id);
+  if (!rateLimitResult.success) {
+    return createRateLimitExceededResponse(rateLimitResult);
   }
 
   const startTime = Date.now();

@@ -8,6 +8,7 @@ import {
   DEFAULT_GEMINI_MODEL,
   AIProvider,
 } from "@/lib/ai/ai-service";
+import { checkAiRateLimit, createRateLimitExceededResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,11 +16,18 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/ai/chat
  * Server-Sent Events (SSE) AI Chat Sidebar giữ toàn bộ ngữ cảnh văn bản (TASK-206).
+ * Tích hợp Rate Limiting & BYOK bypass (TASK-214).
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit check (TASK-214)
+  const rateLimitResult = await checkAiRateLimit(session.user.id);
+  if (!rateLimitResult.success) {
+    return createRateLimitExceededResponse(rateLimitResult);
   }
 
   try {
