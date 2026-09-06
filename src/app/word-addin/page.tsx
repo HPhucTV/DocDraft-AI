@@ -22,10 +22,31 @@ import {
   Bot,
   Download,
   KeyRound,
+  SlidersHorizontal,
+  Check,
+  RotateCcw,
+  Bookmark,
+  PauseCircle,
+  PlayCircle,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  DocDraftFormatConfig,
+  FormatPresetId,
+  FORMAT_PRESETS,
+  getStoredFormatConfig,
+  saveStoredFormatConfig,
+  getStoredCustomProfiles,
+  saveCustomProfile,
+  deleteCustomProfile,
+  SupportedFontFamily,
+} from "@/lib/office/format-config";
+import {
+  formatDocumentWithConfig,
   formatDocumentND30,
+  applyDocumentMargins,
   insertNationalHeaderTable,
   insertSignatureFooterTable,
   getSelectedWordText,
@@ -103,12 +124,107 @@ export default function WordAddinTaskpanePage() {
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [userByokKey, setUserByokKey] = useState<string>("");
 
+  // Cấu hình Thể thức (Format Settings & Presets)
+  const [formatConfig, setFormatConfig] = useState<DocDraftFormatConfig>(FORMAT_PRESETS.nd30);
+  const [showFormatConfig, setShowFormatConfig] = useState(false);
+  const [streamWordCount, setStreamWordCount] = useState<number>(0);
+  const [customProfiles, setCustomProfiles] = useState<DocDraftFormatConfig[]>([]);
+  const [newProfileName, setNewProfileName] = useState<string>("");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("docdraft_user_byok") || "";
       setUserByokKey(saved);
+      setFormatConfig(getStoredFormatConfig());
+      setCustomProfiles(getStoredCustomProfiles());
     }
   }, []);
+
+  const handleSelectPreset = (presetId: FormatPresetId) => {
+    const next = { ...FORMAT_PRESETS[presetId] };
+    setFormatConfig(next);
+    saveStoredFormatConfig(next);
+    setStatusMessage({
+      type: "success",
+      text: `Đã kích hoạt thể thức: ${next.name}`,
+    });
+  };
+
+  const handleSelectCustomProfile = (profile: DocDraftFormatConfig) => {
+    setFormatConfig(profile);
+    saveStoredFormatConfig(profile);
+    setStatusMessage({
+      type: "success",
+      text: `Đã áp dụng hồ sơ thể thức: ${profile.name}`,
+    });
+  };
+
+  const handleSaveNewProfile = () => {
+    if (!newProfileName.trim()) return;
+    const profile: DocDraftFormatConfig = {
+      ...formatConfig,
+      preset: "custom",
+      name: newProfileName.trim(),
+    };
+    const updated = saveCustomProfile(profile);
+    setCustomProfiles(updated);
+    setFormatConfig(profile);
+    saveStoredFormatConfig(profile);
+    setNewProfileName("");
+    setStatusMessage({
+      type: "success",
+      text: `Đã lưu hồ sơ thể thức "${profile.name}" thành công!`,
+    });
+  };
+
+  const handleDeleteCustomProfile = (name: string) => {
+    const updated = deleteCustomProfile(name);
+    setCustomProfiles(updated);
+    setStatusMessage({
+      type: "info",
+      text: `Đã xóa hồ sơ "${name}".`,
+    });
+  };
+
+  const handleUpdateFormatConfig = (updates: Partial<DocDraftFormatConfig>) => {
+    const next: DocDraftFormatConfig = {
+      ...formatConfig,
+      ...updates,
+      preset: (updates.preset || "custom") as FormatPresetId,
+      name: updates.name || "Tùy chỉnh riêng",
+    };
+    setFormatConfig(next);
+    saveStoredFormatConfig(next);
+  };
+
+  const handleApplyFormatToDocument = async () => {
+    setIsLoading(true);
+    try {
+      const res = await formatDocumentWithConfig(formatConfig);
+      setStatusMessage({ type: "success", text: res.message });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Có lỗi";
+      setStatusMessage({ type: "error", text: msg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApplyMarginsOnly = async () => {
+    setIsLoading(true);
+    try {
+      await applyDocumentMargins(formatConfig.margins);
+      setStatusMessage({
+        type: "success",
+        text: `Đã căn lề tài liệu: Trái ${formatConfig.margins.left}mm, Phải ${formatConfig.margins.right}mm, Trên ${formatConfig.margins.top}mm, Dưới ${formatConfig.margins.bottom}mm.`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Có lỗi";
+      setStatusMessage({ type: "error", text: msg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSaveByokKey = () => {
     if (typeof window !== "undefined") {
@@ -249,12 +365,12 @@ export default function WordAddinTaskpanePage() {
     }
   }, [chatMessages, activeTab]);
 
-  // 1-Click Chuẩn hóa thể thức NĐ 30
+  // 1-Click Chuẩn hóa thể thức theo cấu hình hiện hành (NĐ 30, Doanh nghiệp, Trường học...)
   const handleFormatND30 = async () => {
     setIsLoading(true);
     setStatusMessage(null);
     try {
-      const result = await formatDocumentND30();
+      const result = await formatDocumentWithConfig(formatConfig);
       setStatusMessage({ type: "success", text: result.message });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Có lỗi xảy ra";
@@ -343,6 +459,7 @@ export default function WordAddinTaskpanePage() {
     if (!selectedTemplateId) return;
     setIsGeneratingTemplate(true);
     setGeneratedDocHtml("");
+    setStreamWordCount(0);
     setStatusMessage({ type: "info", text: "DocDraft AI đang kết nối và chuẩn bị sinh văn bản..." });
 
     try {
@@ -383,12 +500,12 @@ export default function WordAddinTaskpanePage() {
               if (currentEvent === "thinking") {
                 setStatusMessage({
                   type: "info",
-                  text: "AI đang suy nghĩ và lập dàn ý thể thức NĐ 30...",
+                  text: "AI đang suy nghĩ và lập dàn ý thể thức...",
                 });
               } else if (currentEvent === "content") {
                 setStatusMessage({
                   type: "info",
-                  text: "AI đang soạn thảo văn bản...",
+                  text: "AI đang soạn thảo trực tiếp...",
                 });
               }
               continue;
@@ -410,11 +527,15 @@ export default function WordAddinTaskpanePage() {
                 if (textChunk) {
                   accumulated += textChunk;
                   setGeneratedDocHtml(accumulated);
+                  const count = accumulated.trim().split(/\s+/).filter(Boolean).length;
+                  setStreamWordCount(count);
                 }
               } catch {
                 if (currentEvent !== "ping" && currentEvent !== "error" && currentEvent !== "done") {
                   accumulated += dataStr;
                   setGeneratedDocHtml(accumulated);
+                  const count = accumulated.trim().split(/\s+/).filter(Boolean).length;
+                  setStreamWordCount(count);
                 }
               }
             }
@@ -432,7 +553,9 @@ export default function WordAddinTaskpanePage() {
               const parsed = JSON.parse(dataStr);
               const textChunk =
                 parsed.text ?? parsed.chunk ?? parsed.content ?? "";
-              if (textChunk) accumulated += textChunk;
+              if (textChunk) {
+                accumulated += textChunk;
+              }
             } catch {
               accumulated += dataStr;
             }
@@ -442,10 +565,32 @@ export default function WordAddinTaskpanePage() {
 
       if (accumulated.trim()) {
         setGeneratedDocHtml(accumulated);
-        setStatusMessage({
-          type: "success",
-          text: "AI đã sinh xong văn bản! Bạn có thể bấm 'Chèn vào Word' bên dưới.",
-        });
+        const totalWords = accumulated.trim().split(/\s+/).filter(Boolean).length;
+        setStreamWordCount(totalWords);
+
+        if (formatConfig.autoInsertToWord) {
+          setStatusMessage({
+            type: "info",
+            text: `AI đã sinh xong (${totalWords} từ). Đang tự động chèn vào Word...`,
+          });
+          const insertRes = await insertDocumentContent(accumulated, formatConfig);
+          if (insertRes.success) {
+            setStatusMessage({
+              type: "success",
+              text: `Đã tự động chèn văn bản (${totalWords} từ) vào Word chuẩn thể thức "${formatConfig.name}"!`,
+            });
+          } else {
+            setStatusMessage({
+              type: "error",
+              text: `Lỗi khi tự động chèn: ${insertRes.message}`,
+            });
+          }
+        } else {
+          setStatusMessage({
+            type: "success",
+            text: `AI đã sinh xong văn bản (${totalWords} từ)! Bấm "Chèn vào Word" để ghi vào tài liệu.`,
+          });
+        }
       } else {
         throw new Error("Không nhận được nội dung từ AI. Vui lòng thử lại.");
       }
@@ -465,6 +610,7 @@ export default function WordAddinTaskpanePage() {
     }
     setIsPolishing(true);
     setPolishedHtml("");
+    setStreamWordCount(0);
     setStatusMessage({ type: "info", text: "AI đang phân tích và tái cấu trúc nháp thô..." });
 
     try {
@@ -520,11 +666,15 @@ export default function WordAddinTaskpanePage() {
                 if (textChunk) {
                   accumulated += textChunk;
                   setPolishedHtml(accumulated);
+                  const count = accumulated.trim().split(/\s+/).filter(Boolean).length;
+                  setStreamWordCount(count);
                 }
               } catch {
                 if (currentEvent !== "ping" && currentEvent !== "error" && currentEvent !== "done") {
                   accumulated += dataStr;
                   setPolishedHtml(accumulated);
+                  const count = accumulated.trim().split(/\s+/).filter(Boolean).length;
+                  setStreamWordCount(count);
                 }
               }
             }
@@ -551,10 +701,32 @@ export default function WordAddinTaskpanePage() {
 
       if (accumulated.trim()) {
         setPolishedHtml(accumulated);
-        setStatusMessage({
-          type: "success",
-          text: "Đã chuốt xong văn bản! Sẵn sàng chèn vào Word.",
-        });
+        const totalWords = accumulated.trim().split(/\s+/).filter(Boolean).length;
+        setStreamWordCount(totalWords);
+
+        if (formatConfig.autoInsertToWord) {
+          setStatusMessage({
+            type: "info",
+            text: `Đã chuốt xong (${totalWords} từ). Đang tự động chèn vào Word...`,
+          });
+          const insertRes = await insertDocumentContent(accumulated, formatConfig);
+          if (insertRes.success) {
+            setStatusMessage({
+              type: "success",
+              text: `Đã tự động chèn văn bản chuốt (${totalWords} từ) vào Word chuẩn thể thức "${formatConfig.name}"!`,
+            });
+          } else {
+            setStatusMessage({
+              type: "error",
+              text: `Lỗi khi tự động chèn: ${insertRes.message}`,
+            });
+          }
+        } else {
+          setStatusMessage({
+            type: "success",
+            text: `Đã chuốt xong văn bản (${totalWords} từ)! Bấm "Chèn vào Word" để ghi vào tài liệu.`,
+          });
+        }
       } else {
         throw new Error("Không nhận được kết quả chuốt từ AI. Vui lòng thử lại.");
       }
@@ -678,7 +850,7 @@ export default function WordAddinTaskpanePage() {
     setIsLoading(true);
     try {
       const cleaned = cleanHtmlForWord(html);
-      const res = await insertDocumentContent(cleaned);
+      const res = await insertDocumentContent(cleaned, formatConfig);
       setStatusMessage({ type: "success", text: res.message });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi";
@@ -691,7 +863,7 @@ export default function WordAddinTaskpanePage() {
   // Chèn snippet tại con trỏ
   const handleInsertSnippet = async (text: string) => {
     try {
-      const res = await insertSnippetAtCursor(text);
+      const res = await insertSnippetAtCursor(text, formatConfig);
       setStatusMessage({ type: "success", text: res.message });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi";
@@ -782,6 +954,359 @@ export default function WordAddinTaskpanePage() {
             </button>
           </div>
         )}
+
+        {/* FORMAT CONTROL BAR (PRESETS & AUTO-INSERT TOGGLE) */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+          <div className="p-2.5 flex items-center justify-between gap-1.5">
+            {/* Preset selector chip */}
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">Thể thức:</span>
+              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 truncate flex items-center gap-1">
+                {formatConfig.preset === "nd30" && "🏛️ NĐ 30"}
+                {formatConfig.preset === "corporate" && "🏢 Doanh nghiệp"}
+                {formatConfig.preset === "school" && "🏫 Trường học"}
+                {formatConfig.preset === "custom" && `⚙️ ${formatConfig.name}`}
+              </span>
+            </div>
+
+            {/* Quick controls: Auto-insert toggle & Settings gear */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  handleUpdateFormatConfig({ autoInsertToWord: !formatConfig.autoInsertToWord })
+                }
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold border transition-colors flex items-center gap-1 ${
+                  formatConfig.autoInsertToWord
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400"
+                }`}
+                title="Tự động ghi thẳng văn bản vào Word ngay sau khi AI hoàn tất"
+              >
+                {formatConfig.autoInsertToWord ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Auto-insert: BẬT
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    Auto-insert: TẮT
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowFormatConfig(!showFormatConfig)}
+                className={`p-1 rounded-md border transition-colors ${
+                  showFormatConfig
+                    ? "bg-indigo-50 border-indigo-300 text-indigo-600 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+                title="Tùy chỉnh font chữ, cỡ chữ, khoảng cách dòng, lề trang"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* EXPANDABLE FORMAT DRAWER */}
+          {showFormatConfig && (
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 space-y-3 text-[11px] animate-in fade-in duration-150">
+              {/* 4 Presets Pills */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  Chọn bộ mẫu chuẩn (Preset):
+                </label>
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("nd30")}
+                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                      formatConfig.preset === "nd30"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🏛️ Nghị định 30</span>
+                    {formatConfig.preset === "nd30" && <Check className="w-3 h-3" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("corporate")}
+                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                      formatConfig.preset === "corporate"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🏢 Doanh nghiệp (SME)</span>
+                    {formatConfig.preset === "corporate" && <Check className="w-3 h-3" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("school")}
+                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                      formatConfig.preset === "school"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🏫 Trường học / Nội bộ</span>
+                    {formatConfig.preset === "school" && <Check className="w-3 h-3" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("custom")}
+                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                      formatConfig.preset === "custom"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>⚙️ Tùy chỉnh riêng</span>
+                    {formatConfig.preset === "custom" && <Check className="w-3 h-3" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Font & Size */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Font chữ:</label>
+                  <select
+                    value={formatConfig.fontFamily}
+                    onChange={(e) =>
+                      handleUpdateFormatConfig({ fontFamily: e.target.value as SupportedFontFamily })
+                    }
+                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                  >
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Calibri">Calibri</option>
+                    <option value="Segoe UI">Segoe UI</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Cỡ chữ (pt):</label>
+                  <select
+                    value={formatConfig.fontSize}
+                    onChange={(e) => handleUpdateFormatConfig({ fontSize: Number(e.target.value) })}
+                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                  >
+                    <option value={11}>11 pt</option>
+                    <option value={12}>12 pt</option>
+                    <option value={13}>13 pt (Chuẩn NĐ30)</option>
+                    <option value={14}>14 pt</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Line Spacing & Space After */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Giãn dòng (Line Spacing):</label>
+                  <select
+                    value={formatConfig.lineSpacing}
+                    onChange={(e) => handleUpdateFormatConfig({ lineSpacing: Number(e.target.value) })}
+                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                  >
+                    <option value={1.0}>Single (1.0)</option>
+                    <option value={1.15}>Multiple 1.15</option>
+                    <option value={1.2}>Multiple 1.2 (Chuẩn NĐ30)</option>
+                    <option value={1.3}>Multiple 1.3</option>
+                    <option value={1.5}>1.5 Lines</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Cách đoạn dưới (Space After):</label>
+                  <select
+                    value={formatConfig.spaceAfter}
+                    onChange={(e) => handleUpdateFormatConfig({ spaceAfter: Number(e.target.value) })}
+                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                  >
+                    <option value={0}>0 pt (Sát dòng)</option>
+                    <option value={2}>2 pt</option>
+                    <option value={3}>3 pt</option>
+                    <option value={4}>4 pt</option>
+                    <option value={6}>6 pt (Rộng)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Alignment & Indent */}
+              <div className="grid grid-cols-2 gap-2 items-center">
+                <div>
+                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Căn lề đoạn:</label>
+                  <select
+                    value={formatConfig.alignment}
+                    onChange={(e) =>
+                      handleUpdateFormatConfig({ alignment: e.target.value as "Justified" | "Left" })
+                    }
+                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                  >
+                    <option value="Justified">Justified (Đều 2 bên)</option>
+                    <option value="Left">Left (Căn trái)</option>
+                  </select>
+                </div>
+
+                <label className="flex items-center gap-1.5 text-[11px] pt-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formatConfig.indentFirstLine}
+                    onChange={(e) => handleUpdateFormatConfig({ indentFirstLine: e.target.checked })}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span>Thụt đầu dòng (1.27cm)</span>
+                </label>
+              </div>
+
+              {/* Margins Setup (mm) */}
+              <div className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                    Căn lề trang Word (mm):
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyMarginsOnly}
+                    disabled={isLoading}
+                    className="h-6 text-[9px] px-2"
+                    title="Áp dụng lề trang vào văn bản Word"
+                  >
+                    Đặt lề trang Word
+                  </Button>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <div>
+                    <span className="text-[9px] text-slate-400 block">Trên</span>
+                    <input
+                      type="number"
+                      value={formatConfig.margins.top}
+                      onChange={(e) =>
+                        handleUpdateFormatConfig({
+                          margins: { ...formatConfig.margins, top: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block">Dưới</span>
+                    <input
+                      type="number"
+                      value={formatConfig.margins.bottom}
+                      onChange={(e) =>
+                        handleUpdateFormatConfig({
+                          margins: { ...formatConfig.margins, bottom: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block">Trái</span>
+                    <input
+                      type="number"
+                      value={formatConfig.margins.left}
+                      onChange={(e) =>
+                        handleUpdateFormatConfig({
+                          margins: { ...formatConfig.margins, left: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block">Phải</span>
+                    <input
+                      type="number"
+                      value={formatConfig.margins.right}
+                      onChange={(e) =>
+                        handleUpdateFormatConfig({
+                          margins: { ...formatConfig.margins, right: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Custom Profile */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block">
+                  Lưu cấu hình thành hồ sơ riêng:
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="Tên hồ sơ (VD: Hợp đồng XYZ...)"
+                    value={newProfileName}
+                    onChange={(e) => setNewProfileName(e.target.value)}
+                    className="flex-1 text-[11px] px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSaveNewProfile}
+                    disabled={!newProfileName.trim()}
+                    className="h-7 text-[10px] px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    <Plus className="w-3 h-3 mr-0.5" /> Lưu
+                  </Button>
+                </div>
+
+                {customProfiles.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[9px] text-slate-400 block">Hồ sơ đã lưu:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {customProfiles.map((p) => (
+                        <div
+                          key={p.name}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleSelectCustomProfile(p)}
+                            className="hover:text-indigo-600 font-medium"
+                          >
+                            {p.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCustomProfile(p.name)}
+                            className="text-slate-400 hover:text-rose-600 ml-0.5"
+                            title="Xóa hồ sơ"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Button apply format to active Word doc */}
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleApplyFormatToDocument}
+                disabled={isLoading}
+                className="w-full h-8 text-[11px] font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white"
+              >
+                <FileCheck className="w-3.5 h-3.5 mr-1" />
+                Áp dụng toàn bộ thể thức vào tệp Word này
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* 4-TAB NAVIGATION BAR */}
         <div className="grid grid-cols-4 gap-1 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-lg text-[11px] font-semibold">
@@ -1021,43 +1546,81 @@ export default function WordAddinTaskpanePage() {
               </Button>
             </div>
 
-            {/* Preview & Insert Button */}
-            {(generatedDocHtml || isGeneratingTemplate) && (
-              <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2 animate-in fade-in duration-200">
+            {/* LIVE PROGRESS CARD (WHEN GENERATING) */}
+            {isGeneratingTemplate && (
+              <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/40 dark:to-slate-900 space-y-2.5 shadow-xs animate-in fade-in">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-                    {isGeneratingTemplate ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
-                        AI đang soạn thảo...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                        Bản nháp AI vừa sinh:
-                      </>
-                    )}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-md bg-indigo-600 text-white">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200 block">
+                        AI đang soạn thảo trực tiếp...
+                      </span>
+                      <span className="text-[10px] text-indigo-700 dark:text-indigo-400 font-medium">
+                        Đã sinh: <span className="font-bold font-mono">{streamWordCount}</span> từ
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdateFormatConfig({
+                        autoInsertToWord: !formatConfig.autoInsertToWord,
+                      })
+                    }
+                    className={`text-[9px] px-2 py-0.5 rounded-full font-bold border transition-colors flex items-center gap-1 ${
+                      formatConfig.autoInsertToWord
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                    title="Tạm dừng hoặc bật tự động ghi vào Word"
+                  >
+                    {formatConfig.autoInsertToWord ? "⚡ Auto-insert: BẬT" : "⏸️ Auto-insert: TẮT"}
+                  </button>
+                </div>
+
+                {/* Progress animated bar */}
+                <div className="w-full bg-indigo-100 dark:bg-indigo-950 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-indigo-600 h-1.5 rounded-full animate-pulse" style={{ width: "100%" }} />
+                </div>
+
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight italic">
+                  {formatConfig.autoInsertToWord
+                    ? `⚡ Văn bản sẽ tự động ghi thẳng vào Word theo chuẩn "${formatConfig.name}" ngay khi hoàn tất.`
+                    : `⏸️ Đã tạm dừng tự động ghi. Bạn có thể bấm "Chèn vào Word" khi hoàn tất.`}
+                </p>
+              </div>
+            )}
+
+            {/* COMPLETION CARD (WHEN FINISHED) */}
+            {!isGeneratingTemplate && generatedDocHtml && (
+              <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <span className="text-[11px] font-bold text-emerald-900 dark:text-emerald-200 block">
+                        Đã sinh xong văn bản ({streamWordCount} từ)
+                      </span>
+                      <span className="text-[9px] text-emerald-700 dark:text-emerald-400">
+                        {formatConfig.autoInsertToWord
+                          ? `✅ Đã tự động chèn vào Word chuẩn ${formatConfig.name}`
+                          : "Sẵn sàng ghi vào tài liệu"}
+                      </span>
+                    </div>
+                  </div>
                   <Button
                     size="sm"
                     onClick={() => handleInsertGenerated(generatedDocHtml)}
-                    disabled={isLoading || isGeneratingTemplate || !generatedDocHtml}
+                    disabled={isLoading}
                     className="h-7 text-[10px] px-2.5 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
                   >
                     <ArrowDownToLine className="w-3.5 h-3.5" />
-                    Chèn vào Word
+                    {formatConfig.autoInsertToWord ? "Chèn lại vào Word" : "Chèn vào Word"}
                   </Button>
                 </div>
-
-                <div
-                  className="max-h-48 overflow-y-auto p-2.5 rounded bg-white dark:bg-slate-900 text-[10px] border border-indigo-100 dark:border-indigo-900 text-slate-700 dark:text-slate-300 leading-relaxed font-sans"
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeHtml(
-                      generatedDocHtml ||
-                        `<p class="italic text-slate-400 dark:text-slate-500">DocDraft AI đang kết nối và sinh văn bản...</p>`
-                    ),
-                  }}
-                />
               </div>
             )}
           </div>
@@ -1069,7 +1632,7 @@ export default function WordAddinTaskpanePage() {
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-2.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                Chuốt nháp thô sang thể thức NĐ 30
+                Chuốt nháp thô sang thể thức văn bản
               </span>
 
               <div className="space-y-1">
@@ -1112,47 +1675,84 @@ export default function WordAddinTaskpanePage() {
                 ) : (
                   <Wand2 className="w-3.5 h-3.5" />
                 )}
-                {isPolishing ? "Đang chuốt văn bản..." : "AI Tái cấu trúc chuẩn NĐ 30"}
+                {isPolishing ? "Đang chuốt văn bản..." : "AI Tái cấu trúc theo thể thức"}
               </Button>
             </div>
 
-            {/* Polished Result */}
-            {(polishedHtml || isPolishing) && (
-              <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 space-y-2 animate-in fade-in duration-200">
+            {/* LIVE PROGRESS CARD (WHEN POLISHING) */}
+            {isPolishing && (
+              <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-gradient-to-br from-purple-50/70 to-white dark:from-purple-950/40 dark:to-slate-900 space-y-2.5 shadow-xs animate-in fade-in">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
-                    {isPolishing ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600 dark:text-purple-400" />
-                        AI đang tái cấu trúc...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                        Văn bản sau chuốt:
-                      </>
-                    )}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-md bg-purple-600 text-white">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-purple-900 dark:text-purple-200 block">
+                        AI đang tái cấu trúc nháp thô...
+                      </span>
+                      <span className="text-[10px] text-purple-700 dark:text-purple-400 font-medium">
+                        Đã chuốt: <span className="font-bold font-mono">{streamWordCount}</span> từ
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdateFormatConfig({
+                        autoInsertToWord: !formatConfig.autoInsertToWord,
+                      })
+                    }
+                    className={`text-[9px] px-2 py-0.5 rounded-full font-bold border transition-colors flex items-center gap-1 ${
+                      formatConfig.autoInsertToWord
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                    title="Tạm dừng hoặc bật tự động ghi vào Word"
+                  >
+                    {formatConfig.autoInsertToWord ? "⚡ Auto-insert: BẬT" : "⏸️ Auto-insert: TẮT"}
+                  </button>
+                </div>
+
+                <div className="w-full bg-purple-100 dark:bg-purple-950 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-purple-600 h-1.5 rounded-full animate-pulse" style={{ width: "100%" }} />
+                </div>
+
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight italic">
+                  {formatConfig.autoInsertToWord
+                    ? `⚡ Văn bản chuốt sẽ tự động ghi vào Word theo chuẩn "${formatConfig.name}" ngay khi hoàn tất.`
+                    : `⏸️ Đang tạm dừng tự động ghi. Bạn có thể bấm "Chèn vào Word" khi hoàn tất.`}
+                </p>
+              </div>
+            )}
+
+            {/* COMPLETION CARD (WHEN POLISHED) */}
+            {!isPolishing && polishedHtml && (
+              <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <div>
+                      <span className="text-[11px] font-bold text-purple-900 dark:text-purple-200 block">
+                        Đã chuốt xong ({streamWordCount} từ)
+                      </span>
+                      <span className="text-[9px] text-purple-700 dark:text-purple-400">
+                        {formatConfig.autoInsertToWord
+                          ? `✅ Đã tự động chèn vào Word chuẩn ${formatConfig.name}`
+                          : "Sẵn sàng ghi vào tài liệu"}
+                      </span>
+                    </div>
+                  </div>
                   <Button
                     size="sm"
                     onClick={() => handleInsertGenerated(polishedHtml)}
-                    disabled={isLoading || isPolishing || !polishedHtml}
+                    disabled={isLoading}
                     className="h-7 text-[10px] px-2.5 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
                   >
                     <ArrowDownToLine className="w-3.5 h-3.5" />
-                    Chèn vào Word
+                    {formatConfig.autoInsertToWord ? "Chèn lại vào Word" : "Chèn vào Word"}
                   </Button>
                 </div>
-
-                <div
-                  className="max-h-48 overflow-y-auto p-2.5 rounded bg-white dark:bg-slate-900 text-[10px] border border-purple-100 dark:border-purple-900 text-slate-700 dark:text-slate-300 leading-relaxed font-sans"
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeHtml(
-                      polishedHtml ||
-                        `<p class="italic text-slate-400 dark:text-slate-500">DocDraft AI đang tái cấu trúc nháp thô...</p>`
-                    ),
-                  }}
-                />
               </div>
             )}
           </div>
