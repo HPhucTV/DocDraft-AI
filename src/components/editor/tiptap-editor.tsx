@@ -746,7 +746,7 @@ export function TiptapEditor({
         {/* Không gian Bàn làm việc (The Desk) cuộn mượt mà */}
         <div className="flex-1 bg-slate-100/90 dark:bg-[#070b13] p-3 sm:p-6 md:p-8 lg:p-10 overflow-y-auto overflow-x-auto flex flex-col items-center editor-canvas-scroll select-text">
           {/* Thanh chỉ số lề giấy & Khổ văn bản A4 chuẩn NĐ 30 */}
-          <div className="w-full max-w-[210mm] flex items-center justify-between text-[11px] text-muted-foreground/80 mb-3 px-1 font-mono select-none">
+          <div className="w-full max-w-[210mm] flex items-center justify-between text-[11px] text-muted-foreground/80 mb-3 px-1 font-mono select-none no-print">
             <div className="flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Khổ A4 (210 × 297 mm)</span>
@@ -765,7 +765,7 @@ export function TiptapEditor({
 
           {/* Banner Cứu hộ Dữ liệu khẩn cấp khi người dùng lỡ thoát chưa bấm Lưu (LocalStorage Recovery) */}
           {localBackup && stats.characters === 0 && (
-            <div className="w-full max-w-[210mm] mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 animate-in fade-in">
+            <div className="w-full max-w-[210mm] mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 animate-in fade-in no-print">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 animate-bounce" />
                 <span>
@@ -793,7 +793,11 @@ export function TiptapEditor({
           )}
 
           {/* Thước đo căn lề khổ A4 (Word Ruler) */}
-          {showRuler && <WordRuler zoomLevel={zoomLevel} />}
+          {showRuler && (
+            <div className="no-print w-full flex justify-center">
+              <WordRuler zoomLevel={zoomLevel} />
+            </div>
+          )}
 
           {/* Tờ giấy A4 chuẩn Nghị định 30/2020/NĐ-CP */}
           <div
@@ -816,7 +820,7 @@ export function TiptapEditor({
           </div>
 
           {/* Vạch kết thúc trang tài liệu */}
-          <div className="w-full max-w-[210mm] text-center text-[10px] text-muted-foreground/50 mt-6 mb-4 select-none">
+          <div className="w-full max-w-[210mm] text-center text-[10px] text-muted-foreground/50 mt-6 mb-4 select-none no-print">
             — Hết trang văn bản —
           </div>
         </div>

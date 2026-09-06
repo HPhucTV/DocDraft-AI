@@ -103,6 +103,65 @@ body {
     margin-right: 15mm;
   }
 
+  /* Ẩn toàn bộ thanh công cụ, header, sidebar, popup, nút bấm khi in */
+  header,
+  nav,
+  aside,
+  footer,
+  button,
+  .no-print,
+  .editor-ribbon,
+  .word-ruler-container,
+  .comments-panel,
+  .suggestions-panel,
+  [role="dialog"],
+  [data-radix-popper-content-wrapper],
+  [data-no-print="true"] {
+    display: none !important;
+  }
+
+  /* Đặt lại khung trang in */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+
+  main {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .editor-canvas-scroll {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    display: block !important;
+  }
+
+  .a4-paper-canvas {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    transform: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
   /* Tránh rớt mồ côi dòng đầu/cuối của đoạn văn (Orphans & Widows) */
   p, div {
     orphans: 3;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { r2Storage } from "@/lib/storage/r2-storage";
 import { optimizeHtmlForPdfPageBreak } from "@/lib/export/pdf-page-break";
+import { buildWordDocumentHtml } from "@/lib/export/word-fallback";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
  * POST /api/export/[format] (docx | pdf)
  * Next.js Proxy xuất bản văn bản sang Document Service (FastAPI)
  * Tích hợp Cloudflare R2 Storage & SHA-256 Hash Cache (TASK-213, ADR-007, ADR-009).
+ * Có cơ chế tự động Fallback xuất trực tiếp nếu Document Service ngoại tuyến.
  */
 export async function POST(
   req: NextRequest,
@@ -46,6 +48,9 @@ export async function POST(
       format === "docx"
         ? body.contentJson || body.content_json || body.tiptap_json || { type: "doc", content: [] }
         : body.htmlContent || body.html_content || body.html || "<p></p>";
+
+    const htmlContentForFallback =
+      body.htmlContent || body.html_content || body.html || "<p></p>";
 
     const content =
       format === "pdf" && typeof rawContent === "string"
@@ -90,11 +95,10 @@ export async function POST(
       }
     }
 
-    // 3. Cache Miss: Gọi Document Service (FastAPI) để render
+    // 3. Gọi Document Service (FastAPI) nếu có sẵn
     const documentServiceUrl =
       process.env.DOCUMENT_SERVICE_URL || "http://localhost:8000";
     const internalSecret = process.env.INTERNAL_SECRET || "";
-
     const targetUrl = `${documentServiceUrl}/export/${format}`;
 
     const payload =
@@ -112,64 +116,94 @@ export async function POST(
             config,
           };
 
-    const res = await fetch(targetUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Internal-Secret": internalSecret,
-      },
-      body: JSON.stringify(payload),
-    });
+    let res: Response | null = null;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
 
-    if (!res.ok) {
-      const errDetail = await res.text();
-      return NextResponse.json(
-        { error: `Document Service error (${res.status}): ${errDetail}` },
-        { status: res.status }
-      );
+      res = await fetch(targetUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Secret": internalSecret,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchErr) {
+      console.warn(`[Export API] Không thể kết nối Document Service tại ${targetUrl}:`, fetchErr);
+      res = null;
     }
 
-    const fileArrayBuffer = await res.arrayBuffer();
-    const buffer = Buffer.from(fileArrayBuffer);
+    // NẾU DOCUMENT SERVICE THÀNH CÔNG: Trả về kết quả chính thức từ Python
+    if (res && res.ok) {
+      const fileArrayBuffer = await res.arrayBuffer();
+      const buffer = Buffer.from(fileArrayBuffer);
 
-    // 4. Lưu trữ tệp vào R2 Storage / Cache & ghi nhận vào DB
-    const saved = await r2Storage.saveExportFile({
-      buffer,
-      hash: contentHash,
-      format,
-      draftId: draftId !== "draft-temp" ? draftId : undefined,
-      userId: session.user.id,
-      title,
-      hasImageSignature: body.hasImageSignature || false,
-    });
-
-    if (urlMode) {
-      return NextResponse.json({
-        success: true,
-        cached: false,
+      // 4. Lưu trữ tệp vào R2 Storage / Cache & ghi nhận vào DB
+      const saved = await r2Storage.saveExportFile({
+        buffer,
         hash: contentHash,
-        downloadUrl: saved.presignedUrl || saved.fileUrl,
+        format,
+        draftId: draftId !== "draft-temp" ? draftId : undefined,
+        userId: session.user.id,
+        title,
+        hasImageSignature: body.hasImageSignature || false,
+      });
+
+      if (urlMode) {
+        return NextResponse.json({
+          success: true,
+          cached: false,
+          hash: contentHash,
+          downloadUrl: saved.presignedUrl || saved.fileUrl,
+        });
+      }
+
+      const mediaType =
+        format === "docx"
+          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : "application/pdf";
+
+      const safePayloadTitle = (payload.title || "document").replace(/[^\w\s.-]/g, "_");
+      const encodedPayloadTitle = encodeURIComponent(payload.title || "document");
+      const contentDisposition =
+        res.headers.get("Content-Disposition") ||
+        `attachment; filename="${safePayloadTitle}.${format}"; filename*=UTF-8''${encodedPayloadTitle}.${format}`;
+
+      return new Response(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": mediaType,
+          "Content-Disposition": contentDisposition,
+          "X-DocDraft-Cache": "MISS",
+          "X-DocDraft-Hash": contentHash,
+        },
       });
     }
 
-    const mediaType =
-      format === "docx"
-        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        : "application/pdf";
+    // NẾU DOCUMENT SERVICE NGOẠI TUYẾN / LỖI: KÍCH HOẠT FALLBACK TỰ ĐỘNG
+    const safeTitle = (title || "Van_ban").replace(/[^\w\s.-]/g, "_");
+    const encodedTitle = encodeURIComponent(title || "Van_ban");
 
-    const safePayloadTitle = (payload.title || "document").replace(/[^\w\s.-]/g, "_");
-    const encodedPayloadTitle = encodeURIComponent(payload.title || "document");
-    const contentDisposition =
-      res.headers.get("Content-Disposition") ||
-      `attachment; filename="${safePayloadTitle}.${format}"; filename*=UTF-8''${encodedPayloadTitle}.${format}`;
+    if (format === "docx") {
+      const wordDocHtml = buildWordDocumentHtml(title, htmlContentForFallback);
+      const buffer = Buffer.from("\ufeff" + wordDocHtml, "utf-8");
 
-    return new Response(new Uint8Array(buffer), {
-      headers: {
-        "Content-Type": mediaType,
-        "Content-Disposition": contentDisposition,
-        "X-DocDraft-Cache": "MISS",
-        "X-DocDraft-Hash": contentHash,
-      },
+      return new Response(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": "application/msword; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${safeTitle}.doc"; filename*=UTF-8''${encodedTitle}.doc`,
+          "X-DocDraft-Fallback": "TRUE",
+        },
+      });
+    }
+
+    // Format là PDF: Báo client chuyển tiếp sang Print / Save PDF vector của trình duyệt
+    return NextResponse.json({
+      success: false,
+      fallback: "client_print",
+      message: "Document Service không khả dụng. Đang tự động chuyển sang chế độ In / Lưu PDF của trình duyệt.",
     });
   } catch (error: unknown) {
     console.error(`Lỗi proxy xuất ${format}:`, error);
@@ -177,6 +211,7 @@ export async function POST(
     return NextResponse.json(
       {
         error: `Không thể kết nối đến Document Service: ${msg}`,
+        fallback: "client_print",
       },
       { status: 502 }
     );

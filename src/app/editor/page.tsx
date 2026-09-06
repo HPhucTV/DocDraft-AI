@@ -45,6 +45,7 @@ import { SideBySideDiffModal } from "@/components/diff/side-by-side-diff-modal";
 import { AuditTrailPanel } from "@/components/audit/audit-trail-panel";
 import { VersionHistoryPanel } from "@/components/editor/version-history-panel";
 import { OfflineStatusPill } from "@/components/offline/offline-status-pill";
+import { buildWordDocumentHtml } from "@/lib/export/word-fallback";
 
 interface TemplateItem {
   id: string;
@@ -481,52 +482,134 @@ function EditorContentComponent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Kích hoạt hộp thoại In / Lưu PDF vector chất lượng cao của trình duyệt
+  const triggerBrowserPdfPrint = () => {
+    const originalTitle = document.title;
+    const cleanTitle = (documentTitle || "Van_ban")
+      .replace(/[/\\?%*:|"<>]/g, "-")
+      .trim();
+
+    // Gán tạm document.title để trình duyệt tự điền tên file PDF trùng với tiêu đề văn bản
+    document.title = cleanTitle;
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1500);
+    }, 50);
+  };
+
+  // Xuất file Word tương thích trực tiếp từ Client (Không phụ thuộc Python Service)
+  const exportWordDirectly = (title: string, html: string) => {
+    const cleanTitle = (title || "Van_ban").replace(/[/\\?%*:|"<>]/g, "-").trim();
+    const wordHtml = buildWordDocumentHtml(cleanTitle, html);
+    const blob = new Blob(["\ufeff", wordHtml], {
+      type: "application/msword;charset=utf-8",
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `${cleanTitle}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(downloadUrl);
+  };
+
   // 9. Xuất bản văn bản (Word .docx hoặc PDF) (TASK-113, TASK-114, TASK-115)
   const handleExport = async (format: "docx" | "pdf") => {
     if (!editorContent) return;
     setExportingFormat(format);
     try {
-      const payload =
-        format === "docx"
-          ? {
+      if (format === "pdf") {
+        let downloaded = false;
+        try {
+          const res = await fetch(`/api/export/pdf`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: documentTitle,
+              html_content: editorContent,
+            }),
+          });
+
+          const contentType = res.headers.get("Content-Type") || "";
+          if (res.ok && contentType.includes("application/pdf")) {
+            const blob = await res.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            const cleanTitle = (documentTitle || "Van_ban")
+              .replace(/[/\\?%*:|"<>]/g, "-")
+              .trim();
+            a.download = `${cleanTitle}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            downloaded = true;
+          }
+        } catch (e) {
+          console.warn("Document Service ngoại tuyến, tự động chuyển sang in/lưu PDF trình duyệt:", e);
+        }
+
+        // Tự động chuyển tiếp sang chế độ In / Lưu PDF vector chất lượng cao nếu Document Service offline
+        if (!downloaded) {
+          triggerBrowserPdfPrint();
+        }
+        return;
+      }
+
+      // Xử lý xuất Word
+      if (format === "docx") {
+        let downloaded = false;
+        try {
+          const res = await fetch(`/api/export/docx`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
               title: documentTitle,
               content_json: editorJson || {
                 type: "doc",
                 content: [{ type: "paragraph", content: [{ type: "text", text: editorContent }] }],
               },
-            }
-          : {
-              title: documentTitle,
               html_content: editorContent,
-            };
+            }),
+          });
 
-      const res = await fetch(`/api/export/${format}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+          if (res.ok) {
+            const blob = await res.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            const cleanTitle = (documentTitle || "Van_ban")
+              .replace(/[/\\?%*:|"<>]/g, "-")
+              .trim();
+            const ext = res.headers.get("Content-Type")?.includes("msword") ? "doc" : "docx";
+            a.download = `${cleanTitle}.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            downloaded = true;
+          }
+        } catch (e) {
+          console.warn("Lỗi gọi API xuất Word, chuyển sang xuất Word trực tiếp:", e);
+        }
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || errJson.detail || `Lỗi xuất file ${format.toUpperCase()}`);
+        if (!downloaded) {
+          exportWordDirectly(documentTitle, editorContent);
+        }
+        return;
       }
-
-      const blob = await res.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      const cleanTitle = (documentTitle || "Van_ban")
-        .replace(/[/\\?%*:|"<>]/g, "-")
-        .trim();
-      a.download = `${cleanTitle}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(downloadUrl);
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`Xuất ${format.toUpperCase()} thất bại:`, err);
-      alert(`Xuất ${format.toUpperCase()} thất bại: ${errMsg}`);
+      if (format === "pdf") {
+        triggerBrowserPdfPrint();
+      } else {
+        exportWordDirectly(documentTitle, editorContent);
+      }
     } finally {
       setExportingFormat(null);
     }
