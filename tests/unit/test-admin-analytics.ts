@@ -13,6 +13,8 @@ const mockDashboardData: AnalyticsDashboardData = {
     approvedDrafts: 90,
     inReviewDrafts: 20,
     completionRate: 75,
+    complianceScore: 96.5,
+    hoursSaved: 102,
     totalTemplates: 26,
     totalAiFeedbacks: 85,
     aiSatisfactionRate: 94,
@@ -47,6 +49,10 @@ const mockDashboardData: AnalyticsDashboardData = {
     { status: "DRAFT", label: "Đang soạn thảo", count: 8, color: "#3b82f6" },
     { status: "REJECTED", label: "Từ chối", count: 2, color: "#ef4444" },
   ],
+  commonMistakes: [
+    { id: "m1", label: "Bảng ẩn 2 cột quốc hiệu", count: 15, percentage: 12.5, status: "auto_fixed" },
+  ],
+  scope: "agency",
   timeRange: "30d",
 };
 
@@ -67,9 +73,9 @@ assert.ok(csv.startsWith("\uFEFF"), "Tệp CSV phải bắt đầu bằng UTF-8 
 console.log("  ✓ PASS: Tệp CSV có gắn UTF-8 BOM hỗ trợ mở trực tiếp trên Excel tiếng Việt");
 
 // Test 3: CSV chứa đủ các trường dữ liệu cốt lõi
-assert.ok(csv.includes("BÁO CÁO PHÂN TÍCH THỐNG KÊ HOẠT ĐỘNG DOCDRAFT AI"), "CSV phải có tiêu đề");
-assert.ok(csv.includes("Tổng số văn bản đã tạo,120"), "CSV phải có dòng tổng số văn bản");
-assert.ok(csv.includes("Tỷ lệ hoàn thành (%),75%"), "CSV phải có tỷ lệ hoàn thành");
+assert.ok(csv.includes("BÁO CÁO PHÂN TÍCH THỐNG KÊ TUÂN THỦ NGHỊ ĐỊNH 30 & NĂNG SUẤT VĂN THƯ"), "CSV phải có tiêu đề");
+assert.ok(csv.includes("Tổng số văn bản phát hành / soạn thảo,120"), "CSV phải có dòng tổng số văn bản");
+assert.ok(csv.includes("Tỷ lệ hoàn thành ký duyệt (%),75%"), "CSV phải có tỷ lệ hoàn thành");
 assert.ok(csv.includes("Tờ trình xin phê duyệt dự toán kinh phí"), "CSV phải có danh sách top mẫu");
 console.log("  ✓ PASS: Nội dung báo cáo CSV chứa đầy đủ KPI, tỷ lệ và danh mục mẫu");
 

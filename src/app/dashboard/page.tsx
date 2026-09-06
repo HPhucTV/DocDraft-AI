@@ -10,6 +10,7 @@ import {
   LogOut,
   FolderKanban,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
@@ -90,14 +91,20 @@ export default async function DashboardPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button asChild className="gap-2 shadow-xs">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Button asChild className="gap-2 shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">
                 <Link href="/templates/demo">
                   <Sparkles className="h-4 w-4" />
                   <span>Thư viện mẫu chuẩn</span>
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="gap-2">
+              <Button variant="outline" asChild className="gap-2 text-xs font-semibold">
+                <Link href="/admin/analytics">
+                  <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Năng suất & Thống kê</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="gap-2 text-xs font-semibold">
                 <Link href="/settings/byok">
                   <KeyRound className="h-4 w-4" />
                   <span>Cấu hình BYOK</span>
