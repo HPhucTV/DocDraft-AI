@@ -18,9 +18,8 @@ import {
   Search,
   ArrowLeft,
   FileText,
-  Layers,
+  Loader2,
   ShieldCheck,
-  Building2,
   Users,
   DollarSign,
   ClipboardList,
@@ -59,6 +58,7 @@ const CATEGORIES = [
 export default function TemplateLibraryPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [previewTemplate, setPreviewTemplate] = useState<TemplateItem | null>(null);
@@ -292,7 +292,12 @@ export default function TemplateLibraryPage() {
         </div>
 
         {/* TEMPLATE GRID */}
-        {filteredTemplates.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <p className="text-xs text-slate-500 font-medium">Đang tải thư viện biểu mẫu...</p>
+          </div>
+        ) : filteredTemplates.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTemplates.map((template) => {
               const fieldCount = template.formSchema?.fields?.length || 0;
