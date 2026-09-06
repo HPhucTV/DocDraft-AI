@@ -1155,22 +1155,6 @@ function EditorContentComponent() {
 
         {/* Right Side: A4 Canvas Editor (Tiptap) */}
         <main className={`${mobileActiveView === "canvas" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden relative`}>
-          {/* Nút nổi mở lại khung bên trái khi đang bị đóng trên Desktop */}
-          {!isLeftSidebarOpen && (
-            <div className="hidden lg:block absolute left-3 top-3 z-20 animate-in fade-in slide-in-from-left-2 duration-200">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleLeftSidebar}
-                className="h-8 gap-1.5 px-2.5 text-xs bg-background/95 backdrop-blur-xs shadow-md border-border hover:bg-accent hover:border-primary/50 text-foreground transition-all cursor-pointer"
-                title="Mở lại khung biểu mẫu & nháp thô (Ctrl+B)"
-              >
-                <PanelLeftOpen className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-[11px]">Mở biểu mẫu</span>
-              </Button>
-            </div>
-          )}
-
           <TiptapEditor
             draftId={currentDraftId || undefined}
             draftTitle={documentTitle}
