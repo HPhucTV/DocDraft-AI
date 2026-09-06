@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { collabManager, type Collaborator } from "@/lib/collaboration/collab-manager";
-import { Users, Radio } from "lucide-react";
+import { Users } from "lucide-react";
 
 interface CollaborativePresenceBarProps {
   draftId?: string;
@@ -22,15 +22,20 @@ export function CollaborativePresenceBar({
 }: CollaborativePresenceBarProps) {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
 
+  const userId = currentUser?.id;
+  const userName = currentUser?.name;
+  const userEmail = currentUser?.email;
+  const userRole = currentUser?.role;
+
   useEffect(() => {
-    if (!currentUser) return;
+    if (!userId) return;
 
     // Gia nhập phòng soạn thảo
     collabManager.joinRoom(draftId, {
-      id: currentUser.id,
-      name: currentUser.name,
-      email: currentUser.email,
-      role: currentUser.role,
+      id: userId,
+      name: userName || "Bạn",
+      email: userEmail || "",
+      role: userRole,
     });
 
     // Lắng nghe cập nhật
@@ -42,7 +47,7 @@ export function CollaborativePresenceBar({
       unsubscribe();
       collabManager.leaveRoom();
     };
-  }, [draftId, currentUser]);
+  }, [draftId, userId, userName, userEmail, userRole]);
 
   const totalUsers = collaborators.length + (currentUser ? 1 : 0);
 

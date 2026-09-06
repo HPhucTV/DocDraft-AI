@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -82,6 +82,14 @@ export function ShareExportPopover({
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  // Tự động đóng menu cấp độ khi đóng popover
+  useEffect(() => {
+    if (!isOpen) {
+      setIsAccessDropdownOpen(false);
+    }
+  }, [isOpen]);
 
   // Lắng nghe cộng tác viên trực tuyến
   useEffect(() => {
@@ -166,7 +174,7 @@ export function ShareExportPopover({
           title="Chia sẻ tài liệu & Xuất bản"
         >
           <Share2 className="h-3.5 w-3.5 shrink-0" />
-          <span>Chia sẻ</span>
+          <span className="hidden sm:inline">Chia sẻ</span>
         </Button>
       </PopoverTrigger>
 
@@ -174,7 +182,7 @@ export function ShareExportPopover({
         align="end"
         side="bottom"
         sideOffset={8}
-        className="w-[370px] sm:w-[390px] p-0 font-sans shadow-2xl border-border/80 bg-background/98 backdrop-blur-md rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 no-print"
+        className="w-[calc(100vw-24px)] max-w-[380px] sm:w-[380px] p-0 font-sans shadow-2xl border-border/80 bg-background/98 backdrop-blur-md rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 no-print"
       >
         {/* ========================================================================= */}
         {/* 1. HEADER CỦA MENU CHIA SẺ (Phong cách Canva) */}
@@ -221,6 +229,7 @@ export function ShareExportPopover({
             <form onSubmit={handleAddMember} className="flex items-center gap-1.5">
               <div className="relative flex-1">
                 <Input
+                  ref={emailInputRef}
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
@@ -279,8 +288,7 @@ export function ShareExportPopover({
             <button
               type="button"
               onClick={() => {
-                const el = document.querySelector("input[placeholder='Thêm người qua email...']") as HTMLInputElement;
-                el?.focus();
+                emailInputRef.current?.focus();
               }}
               className="h-8 w-8 rounded-full border border-dashed border-border/90 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-violet-500 hover:bg-violet-500/10 transition-colors shrink-0"
               title="Thêm cộng tác viên mới"
@@ -329,7 +337,12 @@ export function ShareExportPopover({
 
             {/* Menu thả xuống chọn Cấp độ */}
             {isAccessDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 p-1 rounded-xl border border-border/80 bg-background shadow-xl space-y-0.5">
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsAccessDropdownOpen(false)}
+                />
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 p-1 rounded-xl border border-border/80 bg-background shadow-xl space-y-0.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -381,6 +394,7 @@ export function ShareExportPopover({
                   </div>
                 </button>
               </div>
+              </>
             )}
           </div>
 

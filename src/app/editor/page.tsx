@@ -68,6 +68,13 @@ const ShareDialog = dynamic(
   { ssr: false }
 );
 
+const DEFAULT_EDITOR_USER = {
+  id: "user-current",
+  name: "Bạn",
+  email: "user@docdraft.vn",
+  role: "USER" as const,
+};
+
 interface TemplateItem {
   id: string;
   title: string;
@@ -879,7 +886,7 @@ function EditorContentComponent() {
           {/* Cụm Hiển thị Trực tuyến (Giữ nguyên vẹn theo yêu cầu người dùng) */}
           <CollaborativePresenceBar
             draftId={currentDraftId || "default-draft"}
-            currentUser={{ id: "user-current", name: "Bạn", email: "user@docdraft.vn", role: "USER" }}
+            currentUser={DEFAULT_EDITOR_USER}
             onShareClick={() => setIsShareOpen(true)}
           />
 
@@ -890,7 +897,7 @@ function EditorContentComponent() {
             draftId={currentDraftId || undefined}
             draftTitle={documentTitle || "Văn bản dự thảo"}
             editorContent={editorContent}
-            currentUser={{ id: "user-current", name: "Bạn", email: "user@docdraft.vn", role: "USER" }}
+            currentUser={DEFAULT_EDITOR_USER}
             exportingFormat={exportingFormat as ("pdf" | "docx" | null)}
             onExport={handleExport}
             onCopyHTML={handleCopyHTML}
