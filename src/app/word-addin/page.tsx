@@ -20,6 +20,7 @@ import {
   ArrowDownToLine,
   Layers,
   Bot,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -545,19 +546,31 @@ export default function WordAddinTaskpanePage() {
             </div>
           </div>
 
-          <div
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-              isOfficeReady
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-                : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isOfficeReady ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+          <div className="flex items-center gap-1.5">
+            <a
+              href="/word-addin/manifest.xml"
+              download="manifest.xml"
+              title="Tải tệp manifest.xml để nạp vào Word"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-800 transition-colors shadow-2xs"
+            >
+              <Download className="w-3 h-3" />
+              <span>Tải file</span>
+            </a>
+
+            <div
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                isOfficeReady
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
               }`}
-            />
-            {isOfficeReady ? "Word Ready" : "Xem trước"}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isOfficeReady ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`}
+              />
+              {isOfficeReady ? "Word Ready" : "Xem trước"}
+            </div>
           </div>
         </div>
 
@@ -1029,22 +1042,34 @@ export default function WordAddinTaskpanePage() {
           </button>
 
           {showGuide && (
-            <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-[10px] text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50 leading-relaxed">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">
-                Word Online (Trình duyệt):
-              </p>
-              <p>
-                1. Tab <strong>Chèn (Insert)</strong> → <strong>Tiện ích (Add-ins)</strong>.<br />
-                2. Chọn <strong>Tải lên tiện ích của tôi</strong>.<br />
-                3. Tải tệp:{" "}
+            <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2 text-[10px] text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50 leading-relaxed">
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/60 dark:border-slate-800">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  Tệp cấu hình Add-in (Manifest):
+                </span>
                 <a
                   href="/word-addin/manifest.xml"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-indigo-600 dark:text-indigo-400 font-semibold underline inline-flex items-center gap-0.5"
+                  download="manifest.xml"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[10px] shadow-xs transition-all active:scale-95"
                 >
-                  manifest.xml <ExternalLink className="w-2.5 h-2.5" />
+                  <Download className="w-3 h-3" />
+                  <span>Tải manifest.xml</span>
                 </a>
+              </div>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">
+                1. Dùng trên Word Online (Khuyên dùng - Nhanh nhất):
+              </p>
+              <p>
+                • Mở Word Online trên trình duyệt → Tab <strong>Chèn (Insert)</strong> → <strong>Tiện ích (Add-ins)</strong>.<br />
+                • Chọn <strong>Tải lên tiện ích của tôi (Upload My Add-in)</strong> và chọn tệp vừa tải.
+              </p>
+
+              <p className="font-semibold text-slate-900 dark:text-slate-100 pt-1 border-t border-slate-100 dark:border-slate-800">
+                2. Dùng trên Word Desktop (Cài trên máy tính):
+              </p>
+              <p>
+                • <strong>Bản Microsoft 365 mới:</strong> Tab <strong>Chèn</strong> → <strong>Tiện ích</strong> → <strong>Tải lên tiện ích của tôi</strong>.<br />
+                • <strong>Bản Office truyền thống:</strong> Tạo thư mục (VD: <code>C:\Addins</code>) chứa file, bật <strong>Share</strong> thư mục đó → Mở Word: <strong>File → Options → Trust Center → Trusted Add-in Catalogs</strong> → Dán đường dẫn chia sẻ (<code>\\Tên-Máy\Addins</code>) → Khởi động lại Word và mở từ tab <strong>Shared Folder</strong>.
               </p>
             </div>
           )}

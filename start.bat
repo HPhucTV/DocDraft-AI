@@ -64,6 +64,9 @@ start "DocDraft Document Service (:8000)" cmd /k "python -m uvicorn app.main:app
 echo [3/3] Dang khoi dong Ung dung Next.js (Web Frontend tren cong 3000)...
 start "DocDraft Next.js Web (:3000)" cmd /k "npm run dev"
 
+REM 7b. KHOI DONG HTTPS PROXY CHO MICROSOFT WORD ADD-IN (:3443)
+start "DocDraft Word Add-in HTTPS (:3443)" /min cmd /c "node scripts/word-addin-proxy.js"
+
 echo.
 echo ==============================================================================
 echo       TOAN BO HE THONG DOCDRAFT AI DA KHOI DONG THANH CONG!
@@ -71,6 +74,7 @@ echo ===========================================================================
 echo.
 echo   * Giao dien Web:         http://localhost:3000
 echo   * Trinh soan thao A4:    http://localhost:3000/editor
+echo   * Word Add-in (HTTPS):   https://localhost:3443/word-addin
 echo   * Quan tri Mau van ban:  http://localhost:3000/admin/templates
 echo   * Thong ke Phan tich:    http://localhost:3000/admin/analytics
 echo   * Document API Docs:     http://localhost:8000/docs
