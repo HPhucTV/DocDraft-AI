@@ -86,6 +86,7 @@ export default function WordAddinTaskpanePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>("formalize");
+  const [previewText, setPreviewText] = useState<string>("");
   const [showGuide, setShowGuide] = useState(false);
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [userByokKey, setUserByokKey] = useState<string>("");
