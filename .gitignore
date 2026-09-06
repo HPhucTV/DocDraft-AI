@@ -57,6 +57,7 @@ Pipfile.lock
 
 # --- VERCEL & CLOUD ---
 .vercel
+.agents/
 
 # --- TYPESCRIPT & TESTING ---
 *.tsbuildinfo
