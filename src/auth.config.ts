@@ -95,11 +95,19 @@ export const authConfig: NextAuthConfig = {
               existingUser.organization;
             (user as { jobTitle?: string | null }).jobTitle =
               existingUser.jobTitle;
+
+            // Đồng bộ avatar từ Google nếu tài khoản cũ chưa có
+            if (!existingUser.avatarUrl && user.image) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: { avatarUrl: user.image, emailVerified: true },
+              });
+            }
           }
           return true;
         } catch (err) {
           console.error("Lỗi đồng bộ tài khoản Google OAuth:", err);
-          return true; // Cho phép đăng nhập dù DB tạm lỗi
+          return false; // Chặn đăng nhập nếu không đồng bộ được User vào DB để tránh session hỏng
         }
       }
       return true;

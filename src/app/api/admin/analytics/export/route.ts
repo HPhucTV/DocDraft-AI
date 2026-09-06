@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { AnalyticsService } from "@/lib/admin/analytics-service";
 
 /**
@@ -7,6 +8,17 @@ import { AnalyticsService } from "@/lib/admin/analytics-service";
  */
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Thao tác chỉ dành cho Quản trị viên" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const timeRangeParam = (searchParams.get("timeRange") || "30d") as
       | "7d"

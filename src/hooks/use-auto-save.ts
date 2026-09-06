@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { saveOfflineDraft } from "@/lib/offline/offline-storage";
 
 export interface AutoSaveOptions {
   draftId?: string | null;
@@ -92,6 +93,20 @@ export function useAutoSave(
       }
       firstChangeTimeRef.current = null;
 
+      // Nếu đang mất mạng (offline), lưu ngay vào bộ nhớ cục bộ máy tính
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        saveOfflineDraft(draftId, {
+          title: payloadToSave.title || "Văn bản nháp",
+          html: "",
+          json: payloadToSave.contentJson,
+        });
+        setIsDirty(false);
+        lastSavedDataRef.current = serialized;
+        setLastSavedAt(new Date());
+        setIsSaving(false);
+        return;
+      }
+
       setIsSaving(true);
       try {
         const res = await fetch(`/api/drafts/${draftId}`, {
@@ -139,6 +154,17 @@ export function useAutoSave(
       } catch (err: unknown) {
         const error = err instanceof Error ? err : new Error(String(err));
         console.error("[Auto-save Error]:", error);
+
+        // Lưu dự phòng vào bộ nhớ cục bộ nếu lỗi mạng (Network failure)
+        if (typeof window !== "undefined") {
+          saveOfflineDraft(draftId, {
+            title: payloadToSave.title || "Văn bản nháp",
+            html: "",
+            json: payloadToSave.contentJson,
+          });
+          lastSavedDataRef.current = serialized;
+        }
+
         onError?.(error);
       } finally {
         setIsSaving(false);

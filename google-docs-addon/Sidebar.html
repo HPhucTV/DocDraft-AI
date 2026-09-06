@@ -437,9 +437,13 @@
             showAlert('AI đang xử lý lệnh "' + cmd + '"...', 'success');
             
             var serverUrl = localStorage.getItem('docdraft_server') || 'http://localhost:3000';
+            var apiKey = localStorage.getItem('docdraft_key') || '';
+            var headers = { 'Content-Type': 'application/json' };
+            if (apiKey) headers['X-API-Key'] = apiKey;
+
             fetch(serverUrl + '/api/ai/inline-edit', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: headers,
               body: JSON.stringify({
                 selectedText: selectedText,
                 command: cmd,
@@ -511,9 +515,13 @@
         showAlert('AI đang sinh văn bản theo mẫu...', 'success');
         
         var serverUrl = localStorage.getItem('docdraft_server') || 'http://localhost:3000';
+        var apiKey = localStorage.getItem('docdraft_key') || '';
+        var headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['X-API-Key'] = apiKey;
+
         fetch(serverUrl + '/api/ai/generate/stream', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({
             templateId: tId,
             variables: {}
@@ -546,10 +554,13 @@
 
         showAlert('AI đang bóc tách và tái cấu trúc sang ' + targetType + '...', 'success');
         var serverUrl = localStorage.getItem('docdraft_server') || 'http://localhost:3000';
+        var apiKey = localStorage.getItem('docdraft_key') || '';
+        var headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['X-API-Key'] = apiKey;
 
         fetch(serverUrl + '/api/ai/raw-to-doc/stream', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({
             rawText: rawText,
             targetDocType: targetType
@@ -571,13 +582,18 @@
 
       function saveSettings() {
         var url = document.getElementById('serverUrl').value.trim();
+        var key = document.getElementById('byokKey').value.trim();
         localStorage.setItem('docdraft_server', url);
-        showAlert('Đã lưu cấu hình máy chủ!', 'success');
+        localStorage.setItem('docdraft_key', key);
+        showAlert('Đã lưu cấu hình máy chủ và mã kết nối!', 'success');
       }
 
       // Load saved settings
       if (localStorage.getItem('docdraft_server')) {
         document.getElementById('serverUrl').value = localStorage.getItem('docdraft_server');
+      }
+      if (localStorage.getItem('docdraft_key')) {
+        document.getElementById('byokKey').value = localStorage.getItem('docdraft_key');
       }
     </script>
   </body>

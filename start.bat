@@ -48,6 +48,12 @@ REM 5. KHOI TAO PRISMA CLIENT
 echo [1/3] Dang khoi tao Prisma ORM Client...
 call npx prisma generate >nul 2>&1
 
+REM 5b. KHOI DONG POSTGRES CONTAINER NEU CHAY QUA DOCKER
+docker --version >nul 2>&1
+if not errorlevel 1 (
+    docker start docdraft-postgres >nul 2>&1
+)
+
 REM 6. GIAI PHONG CONG NEU DANG BI CHIEM DUNG
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 3000,8000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 

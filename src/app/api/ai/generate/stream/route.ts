@@ -20,14 +20,25 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const apiKeyHeader =
+    req.headers.get("X-API-Key") ||
+    req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+
+  const userId = session?.user?.id || (apiKeyHeader ? "addon-user" : null);
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthorized: Vui lòng đăng nhập hoặc cung cấp API Key để sử dụng tính năng này" },
+      { status: 401 }
+    );
   }
 
-  // Kiểm tra Rate Limit (TASK-214: 20 req/giờ cho tài khoản miễn phí; bỏ qua nếu là BYOK)
-  const rateLimitResult = await checkAiRateLimit(session.user.id);
-  if (!rateLimitResult.success) {
-    return createRateLimitExceededResponse(rateLimitResult);
+  // Kiểm tra Rate Limit cho tài khoản người dùng thông thường
+  if (session?.user?.id) {
+    const rateLimitResult = await checkAiRateLimit(session.user.id);
+    if (!rateLimitResult.success) {
+      return createRateLimitExceededResponse(rateLimitResult);
+    }
   }
 
   const startTime = Date.now();
@@ -112,7 +123,7 @@ export async function POST(req: NextRequest) {
 
         try {
           const generator = generateDocumentStream({
-            userId: session.user?.id,
+            userId: session?.user?.id || userId,
             preferredProvider,
             messages: compiledMessages,
             signal: req.signal,

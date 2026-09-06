@@ -46,8 +46,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Không cache các endpoint API streaming hoặc realtime
-  if (url.pathname.startsWith("/api/ai/") || url.pathname.startsWith("/api/auth/")) {
+  // Không cache bất kỳ endpoint API nào (API xử lý động, xác thực phiên và lưu ngoại tuyến qua LocalStorage)
+  if (url.pathname.startsWith("/api/")) {
     return;
   }
 

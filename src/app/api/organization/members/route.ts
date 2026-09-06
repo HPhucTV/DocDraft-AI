@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import {
   getOrganization,
   addMember,
@@ -13,16 +14,32 @@ export const runtime = "nodejs";
  * Danh sách thành viên tổ chức kèm phân quyền RBAC (TASK-504).
  */
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const org = getOrganization();
   return NextResponse.json(org.members);
 }
 
 /**
  * POST /api/organization/members
- * Mời hoặc gán cán bộ mới vào phòng ban.
+ * Mời hoặc gán cán bộ mới vào phòng ban (Yêu cầu ADMIN).
  */
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Thao tác chỉ dành cho Quản trị viên" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { fullName, email, role = "USER", departmentId, jobTitle } = body;
 
@@ -54,10 +71,21 @@ export async function POST(req: NextRequest) {
 
 /**
  * PATCH /api/organization/members
- * Cập nhật vai trò RBAC hoặc chuyển phòng ban cho cán bộ.
+ * Cập nhật vai trò RBAC hoặc chuyển phòng ban cho cán bộ (Yêu cầu ADMIN).
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Thao tác chỉ dành cho Quản trị viên" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { memberId, role, departmentId, jobTitle, status } = body;
 
@@ -89,10 +117,21 @@ export async function PATCH(req: NextRequest) {
 
 /**
  * DELETE /api/organization/members
- * Xóa hoặc thu hồi quyền truy cập của cán bộ.
+ * Xóa hoặc thu hồi quyền truy cập của cán bộ (Yêu cầu ADMIN).
  */
 export async function DELETE(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Thao tác chỉ dành cho Quản trị viên" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

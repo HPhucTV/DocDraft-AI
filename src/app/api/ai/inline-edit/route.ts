@@ -33,14 +33,25 @@ QUY TẮC CỐT LÕI:
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const apiKeyHeader =
+    req.headers.get("X-API-Key") ||
+    req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+
+  const userId = session?.user?.id || (apiKeyHeader ? "addon-user" : null);
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthorized: Vui lòng đăng nhập hoặc cung cấp API Key để sử dụng tính năng này" },
+      { status: 401 }
+    );
   }
 
   // Rate limit check (TASK-214)
-  const rateLimitResult = await checkAiRateLimit(session.user.id);
-  if (!rateLimitResult.success) {
-    return createRateLimitExceededResponse(rateLimitResult);
+  if (session?.user?.id) {
+    const rateLimitResult = await checkAiRateLimit(session.user.id);
+    if (!rateLimitResult.success) {
+      return createRateLimitExceededResponse(rateLimitResult);
+    }
   }
 
   try {
@@ -80,7 +91,7 @@ ${selectedText}
 
 HÃY TRẢ VỀ ĐOẠN ĐÃ SỬA:`;
 
-    const keyInfo = await resolveAIKey(session.user.id, preferredProvider);
+    const keyInfo = await resolveAIKey(session?.user?.id || userId, preferredProvider);
 
     let resultText = "";
 

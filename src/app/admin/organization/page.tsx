@@ -144,9 +144,12 @@ export default function OrganizationAdminPage() {
         setNewDeptHead("");
         setNewDeptDesc("");
         loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage({ type: "error", text: err.error || "Không thể thêm phòng ban." });
       }
     } catch {
-      setStatusMessage({ type: "error", text: "Lỗi thêm phòng ban." });
+      setStatusMessage({ type: "error", text: "Lỗi kết nối máy chủ khi thêm phòng ban." });
     }
   };
 
@@ -160,9 +163,12 @@ export default function OrganizationAdminPage() {
       if (res.ok) {
         setStatusMessage({ type: "success", text: `Đã xóa phòng ban "${name}".` });
         loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage({ type: "error", text: err.error || "Không thể xóa phòng ban." });
       }
     } catch {
-      setStatusMessage({ type: "error", text: "Lỗi khi xóa phòng ban." });
+      setStatusMessage({ type: "error", text: "Lỗi kết nối khi xóa phòng ban." });
     }
   };
 
@@ -190,9 +196,12 @@ export default function OrganizationAdminPage() {
         setNewMemEmail("");
         setNewMemTitle("");
         loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage({ type: "error", text: err.error || "Không thể thêm cán bộ." });
       }
     } catch {
-      setStatusMessage({ type: "error", text: "Lỗi thêm cán bộ." });
+      setStatusMessage({ type: "error", text: "Lỗi kết nối khi thêm cán bộ." });
     }
   };
 
@@ -206,9 +215,12 @@ export default function OrganizationAdminPage() {
       if (res.ok) {
         setStatusMessage({ type: "success", text: `Đã xóa cán bộ "${name}".` });
         loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage({ type: "error", text: err.error || "Không thể xóa cán bộ." });
       }
     } catch {
-      setStatusMessage({ type: "error", text: "Lỗi khi xóa cán bộ." });
+      setStatusMessage({ type: "error", text: "Lỗi kết nối khi xóa cán bộ." });
     }
   };
 
@@ -220,11 +232,14 @@ export default function OrganizationAdminPage() {
         body: JSON.stringify({ memberId, role }),
       });
       if (res.ok) {
-        setStatusMessage({ type: "success", text: "Đã cập nhật vai trò cán bộ!" });
+        setStatusMessage({ type: "success", text: "Đã cập nhật vai trò cán bộ thành công!" });
         loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage({ type: "error", text: err.error || "Không thể cập nhật vai trò." });
       }
     } catch {
-      setStatusMessage({ type: "error", text: "Lỗi khi đổi vai trò." });
+      setStatusMessage({ type: "error", text: "Lỗi kết nối khi đổi vai trò." });
     }
   };
 

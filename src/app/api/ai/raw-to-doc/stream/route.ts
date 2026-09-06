@@ -15,14 +15,25 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const apiKeyHeader =
+    req.headers.get("X-API-Key") ||
+    req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+
+  const userId = session?.user?.id || (apiKeyHeader ? "addon-user" : null);
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthorized: Vui lòng đăng nhập hoặc cung cấp API Key để sử dụng tính năng này" },
+      { status: 401 }
+    );
   }
 
-  // Rate limit check (TASK-214)
-  const rateLimitResult = await checkAiRateLimit(session.user.id);
-  if (!rateLimitResult.success) {
-    return createRateLimitExceededResponse(rateLimitResult);
+  // Rate limit check cho người dùng thông thường (TASK-214)
+  if (session?.user?.id) {
+    const rateLimitResult = await checkAiRateLimit(session.user.id);
+    if (!rateLimitResult.success) {
+      return createRateLimitExceededResponse(rateLimitResult);
+    }
   }
 
   const startTime = Date.now();
@@ -64,7 +75,7 @@ export async function POST(req: NextRequest) {
       let accumulatedContent = "";
       try {
         const generator = streamRestructuredDocument({
-          userId: session.user.id,
+          userId: session?.user?.id || userId,
           rawText: rawText.trim(),
           targetDocType,
           preferredProvider,

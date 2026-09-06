@@ -39,7 +39,13 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (session?.user && session.user.role !== "ADMIN") {
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Vui lòng đăng nhập để thực hiện thao tác này" },
+        { status: 401 }
+      );
+    }
+    if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Quyền truy cập bị từ chối. Thao tác chỉ dành cho Quản trị viên." },
         { status: 403 }
@@ -71,7 +77,13 @@ export async function PATCH(
 ) {
   try {
     const session = await auth();
-    if (session?.user && session.user.role !== "ADMIN") {
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Vui lòng đăng nhập để thực hiện thao tác này" },
+        { status: 401 }
+      );
+    }
+    if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Quyền truy cập bị từ chối. Thao tác chỉ dành cho Quản trị viên." },
         { status: 403 }

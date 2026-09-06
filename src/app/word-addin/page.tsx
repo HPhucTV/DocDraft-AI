@@ -58,6 +58,20 @@ interface ChatMessage {
   content: string;
 }
 
+/**
+ * Làm sạch mã HTML đầu ra của AI trước khi render vào DOM để triệt tiêu nguy cơ XSS
+ */
+function sanitizeHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "")
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, "")
+    .replace(/\son\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, "")
+    .replace(/(href|src)\s*=\s*['"]?javascript:[^'"]*['"]?/gi, "");
+}
+
 export default function WordAddinTaskpanePage() {
   const [isOfficeReady, setIsOfficeReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"format" | "template" | "raw" | "copilot">("format");
@@ -833,7 +847,7 @@ export default function WordAddinTaskpanePage() {
 
                 <div
                   className="max-h-40 overflow-y-auto p-2 rounded bg-white dark:bg-slate-900 text-[10px] border border-indigo-100 dark:border-indigo-900 text-slate-700 dark:text-slate-300 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: generatedDocHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(generatedDocHtml) }}
                 />
               </div>
             )}
@@ -913,7 +927,7 @@ export default function WordAddinTaskpanePage() {
 
                 <div
                   className="max-h-40 overflow-y-auto p-2 rounded bg-white dark:bg-slate-900 text-[10px] border border-purple-100 dark:border-purple-900 text-slate-700 dark:text-slate-300 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: polishedHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(polishedHtml) }}
                 />
               </div>
             )}

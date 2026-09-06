@@ -36,6 +36,23 @@ function LoginForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const errorParam = searchParams.get("error");
+
+  React.useEffect(() => {
+    if (errorParam === "AccessDenied") {
+      setErrorMessage(
+        "Đăng nhập bị từ chối: Hệ thống không thể kết nối tới cơ sở dữ liệu để đồng bộ thông tin tài khoản Google."
+      );
+    } else if (errorParam === "OAuthSignin" || errorParam === "OAuthCallback") {
+      setErrorMessage(
+        "Lỗi xác thực với dịch vụ Google OAuth. Vui lòng thử lại hoặc kiểm tra lại cấu hình."
+      );
+    } else if (errorParam) {
+      setErrorMessage(
+        `Đăng nhập không thành công (Mã lỗi: ${errorParam}). Vui lòng thử lại.`
+      );
+    }
+  }, [errorParam]);
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

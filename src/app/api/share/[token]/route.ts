@@ -169,6 +169,7 @@ export async function PUT(
         id: true,
         draftId: true,
         permission: true,
+        passwordHash: true,
         expiresAt: true,
       },
     });
@@ -189,7 +190,38 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { title, contentJson } = body as { title?: string; contentJson?: unknown };
+    const { title, contentJson, password } = body as {
+      title?: string;
+      contentJson?: unknown;
+      password?: string;
+    };
+
+    // Kiểm tra mật khẩu bảo vệ nếu liên kết yêu cầu
+    if (link.passwordHash) {
+      const headerPassword = req.headers.get("X-Share-Password");
+      const providedPassword = password || headerPassword;
+
+      if (!providedPassword) {
+        return NextResponse.json(
+          {
+            error: "Tài liệu này được bảo vệ bằng mật khẩu. Vui lòng nhập mật khẩu để lưu chỉnh sửa.",
+            requiresPassword: true,
+          },
+          { status: 401 }
+        );
+      }
+
+      const isValidPassword = await bcrypt.compare(providedPassword, link.passwordHash);
+      if (!isValidPassword) {
+        return NextResponse.json(
+          {
+            error: "Mật khẩu bảo vệ không chính xác. Thao tác lưu bị từ chối.",
+            requiresPassword: true,
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     const updated = await prisma.documentDraft.update({
       where: { id: link.draftId },

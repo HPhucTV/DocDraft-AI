@@ -58,13 +58,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (session?.user && session.user.role !== "ADMIN") {
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Vui lòng đăng nhập để thực hiện thao tác này" },
+        { status: 401 }
+      );
+    }
+    if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Quyền truy cập bị từ chối. Thao tác chỉ dành cho Quản trị viên." },
         { status: 403 }
       );
     }
-    const userId = session?.user?.id || null;
+    const userId = session.user.id;
 
     const body = await req.json();
     const validation = TemplateService.validate(body);

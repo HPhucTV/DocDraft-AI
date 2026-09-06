@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import {
   getOrganization,
   addDepartment,
@@ -12,16 +13,32 @@ export const runtime = "nodejs";
  * Lấy danh mục phòng ban trực thuộc (TASK-504).
  */
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const org = getOrganization();
   return NextResponse.json(org.departments);
 }
 
 /**
  * POST /api/organization/departments
- * Thêm phòng ban mới vào cơ quan.
+ * Thêm phòng ban mới vào cơ quan (Yêu cầu ADMIN).
  */
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Thao tác chỉ dành cho Quản trị viên" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { name, code, description, headName } = body;
 
@@ -46,10 +63,21 @@ export async function POST(req: NextRequest) {
 
 /**
  * DELETE /api/organization/departments
- * Xóa phòng ban theo ID.
+ * Xóa phòng ban theo ID (Yêu cầu ADMIN).
  */
 export async function DELETE(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Thao tác chỉ dành cho Quản trị viên" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

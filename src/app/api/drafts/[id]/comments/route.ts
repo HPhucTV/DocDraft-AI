@@ -6,6 +6,44 @@ import { Prisma } from "@prisma/client";
 export const dynamic = "force-dynamic";
 
 /**
+ * Kiểm tra xem người dùng hiện tại có quyền truy cập bản nháp hay không
+ * (Chủ sở hữu, Quản trị viên, hoặc Cán bộ duyệt trong chuỗi phê duyệt).
+ */
+async function verifyDraftAccess(draftId: string, userId: string, userRole?: string) {
+  const draft = await prisma.documentDraft.findUnique({
+    where: { id: draftId },
+    select: {
+      id: true,
+      userId: true,
+      approvalChains: {
+        where: { status: "PENDING" },
+        include: { steps: { select: { approverId: true } } },
+      },
+    },
+  });
+
+  if (!draft) {
+    return { error: "Bản nháp không tồn tại", status: 404, draft: null };
+  }
+
+  const isOwner = draft.userId === userId;
+  const isAdmin = userRole === "ADMIN";
+  const isApprover = draft.approvalChains.some((chain) =>
+    chain.steps.some((step) => step.approverId === userId)
+  );
+
+  if (!isOwner && !isAdmin && !isApprover) {
+    return {
+      error: "Bạn không có quyền xem hoặc thêm bình luận cho bản nháp này",
+      status: 403,
+      draft: null,
+    };
+  }
+
+  return { error: null, status: 200, draft };
+}
+
+/**
  * GET /api/drafts/[id]/comments
  * Lấy danh sách bình luận theo ngữ cảnh của bản nháp (TASK-306).
  */
@@ -21,14 +59,14 @@ export async function GET(
   const { id: draftId } = await params;
 
   try {
-    // 1. Kiểm tra quyền truy cập bản nháp (chủ sở hữu hoặc qua shared links)
-    const draft = await prisma.documentDraft.findUnique({
-      where: { id: draftId },
-      select: { id: true, userId: true },
-    });
-
-    if (!draft) {
-      return NextResponse.json({ error: "Bản nháp không tồn tại" }, { status: 404 });
+    // 1. Kiểm tra quyền truy cập bản nháp (Chống IDOR)
+    const access = await verifyDraftAccess(
+      draftId,
+      session.user.id,
+      session.user.role
+    );
+    if (access.error) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
     // 2. Lấy danh sách bình luận kèm thông tin tác giả và câu trả lời lồng nhau
@@ -90,6 +128,16 @@ export async function POST(
   const { id: draftId } = await params;
 
   try {
+    // 1. Kiểm tra quyền truy cập bản nháp (Chống IDOR)
+    const access = await verifyDraftAccess(
+      draftId,
+      session.user.id,
+      session.user.role
+    );
+    if (access.error) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
     const body = await req.json();
     const {
       content,
