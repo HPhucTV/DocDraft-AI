@@ -25,7 +25,7 @@ export function WordRuler({ zoomLevel = 100 }: WordRulerProps) {
         transformOrigin: "bottom center",
       }}
       className="w-[210mm] max-w-full h-7 mb-1 bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700/80 rounded-t-sm shadow-xs select-none flex flex-col justify-between overflow-hidden transition-transform duration-150"
-      title="Thước đo căn lề khổ A4 chuẩn Nghị định 30/2020/NĐ-CP"
+      title="Thước đo căn lề khổ A4"
     >
       {/* Thân thước đo gồm 3 dải: Lề trái (3cm) | Vùng in (16.5cm) | Lề phải (1.5cm) */}
       <div className="relative w-full h-full flex items-stretch text-[9px] font-mono">
@@ -33,7 +33,7 @@ export function WordRuler({ zoomLevel = 100 }: WordRulerProps) {
         <div
           style={{ width: "calc(30 / 210 * 100%)" }}
           className="h-full bg-slate-300/80 dark:bg-slate-900/90 border-r border-slate-400/60 dark:border-slate-700 relative group cursor-default"
-          title="Lề trái: 30mm (Chuẩn Nghị định 30)"
+          title="Lề trái: 30mm"
         >
           <span className="absolute bottom-0.5 left-1 text-[8px] text-slate-500 dark:text-slate-400 font-semibold">
             30mm
@@ -51,7 +51,7 @@ export function WordRuler({ zoomLevel = 100 }: WordRulerProps) {
           <div
             style={{ left: "calc(12 / 165 * 100%)" }}
             className="absolute top-0 -translate-x-1/2 z-10 cursor-default group"
-            title="Thụt đầu dòng đoạn văn: 1.2cm (12mm) chuẩn NĐ 30"
+            title="Thụt đầu dòng đoạn văn: 1.2cm (12mm)"
           >
             <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-t-[6px] border-t-amber-500" />
             <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground border text-[8px] px-1 rounded shadow-xs whitespace-nowrap pointer-events-none">
@@ -80,7 +80,7 @@ export function WordRuler({ zoomLevel = 100 }: WordRulerProps) {
         <div
           style={{ width: "calc(15 / 210 * 100%)" }}
           className="h-full bg-slate-300/80 dark:bg-slate-900/90 border-l border-slate-400/60 dark:border-slate-700 relative group cursor-default"
-          title="Lề phải: 15mm (Chuẩn Nghị định 30)"
+          title="Lề phải: 15mm"
         >
           {/* Con trỏ mốc lề phải */}
           <div className="absolute -bottom-0.5 left-0 -translate-x-1/2 w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[6px] border-b-primary" />

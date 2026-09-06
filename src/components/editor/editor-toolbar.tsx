@@ -103,7 +103,7 @@ interface EditorToolbarProps {
 }
 
 const FONT_FAMILIES = [
-  { label: "Times New Roman (Chuẩn NĐ 30)", value: "Times New Roman" },
+  { label: "Times New Roman", value: "Times New Roman" },
   { label: "Arial", value: "Arial" },
   { label: "Calibri", value: "Calibri" },
   { label: "Roboto", value: "Roboto" },
@@ -112,8 +112,8 @@ const FONT_FAMILIES = [
 const FONT_SIZES = [
   { label: "11pt", value: "11pt" },
   { label: "12pt", value: "12pt" },
-  { label: "13pt (Chuẩn NĐ 30)", value: "13pt" },
-  { label: "14pt (Chuẩn NĐ 30)", value: "14pt" },
+  { label: "13pt", value: "13pt" },
+  { label: "14pt", value: "14pt" },
   { label: "16pt", value: "16pt" },
   { label: "18pt", value: "18pt" },
   { label: "20pt", value: "20pt" },
@@ -251,7 +251,7 @@ export function EditorToolbar({
               : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
           }`}
         >
-          Bố cục & Thể thức NĐ 30
+          Bố cục & Thể thức
         </button>
 
         <button
@@ -281,10 +281,10 @@ export function EditorToolbar({
               size="sm"
               onClick={onAutoFormatND30}
               className="h-6.5 gap-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 px-2 shadow-2xs"
-              title="Tự động căn lề đều 2 bên, thụt đầu dòng 1.2cm và giãn dòng chuẩn NĐ 30"
+              title="Tự động căn đều 2 bên, thụt đầu dòng và giãn dòng chuẩn"
             >
               <Sparkles className="h-3 w-3 text-primary" />
-              <span>⚡ Chuẩn hóa NĐ 30</span>
+              <span>⚡ Chuẩn hóa thể thức</span>
             </Button>
           )}
 
@@ -382,7 +382,7 @@ export function EditorToolbar({
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 px-1.5 text-xs min-w-[58px] justify-between border border-border/40 hover:bg-muted font-mono"
-                    title="Cỡ chữ văn bản (Chuẩn NĐ 30: 13pt hoặc 14pt)"
+                    title="Cỡ chữ văn bản"
                   >
                     <span>13pt</span>
                     <ChevronDown className="h-3 w-3 opacity-60" />
@@ -390,7 +390,7 @@ export function EditorToolbar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-36 text-xs">
                   <DropdownMenuLabel className="text-[11px] text-muted-foreground">
-                    Cỡ chữ chuẩn NĐ 30
+                    Cỡ chữ văn bản
                   </DropdownMenuLabel>
                   {FONT_SIZES.map((size) => (
                     <DropdownMenuItem
@@ -627,12 +627,12 @@ export function EditorToolbar({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onChangeLineSpacing?.(1.25)}
-                    className="cursor-pointer font-semibold text-primary"
+                    className="cursor-pointer"
                   >
-                    1.25x (Chuẩn NĐ 30)
+                    1.25x
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onChangeLineSpacing?.(1.35)} className="cursor-pointer">
-                    1.35x (Nghị định 30)
+                    1.35x
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onChangeLineSpacing?.(1.5)} className="cursor-pointer">
                     1.5x (Rộng)
@@ -746,7 +746,7 @@ export function EditorToolbar({
               </Button>
             </div>
 
-            {/* Nhóm Bảng Biểu & Mẫu NĐ 30 */}
+            {/* Nhóm Bảng Biểu */}
             <div className="flex items-center gap-1 pr-2 border-r border-border/60">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -754,16 +754,16 @@ export function EditorToolbar({
                     variant="outline"
                     size="sm"
                     className="h-7 gap-1.5 text-xs font-medium border-border/80 hover:bg-muted"
-                    title="Chèn bảng biểu hoặc bảng chuẩn Nghị định 30"
+                    title="Chèn bảng biểu hoặc bảng chia cột"
                   >
                     <TableIcon className="h-3.5 w-3.5 text-primary" />
-                    <span>Bảng & Thể thức NĐ 30</span>
+                    <span>Bảng & Khung bố cục</span>
                     <ChevronDown className="h-3 w-3 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-60 text-xs">
                   <DropdownMenuLabel className="text-[11px] text-muted-foreground font-semibold">
-                    Bố cục Bảng ẩn NĐ 30/2020/NĐ-CP
+                    Khung 2 cột văn bản (Bảng ẩn)
                   </DropdownMenuLabel>
                   <DropdownMenuItem
                     onClick={() => editor.commands.insertND30HeaderTable()}
@@ -863,7 +863,7 @@ export function EditorToolbar({
             {/* Nhóm Căn lề khổ A4 */}
             <div className="flex items-center gap-2 pr-2 border-r border-border/60">
               <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/40 rounded border border-border/50 text-[11px] font-mono">
-                <span className="font-semibold text-foreground">Căn lề NĐ 30:</span>
+                <span className="font-semibold text-foreground">Căn lề tiêu chuẩn:</span>
                 <span className="text-muted-foreground">Trái 30mm • Phải 15mm • Trên/Dưới 20mm</span>
               </div>
             </div>

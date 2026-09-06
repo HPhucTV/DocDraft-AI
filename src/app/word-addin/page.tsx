@@ -1098,7 +1098,7 @@ export default function WordAddinTaskpanePage() {
                   >
                     <option value={11}>11 pt</option>
                     <option value={12}>12 pt</option>
-                    <option value={13}>13 pt (Chuẩn NĐ30)</option>
+                    <option value={13}>13 pt</option>
                     <option value={14}>14 pt</option>
                   </select>
                 </div>
@@ -1115,7 +1115,7 @@ export default function WordAddinTaskpanePage() {
                   >
                     <option value={1.0}>Single (1.0)</option>
                     <option value={1.15}>Multiple 1.15</option>
-                    <option value={1.2}>Multiple 1.2 (Chuẩn NĐ30)</option>
+                    <option value={1.2}>Multiple 1.2</option>
                     <option value={1.3}>Multiple 1.3</option>
                     <option value={1.5}>1.5 Lines</option>
                   </select>
@@ -1527,7 +1527,7 @@ export default function WordAddinTaskpanePage() {
                   ))
                 ) : (
                   <p className="text-[10px] text-slate-400 italic">
-                    Mẫu này tự động sinh dựa trên dữ liệu chuẩn NĐ 30.
+                    Mẫu này tự động sinh dựa trên dữ liệu mẫu đã chọn.
                   </p>
                 )}
               </div>
