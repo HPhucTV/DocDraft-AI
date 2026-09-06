@@ -120,7 +120,6 @@ export default function WordAddinTaskpanePage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>("formalize");
   const [previewText, setPreviewText] = useState<string>("");
-  const [showGuide, setShowGuide] = useState(false);
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [userByokKey, setUserByokKey] = useState<string>("");
 
@@ -1901,54 +1900,6 @@ export default function WordAddinTaskpanePage() {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* HƯỚNG DẪN CÀI ĐẶT ADD-IN (SIDELOADING GUIDE) */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs">
-          <button
-            type="button"
-            onClick={() => setShowGuide(!showGuide)}
-            className="w-full p-2.5 flex items-center justify-between font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-          >
-            <span className="flex items-center gap-1.5 text-[11px]">
-              <HelpCircle className="w-3.5 h-3.5 text-indigo-500" />
-              Hướng dẫn nạp Add-in vào Word
-            </span>
-            {showGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-
-          {showGuide && (
-            <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2 text-[10px] text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50 leading-relaxed">
-              <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/60 dark:border-slate-800">
-                <span className="font-semibold text-slate-900 dark:text-slate-100">
-                  Tệp cấu hình Add-in (Manifest):
-                </span>
-                <a
-                  href="/word-addin/manifest.xml"
-                  download="manifest.xml"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[10px] shadow-xs transition-all active:scale-95"
-                >
-                  <Download className="w-3 h-3" />
-                  <span>Tải manifest.xml</span>
-                </a>
-              </div>
-              <p className="font-semibold text-slate-900 dark:text-slate-100">
-                1. Dùng trên Word Online (Khuyên dùng - Nhanh nhất):
-              </p>
-              <p>
-                • Mở Word Online trên trình duyệt → Tab <strong>Chèn (Insert)</strong> → <strong>Tiện ích (Add-ins)</strong>.<br />
-                • Chọn <strong>Tải lên tiện ích của tôi (Upload My Add-in)</strong> và chọn tệp vừa tải.
-              </p>
-
-              <p className="font-semibold text-slate-900 dark:text-slate-100 pt-1 border-t border-slate-100 dark:border-slate-800">
-                2. Dùng trên Word Desktop (Cài trên máy tính):
-              </p>
-              <p>
-                • <strong>Bản Microsoft 365 mới:</strong> Tab <strong>Chèn</strong> → <strong>Tiện ích</strong> → <strong>Tải lên tiện ích của tôi</strong>.<br />
-                • <strong>Bản Office truyền thống:</strong> Tạo thư mục (VD: <code>C:\Addins</code>) chứa file, bật <strong>Share</strong> thư mục đó → Mở Word: <strong>File → Options → Trust Center → Trusted Add-in Catalogs</strong> → Dán đường dẫn chia sẻ (<code>\\Tên-Máy\Addins</code>) → Khởi động lại Word và mở từ tab <strong>Shared Folder</strong>.
-              </p>
             </div>
           )}
         </div>
