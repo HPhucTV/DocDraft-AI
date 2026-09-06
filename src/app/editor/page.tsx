@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -37,10 +37,8 @@ import { streamDocumentGeneration } from "@/lib/ai/stream-client";
 import { streamRawToDocument } from "@/lib/ai/raw-to-doc-client";
 import { RawExtractionResult } from "@/lib/ai/raw-to-doc-service";
 import { useAutoSave } from "@/hooks/use-auto-save";
-import { OfflineStatusPill } from "@/components/offline/offline-status-pill";
 import { buildWordDocumentHtml } from "@/lib/export/word-fallback";
 import { ShareExportPopover } from "@/components/editor/share-export-popover";
-import { CollaborativePresenceBar } from "@/components/editor/collaborative-presence-bar";
 
 // Tối ưu hóa Bundle Size: Lazy-load các Panel & Modal nặng (bundle-dynamic-imports)
 const SideBySideDiffModal = dynamic(
@@ -77,7 +75,7 @@ const SmartFillDialog = dynamic(
 );
 import type { PlaceholderReplacement } from "@/components/editor/smart-fill-dialog";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { Zap, Keyboard } from "lucide-react";
+import { Keyboard } from "lucide-react";
 
 const DEFAULT_EDITOR_USER = {
   id: "user-current",
@@ -576,102 +574,108 @@ function EditorContentComponent() {
   };
 
   // 9. Xuất bản văn bản (Word .docx hoặc PDF) (TASK-113, TASK-114, TASK-115)
-  const handleExport = async (format: "docx" | "pdf") => {
-    if (!editorContent) return;
-    setExportingFormat(format);
-    try {
-      if (format === "pdf") {
-        let downloaded = false;
-        try {
-          const res = await fetch(`/api/export/pdf`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: documentTitle,
-              html_content: editorContent,
-            }),
-          });
-
-          const contentType = res.headers.get("Content-Type") || "";
-          if (res.ok && contentType.includes("application/pdf")) {
-            const blob = await res.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-            const cleanTitle = (documentTitle || "Van_ban")
-              .replace(/[/\\?%*:|"<>]/g, "-")
-              .trim();
-            a.download = `${cleanTitle}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
-            downloaded = true;
-          }
-        } catch (e) {
-          console.warn("Document Service ngoại tuyến, tự động chuyển sang in/lưu PDF trình duyệt:", e);
-        }
-
-        // Tự động chuyển tiếp sang chế độ In / Lưu PDF vector chất lượng cao nếu Document Service offline
-        if (!downloaded) {
-          triggerBrowserPdfPrint();
-        }
+  const handleExport = useCallback(
+    async (format: "docx" | "pdf") => {
+      if (!editorContent) {
+        alert("Chưa có nội dung văn bản để xuất bản. Vui lòng soạn thảo văn bản trước.");
         return;
       }
+      setExportingFormat(format);
+      try {
+        if (format === "pdf") {
+          let downloaded = false;
+          try {
+            const res = await fetch(`/api/export/pdf`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: documentTitle,
+                html_content: editorContent,
+              }),
+            });
 
-      // Xử lý xuất Word
-      if (format === "docx") {
-        let downloaded = false;
-        try {
-          const res = await fetch(`/api/export/docx`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: documentTitle,
-              content_json: editorJson || {
-                type: "doc",
-                content: [{ type: "paragraph", content: [{ type: "text", text: editorContent }] }],
-              },
-              html_content: editorContent,
-            }),
-          });
-
-          if (res.ok) {
-            const blob = await res.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-            const cleanTitle = (documentTitle || "Van_ban")
-              .replace(/[/\\?%*:|"<>]/g, "-")
-              .trim();
-            const ext = res.headers.get("Content-Type")?.includes("msword") ? "doc" : "docx";
-            a.download = `${cleanTitle}.${ext}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
-            downloaded = true;
+            const contentType = res.headers.get("Content-Type") || "";
+            if (res.ok && contentType.includes("application/pdf")) {
+              const blob = await res.blob();
+              const downloadUrl = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = downloadUrl;
+              const cleanTitle = (documentTitle || "Van_ban")
+                .replace(/[/\\?%*:|"<>]/g, "-")
+                .trim();
+              a.download = `${cleanTitle}.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(downloadUrl);
+              downloaded = true;
+            }
+          } catch (e) {
+            console.warn("Document Service ngoại tuyến, tự động chuyển sang in/lưu PDF trình duyệt:", e);
           }
-        } catch (e) {
-          console.warn("Lỗi gọi API xuất Word, chuyển sang xuất Word trực tiếp:", e);
+
+          // Tự động chuyển tiếp sang chế độ In / Lưu PDF vector chất lượng cao nếu Document Service offline
+          if (!downloaded) {
+            triggerBrowserPdfPrint();
+          }
+          return;
         }
 
-        if (!downloaded) {
+        // Xử lý xuất Word
+        if (format === "docx") {
+          let downloaded = false;
+          try {
+            const res = await fetch(`/api/export/docx`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: documentTitle,
+                content_json: editorJson || {
+                  type: "doc",
+                  content: [{ type: "paragraph", content: [{ type: "text", text: editorContent }] }],
+                },
+                html_content: editorContent,
+              }),
+            });
+
+            if (res.ok) {
+              const blob = await res.blob();
+              const downloadUrl = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = downloadUrl;
+              const cleanTitle = (documentTitle || "Van_ban")
+                .replace(/[/\\?%*:|"<>]/g, "-")
+                .trim();
+              const ext = res.headers.get("Content-Type")?.includes("msword") ? "doc" : "docx";
+              a.download = `${cleanTitle}.${ext}`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(downloadUrl);
+              downloaded = true;
+            }
+          } catch (e) {
+            console.warn("Lỗi gọi API xuất Word, chuyển sang xuất Word trực tiếp:", e);
+          }
+
+          if (!downloaded) {
+            exportWordDirectly(documentTitle, editorContent);
+          }
+          return;
+        }
+      } catch (err: unknown) {
+        console.error(`Xuất ${format.toUpperCase()} thất bại:`, err);
+        if (format === "pdf") {
+          triggerBrowserPdfPrint();
+        } else {
           exportWordDirectly(documentTitle, editorContent);
         }
-        return;
+      } finally {
+        setExportingFormat(null);
       }
-    } catch (err: unknown) {
-      console.error(`Xuất ${format.toUpperCase()} thất bại:`, err);
-      if (format === "pdf") {
-        triggerBrowserPdfPrint();
-      } else {
-        exportWordDirectly(documentTitle, editorContent);
-      }
-    } finally {
-      setExportingFormat(null);
-    }
-  };
+    },
+    [editorContent, documentTitle, editorJson]
+  );
 
   // Xử lý áp dụng các trường Smart Fill AI vào Tiptap Editor (TASK-B1)
   const handleApplySmartFillReplacements = (replacements: PlaceholderReplacement[]) => {
@@ -731,7 +735,14 @@ function EditorContentComponent() {
         return;
       }
 
-      // 6. ?: Mở bảng tra cứu phím tắt (khi không trong input)
+      // 6. Ctrl+Shift+C: Kiểm tra thể thức Nghị định 30
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "c" || e.key === "C")) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("docdraft:open-compliance"));
+        return;
+      }
+
+      // 7. ?: Mở bảng tra cứu phím tắt (khi không trong input)
       if (e.key === "?" && !isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         setIsShortcutsOpen((prev) => !prev);
@@ -741,7 +752,108 @@ function EditorContentComponent() {
 
     window.addEventListener("keydown", handleGlobalShortcuts);
     return () => window.removeEventListener("keydown", handleGlobalShortcuts);
-  }, [editorContent, documentTitle]);
+  }, [editorContent, documentTitle, handleExport]);
+
+  // Xử lý các lệnh từ Command Palette (Ctrl+K) hoặc URL params
+  const handleExecuteCommand = useCallback(
+    (action: string, param?: string) => {
+      switch (action) {
+        case "create-new-draft": {
+          setCurrentDraftId(null);
+          setDocumentTitle("Văn bản dự thảo mới");
+          setEditorContent("");
+          setEditorJson(null);
+          setEditorContentRef.current?.("");
+          setIsLeftSidebarOpen(true);
+          setSidebarMode("template");
+          if (typeof window !== "undefined") {
+            window.history.replaceState(null, "", "/editor");
+          }
+          break;
+        }
+        case "smart-fill": {
+          setIsSmartFillOpen(true);
+          break;
+        }
+        case "ai-copilot": {
+          setIsChatOpen(true);
+          break;
+        }
+        case "compliance-check": {
+          window.dispatchEvent(new CustomEvent("docdraft:open-compliance"));
+          break;
+        }
+        case "export-word": {
+          handleExport("docx");
+          break;
+        }
+        case "export-pdf": {
+          handleExport("pdf");
+          break;
+        }
+        case "template": {
+          if (param && templates.length > 0) {
+            const query = param.toLowerCase();
+            const matched = templates.find((t) => {
+              const idMatch = t.id.toLowerCase().includes(query);
+              const titleMatch =
+                query === "to-trinh"
+                  ? t.title.toLowerCase().includes("tờ trình")
+                  : query === "cong-van"
+                  ? t.title.toLowerCase().includes("công văn")
+                  : query === "quyet-dinh"
+                  ? t.title.toLowerCase().includes("quyết định")
+                  : t.title.toLowerCase().includes(query);
+              return idMatch || titleMatch;
+            });
+            if (matched) {
+              setSelectedTemplateId(matched.id);
+              setDocumentTitle(`Dự thảo ${matched.title}`);
+              setIsLeftSidebarOpen(true);
+              setSidebarMode("template");
+            }
+          }
+          break;
+        }
+        case "shortcuts": {
+          setIsShortcutsOpen(true);
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    [templates, handleExport]
+  );
+
+  // Lắng nghe sự kiện custom từ Command Palette (Ctrl+K)
+  useEffect(() => {
+    const handleCommandEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ action: string; param?: string }>;
+      if (customEvent.detail?.action) {
+        handleExecuteCommand(customEvent.detail.action, customEvent.detail.param);
+      }
+    };
+
+    window.addEventListener("docdraft:command", handleCommandEvent);
+    return () => window.removeEventListener("docdraft:command", handleCommandEvent);
+  }, [handleExecuteCommand]);
+
+  // Xử lý action từ URL searchParams nếu chuyển hướng từ trang khác tới /editor?action=...
+  useEffect(() => {
+    const action = searchParams.get("action");
+    const param = searchParams.get("param") || undefined;
+    if (action) {
+      handleExecuteCommand(action, param);
+      // Xóa query param action và param khỏi URL sau khi thực hiện
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("action");
+        url.searchParams.delete("param");
+        window.history.replaceState(null, "", url.toString());
+      }
+    }
+  }, [searchParams, handleExecuteCommand]);
 
   // 10. Xử lý Nhập khẩu tệp Word (.docx) sang Tiptap Canvas (TASK-207)
   const handleImportDocx = async (file: File) => {
@@ -965,13 +1077,6 @@ function EditorContentComponent() {
               <span className="hidden md:inline">Lưu</span>
             </Button>
           )}
-
-          {/* Cụm Hiển thị Trực tuyến (Giữ nguyên vẹn theo yêu cầu người dùng) */}
-          <CollaborativePresenceBar
-            draftId={currentDraftId || "default-draft"}
-            currentUser={DEFAULT_EDITOR_USER}
-            onShareClick={() => setIsShareOpen(true)}
-          />
 
           {/* Menu Chia sẻ & Xuất bản chuẩn phong cách Canva (Gói gọn 3 nút Xuất Word, In/PDF, Sao chép + Mời) */}
           <ShareExportPopover

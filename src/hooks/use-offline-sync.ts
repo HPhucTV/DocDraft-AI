@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   listOfflineDrafts,
   markDraftSynced,
-  type OfflineDraft,
 } from "@/lib/offline/offline-storage";
 
-export function useOfflineSync(currentDraftId?: string) {
+export function useOfflineSync(_currentDraftId?: string) {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [unsyncedCount, setUnsyncedCount] = useState<number>(0);

@@ -52,7 +52,7 @@ export function computeDeterministicVector(text: string, dim: number = 768): num
 
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
-    const hash = crypto.createHash("md5").update(word).digest();
+    const hash = crypto.createHash("sha256").update(word).digest();
     for (let b = 0; b < hash.length; b++) {
       const index = (hash[b] * 31 + i) % dim;
       const weight = ((hash[b] % 100) - 50) / 50.0;

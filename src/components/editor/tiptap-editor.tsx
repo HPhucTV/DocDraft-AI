@@ -259,7 +259,7 @@ export function TiptapEditor({
     const trimmed = text.trim();
     const words = trimmed ? trimmed.split(/\s+/).length : 0;
     return { words, characters: text.length };
-  }, [editor?.state.doc]);
+  }, [editor]);
 
   // Tính số trang hiện tại và tổng số trang (Word Multi-Page Pagination)
   const pageInfo = React.useMemo(() => {
@@ -281,7 +281,7 @@ export function TiptapEditor({
     const totalPages = Math.max(1, totalBreaks + 1, charEstimate);
     const currentPage = Math.min(totalPages, breaksBeforeCursor + 1);
     return { currentPage, totalPages };
-  }, [editor?.state.doc, editor?.state.selection, stats.characters]);
+  }, [editor, stats.characters]);
 
   // Tự động quét LocalStorage tìm bản sao lưu có nội dung khi tài liệu bị trống (0 ký tự)
   useEffect(() => {
@@ -385,6 +385,15 @@ export function TiptapEditor({
       editor.off("transaction", handleUpdate);
     };
   }, [editor]);
+
+  // Lắng nghe sự kiện mở Compliance Dialog NĐ 30 từ Command Palette hoặc phím tắt
+  useEffect(() => {
+    const handleOpenCompliance = () => {
+      setIsComplianceDialogOpen(true);
+    };
+    window.addEventListener("docdraft:open-compliance", handleOpenCompliance);
+    return () => window.removeEventListener("docdraft:open-compliance", handleOpenCompliance);
+  }, []);
 
   // Cập nhật nội dung từ ngoài vào (khi sinh stream AI hoặc load draft, không can thiệp khi người dùng đang soạn)
   useEffect(() => {
@@ -568,7 +577,6 @@ export function TiptapEditor({
         onChangeLineSpacing={setLineSpacing}
         onAutoFormatND30={handleAutoFormatND30}
         onInsertPageBreak={() => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (editor.chain().focus() as any).insertPageBreak().run();
         }}
         showRuler={showRuler}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -13,14 +13,11 @@ import {
   Sparkles,
   CheckCircle2,
   Download,
-  Share2,
   FolderKanban,
   Building2,
-  Settings,
   HelpCircle,
   Moon,
   Sun,
-  Laptop,
   ArrowRight,
   Zap,
 } from "lucide-react";
@@ -58,7 +55,10 @@ export function CommandPalette({
   onTriggerAIChat,
 }: CommandPaletteProps) {
   const router = useRouter();
-  const { setTheme, theme } = useTheme();
+  const pathname = usePathname();
+  const { setTheme, theme, resolvedTheme } = useTheme();
+  const currentTheme = resolvedTheme || theme || "light";
+  const isDark = currentTheme === "dark";
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,17 +72,40 @@ export function CommandPalette({
     }
   }, [open]);
 
+  // Bộ điều phối lệnh thông minh: kích hoạt ngay nếu ở /editor, hoặc điều hướng kèm tham số
+  const dispatchEditorCommand = (commandId: string, param?: string) => {
+    onOpenChange(false);
+
+    if (commandId === "compliance-check") {
+      window.dispatchEvent(new CustomEvent("docdraft:open-compliance"));
+    }
+
+    // Phát custom event cho trang editor
+    window.dispatchEvent(
+      new CustomEvent("docdraft:command", {
+        detail: { action: commandId, param },
+      })
+    );
+
+    // Nếu không ở trang editor thì điều hướng
+    if (!pathname || !pathname.startsWith("/editor")) {
+      const url = param
+        ? `/editor?action=${commandId}&param=${encodeURIComponent(param)}`
+        : `/editor?action=${commandId}`;
+      router.push(url);
+    }
+  };
+
   const items: CommandItem[] = [
     // 1. Thao tác nhanh
     {
       id: "create-new-draft",
       title: "Tạo văn bản dự thảo mới",
-      subtitle: "Mở trình soạn thảo trắng để bắt đầu văn bản mới",
+      subtitle: "Mở hoặc làm mới trình soạn thảo trắng để bắt đầu",
       category: "actions",
       icon: PlusCircle,
       action: () => {
-        onOpenChange(false);
-        router.push("/editor");
+        dispatchEditorCommand("create-new-draft");
       },
     },
     {
@@ -93,11 +116,11 @@ export function CommandPalette({
       icon: Zap,
       shortcut: ["Ctrl", "Shift", "F"],
       action: () => {
-        onOpenChange(false);
         if (onTriggerSmartFill) {
+          onOpenChange(false);
           onTriggerSmartFill();
         } else {
-          router.push("/editor?action=smart-fill");
+          dispatchEditorCommand("smart-fill");
         }
       },
     },
@@ -109,11 +132,11 @@ export function CommandPalette({
       icon: Sparkles,
       shortcut: ["Ctrl", "/"],
       action: () => {
-        onOpenChange(false);
         if (onTriggerAIChat) {
+          onOpenChange(false);
           onTriggerAIChat();
         } else {
-          router.push("/editor?action=chat");
+          dispatchEditorCommand("ai-copilot");
         }
       },
     },
@@ -125,11 +148,11 @@ export function CommandPalette({
       icon: CheckCircle2,
       shortcut: ["Ctrl", "Shift", "C"],
       action: () => {
-        onOpenChange(false);
         if (onTriggerComplianceCheck) {
+          onOpenChange(false);
           onTriggerComplianceCheck();
         } else {
-          router.push("/editor?action=compliance");
+          dispatchEditorCommand("compliance-check");
         }
       },
     },
@@ -141,11 +164,11 @@ export function CommandPalette({
       icon: Download,
       shortcut: ["Ctrl", "Shift", "E"],
       action: () => {
-        onOpenChange(false);
         if (onTriggerExportWord) {
+          onOpenChange(false);
           onTriggerExportWord();
         } else {
-          router.push("/editor");
+          dispatchEditorCommand("export-word");
         }
       },
     },
@@ -157,11 +180,11 @@ export function CommandPalette({
       icon: Download,
       shortcut: ["Ctrl", "Shift", "P"],
       action: () => {
-        onOpenChange(false);
         if (onTriggerExportPdf) {
+          onOpenChange(false);
           onTriggerExportPdf();
         } else {
-          router.push("/editor");
+          dispatchEditorCommand("export-pdf");
         }
       },
     },
@@ -209,8 +232,7 @@ export function CommandPalette({
       category: "templates",
       icon: FileText,
       action: () => {
-        onOpenChange(false);
-        router.push("/editor?template=to-trinh");
+        dispatchEditorCommand("template", "to-trinh");
       },
     },
     {
@@ -220,8 +242,7 @@ export function CommandPalette({
       category: "templates",
       icon: FileText,
       action: () => {
-        onOpenChange(false);
-        router.push("/editor?template=cong-van");
+        dispatchEditorCommand("template", "cong-van");
       },
     },
     {
@@ -231,8 +252,7 @@ export function CommandPalette({
       category: "templates",
       icon: FileText,
       action: () => {
-        onOpenChange(false);
-        router.push("/editor?template=quyet-dinh");
+        dispatchEditorCommand("template", "quyet-dinh");
       },
     },
 
@@ -247,16 +267,19 @@ export function CommandPalette({
       action: () => {
         onOpenChange(false);
         if (onOpenShortcuts) onOpenShortcuts();
+        window.dispatchEvent(
+          new CustomEvent("docdraft:command", { detail: { action: "shortcuts" } })
+        );
       },
     },
     {
       id: "sys-theme-toggle",
-      title: `Chuyển giao diện: ${theme === "dark" ? "Chế độ Sáng" : "Chế độ Tối"}`,
+      title: `Chuyển sang ${isDark ? "Giao diện Sáng" : "Giao diện Tối"}`,
       subtitle: "Thay đổi tông màu hiển thị Dark / Light mode",
       category: "system",
-      icon: theme === "dark" ? Sun : Moon,
+      icon: isDark ? Sun : Moon,
       action: () => {
-        setTheme(theme === "dark" ? "light" : "dark");
+        setTheme(isDark ? "light" : "dark");
         onOpenChange(false);
       },
     },
@@ -343,22 +366,39 @@ export function CommandPalette({
                     const Icon = item.icon;
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={item.id}
-                        onClick={() => item.action()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          item.action();
+                        }}
                         onMouseEnter={() => setSelectedIndex(itemGlobalIndex)}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-colors ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs text-left cursor-pointer transition-colors border-0 outline-none select-none ${
                           isSelected
                             ? "bg-primary text-primary-foreground font-medium shadow-xs"
                             : "text-foreground hover:bg-muted/60"
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          <Icon className={`h-4 w-4 shrink-0 ${isSelected ? "text-primary-foreground" : "text-muted-foreground"}`} />
+                          <Icon
+                            className={`h-4 w-4 shrink-0 ${
+                              isSelected
+                                ? "text-primary-foreground"
+                                : "text-muted-foreground"
+                            }`}
+                          />
                           <div className="truncate">
-                            <p className="truncate">{item.title}</p>
+                            <p className="truncate font-semibold">{item.title}</p>
                             {item.subtitle && (
-                              <p className={`text-[11px] truncate mt-0.5 ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                              <p
+                                className={`text-[11px] truncate mt-0.5 ${
+                                  isSelected
+                                    ? "text-primary-foreground/80"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
                                 {item.subtitle}
                               </p>
                             )}
@@ -387,7 +427,7 @@ export function CommandPalette({
                             <ArrowRight className="h-3.5 w-3.5 text-primary-foreground ml-1" />
                           )}
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -403,7 +443,7 @@ export function CommandPalette({
               Dùng phím <kbd className="px-1 rounded bg-muted border font-mono">↑</kbd> <kbd className="px-1 rounded bg-muted border font-mono">↓</kbd> để di chuyển
             </span>
             <span>
-              Nhấn <kbd className="px-1 rounded bg-muted border font-mono">Enter ⏎</kbd> để chọn
+              Nhấn <kbd className="px-1 rounded bg-muted border font-mono">Enter ⏎</kbd> hoặc click để chọn
             </span>
           </div>
           <span>DOCDRAFT AI Command Palette</span>

@@ -31,7 +31,6 @@ import {
   Tag,
   Clock,
   Check,
-  Filter,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { FormSchema } from "@/types/form-schema";
@@ -49,9 +48,9 @@ interface TemplateItem {
 }
 
 const CATEGORIES = [
-  { id: "ALL", label: "Tất cả biểu mẫu", icon: Layers, count: 0 },
-  { id: "ADMINISTRATIVE", label: "Hành chính NĐ 30", icon: Building2, count: 0 },
-  { id: "HR", label: "Nhân sự & Bổ nhiệm", icon: Users, count: 0 },
+  { id: "ALL", label: "Tất cả mẫu", icon: FileText, count: 0 },
+  { id: "ADMINISTRATIVE", label: "Hành chính công (NĐ 30)", icon: ShieldCheck, count: 0 },
+  { id: "PERSONNEL", label: "Nhân sự & Lao động", icon: Users, count: 0 },
   { id: "FINANCE", label: "Tài chính & Kinh phí", icon: DollarSign, count: 0 },
   { id: "MINUTES", label: "Biên bản & Bàn giao", icon: ClipboardList, count: 0 },
   { id: "ENTERPRISE", label: "Doanh nghiệp & Hợp đồng", icon: Briefcase, count: 0 },
@@ -60,7 +59,6 @@ const CATEGORIES = [
 export default function TemplateLibraryPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [previewTemplate, setPreviewTemplate] = useState<TemplateItem | null>(null);
@@ -316,10 +314,12 @@ export default function TemplateLibraryPage() {
                         <span>{template.industryPack || "HÀNH CHÍNH"}</span>
                       </span>
 
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                        <span>Chuẩn NĐ 30</span>
-                      </span>
+                      {isAdministrative && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Chuẩn NĐ 30</span>
+                        </span>
+                      )}
                     </div>
 
                     {/* Title */}

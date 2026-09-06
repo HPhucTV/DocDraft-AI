@@ -147,7 +147,7 @@ export function convertFullDocumentToND30Html(text: string): string {
     return true;
   });
 
-  let orgLines: string[] = [];
+  const orgLines: string[] = [];
   let docNumber = "";
   let locationDate = "";
   let title = "";
@@ -309,7 +309,7 @@ export function convertFullDocumentToND30Html(text: string): string {
   // Xây dựng Thân văn bản
   const bodyHtml = bodyParagraphs
     .map((p) => {
-      let formatted = inlineMarkdownToHtml(p);
+      const formatted = inlineMarkdownToHtml(p);
       const isListItem = /^\d+\.\s+|-/.test(p);
       const style = isListItem
         ? `margin: 0 0 6pt 0; line-height: 1.35; font-size: 13pt; text-align: justify;`

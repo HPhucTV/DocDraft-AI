@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Zap,
-  CheckCircle2,
   Building2,
   Calendar,
   Sparkles,

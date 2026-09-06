@@ -16,7 +16,6 @@ import {
   Loader2,
   UploadCloud,
   BookmarkCheck,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FolderTree } from "./folder-tree";

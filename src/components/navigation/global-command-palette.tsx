@@ -35,6 +35,17 @@ export function GlobalCommandPalette() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    const handleCommand = (e: Event) => {
+      const detail = (e as CustomEvent<{ action: string }>).detail;
+      if (detail?.action === "shortcuts") {
+        setIsShortcutsOpen(true);
+      }
+    };
+    window.addEventListener("docdraft:command", handleCommand);
+    return () => window.removeEventListener("docdraft:command", handleCommand);
+  }, []);
+
   return (
     <>
       <CommandPalette

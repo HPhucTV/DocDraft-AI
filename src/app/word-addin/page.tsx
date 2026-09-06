@@ -10,26 +10,12 @@ import {
   AlertCircle,
   HelpCircle,
   Loader2,
-  Columns2,
-  FileCheck,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
   LayoutTemplate,
   Send,
   ArrowDownToLine,
   Layers,
   Bot,
-  Download,
-  KeyRound,
   SlidersHorizontal,
-  Check,
-  RotateCcw,
-  Bookmark,
-  PauseCircle,
-  PlayCircle,
-  Trash2,
-  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,14 +27,9 @@ import {
   getStoredCustomProfiles,
   saveCustomProfile,
   deleteCustomProfile,
-  SupportedFontFamily,
 } from "@/lib/office/format-config";
 import {
-  formatDocumentWithConfig,
-  formatDocumentND30,
   applyDocumentMargins,
-  insertNationalHeaderTable,
-  insertSignatureFooterTable,
   getSelectedWordText,
   replaceSelectedWordText,
   insertSnippetAtCursor,
@@ -80,20 +61,6 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
-}
-
-/**
- * Làm sạch mã HTML đầu ra của AI trước khi render vào DOM để triệt tiêu nguy cơ XSS
- */
-function sanitizeHtml(html: string): string {
-  if (!html) return "";
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
-    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "")
-    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, "")
-    .replace(/\son\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, "")
-    .replace(/(href|src)\s*=\s*['"]?javascript:[^'"]*['"]?/gi, "");
 }
 
 /**
@@ -197,19 +164,6 @@ export default function WordAddinTaskpanePage() {
     saveStoredFormatConfig(next);
   };
 
-  const handleApplyFormatToDocument = async () => {
-    setIsLoading(true);
-    try {
-      const res = await formatDocumentWithConfig(formatConfig);
-      setStatusMessage({ type: "success", text: res.message });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Có lỗi";
-      setStatusMessage({ type: "error", text: msg });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleApplyMarginsOnly = async () => {
     setIsLoading(true);
     try {
@@ -290,7 +244,6 @@ export default function WordAddinTaskpanePage() {
   // Khởi tạo Office.js
   useEffect(() => {
     const timer = setTimeout(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const officeGlobal = (window as any).Office;
       if (officeGlobal && officeGlobal.onReady) {
         officeGlobal.onReady((info: { host?: string }) => {
@@ -364,47 +317,6 @@ export default function WordAddinTaskpanePage() {
       chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages, activeTab]);
-
-  // 1-Click Chuẩn hóa thể thức theo cấu hình hiện hành (NĐ 30, Doanh nghiệp, Trường học...)
-  const handleFormatND30 = async () => {
-    setIsLoading(true);
-    setStatusMessage(null);
-    try {
-      const result = await formatDocumentWithConfig(formatConfig);
-      setStatusMessage({ type: "success", text: result.message });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Có lỗi xảy ra";
-      setStatusMessage({ type: "error", text: `Lỗi: ${msg}` });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInsertHeader = async () => {
-    setIsLoading(true);
-    try {
-      const res = await insertNationalHeaderTable();
-      setStatusMessage({ type: "success", text: res.message });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Có lỗi";
-      setStatusMessage({ type: "error", text: msg });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInsertFooter = async () => {
-    setIsLoading(true);
-    try {
-      const res = await insertSignatureFooterTable();
-      setStatusMessage({ type: "success", text: res.message });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Có lỗi";
-      setStatusMessage({ type: "error", text: msg });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // AI Copilot trên đoạn bôi đen
   const handleRunAiCopilot = async (command: string) => {

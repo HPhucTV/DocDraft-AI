@@ -32,23 +32,15 @@ import {
   Send,
   ChevronDown,
   Check,
-  MoreHorizontal,
   FileText,
   Heading1,
   Heading2,
   Heading3,
-  Layers,
   Sparkles,
-  Subscript as SubscriptIcon,
-  Superscript as SuperscriptIcon,
-  Baseline,
   Eraser,
-  Indent,
-  Outdent,
   Minus,
   FilePlus2,
   Ruler,
-  Palette,
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -60,12 +52,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { AIFeedbackWidget } from "./ai-feedback-widget";
 import { CollaborativePresenceBar } from "./collaborative-presence-bar";
 
 interface EditorToolbarProps {
@@ -166,9 +152,9 @@ export function EditorToolbar({
   isSuggestionMode,
   onOpenSuggestionsPanel,
   suggestionsCount,
-  isSuggestionsPanelOpen,
+  isSuggestionsPanelOpen: _isSuggestionsPanelOpen,
   draftId,
-  draftStatus,
+  draftStatus: _draftStatus,
   currentUser,
   onOpenSubmitApproval,
   lineSpacing = 1.25,

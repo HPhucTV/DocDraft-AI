@@ -157,7 +157,7 @@ export function formatMarkdownToWordHtml(
   const currentConfig = config || getStoredFormatConfig();
   if (!rawMarkdown || !rawMarkdown.trim()) return "";
 
-  let text = cleanHtmlForWord(rawMarkdown);
+  const text = cleanHtmlForWord(rawMarkdown);
 
   // Nếu text là toàn văn văn bản NĐ 30 chưa có bảng ẩn 2 cột -> Tự động đóng gói vào Bảng 2 cột chuẩn NĐ 30
   if (isFullND30Document(text) && !text.includes("data-nd30-table")) {
