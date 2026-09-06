@@ -30,7 +30,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Node dependencies
-        run: npm ci
+        run: npm install
 
       - name: Validate Prisma Schema Syntax
         run: npx prisma validate
