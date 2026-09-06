@@ -26,6 +26,10 @@ import {
   Calendar,
   Building,
   MessageSquare,
+  PanelLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -113,6 +117,47 @@ function EditorContentComponent() {
 
   // Chế độ hiển thị trên màn hình di động & tablet (< 1024px) (TASK-412)
   const [mobileActiveView, setMobileActiveView] = useState<"sidebar" | "canvas">("sidebar");
+
+  // Trạng thái đóng / mở khung bên trái (Mẫu quy chuẩn & Nháp thô)
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("docdraft_editor_left_sidebar");
+      if (saved !== null) {
+        setIsLeftSidebarOpen(saved === "true");
+      }
+    }
+  }, []);
+
+  const toggleLeftSidebar = () => {
+    setIsLeftSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("docdraft_editor_left_sidebar", String(next));
+      }
+      return next;
+    });
+  };
+
+  // Phím tắt Ctrl+B (hoặc Cmd+B) để đóng / mở thanh bên trái
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        const target = e.target as HTMLElement | null;
+        const isInput =
+          target?.tagName === "INPUT" ||
+          target?.tagName === "TEXTAREA" ||
+          target?.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          toggleLeftSidebar();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // 1. Tải danh sách templates từ API
   useEffect(() => {
@@ -539,6 +584,28 @@ function EditorContentComponent() {
             </Link>
           </Button>
 
+          {/* Nút đóng / mở khung bên trái (gần nút Dashboard) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLeftSidebar}
+            className={`gap-1.5 h-9 px-2 text-xs transition-colors ${
+              !isLeftSidebarOpen
+                ? "text-primary bg-primary/10 hover:bg-primary/20 font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+            title={isLeftSidebarOpen ? "Ẩn khung bên trái (Ctrl+B)" : "Hiện khung bên trái (Ctrl+B)"}
+          >
+            {isLeftSidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4 text-primary" />
+            )}
+            <span className="hidden xl:inline text-xs">
+              {isLeftSidebarOpen ? "Đóng thanh bên" : "Mở thanh bên"}
+            </span>
+          </Button>
+
           <div className="h-4 w-px bg-border" />
 
           {/* Tiêu đề văn bản có thể chỉnh sửa trực tiếp */}
@@ -724,6 +791,34 @@ function EditorContentComponent() {
 
           <OfflineStatusPill draftId={currentDraftId || undefined} />
 
+          {/* Bộ điều khiển Bố cục (Layout Controls - phong cách Modern IDE chuẩn như hình mẫu) */}
+          <div className="hidden sm:flex items-center gap-0.5 p-1 rounded-md border border-border/80 bg-muted/30" title="Tùy chỉnh bố cục hiển thị">
+            <button
+              type="button"
+              onClick={toggleLeftSidebar}
+              className={`h-7 w-7 rounded flex items-center justify-center transition-all ${
+                isLeftSidebarOpen
+                  ? "bg-background text-foreground shadow-2xs border border-border/60 font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              }`}
+              title={isLeftSidebarOpen ? "Ẩn khung biểu mẫu bên trái (Ctrl+B)" : "Hiện khung biểu mẫu bên trái (Ctrl+B)"}
+            >
+              <PanelLeft className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className={`h-7 w-7 rounded flex items-center justify-center transition-all ${
+                isChatOpen
+                  ? "bg-background text-foreground shadow-2xs border border-border/60 font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              }`}
+              title={isChatOpen ? "Đóng AI Copilot bên phải" : "Mở AI Copilot bên phải"}
+            >
+              <PanelRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
           <ThemeToggle />
         </div>
       </header>
@@ -758,11 +853,17 @@ function EditorContentComponent() {
       </div>
 
       {/* Main Workspace: Left Sidebar & Right A4 Canvas */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left Side: Biểu mẫu động & Nháp thô */}
-        <aside className={`${mobileActiveView === "sidebar" ? "flex" : "hidden"} lg:flex w-full lg:w-[460px] border-r bg-muted/20 flex-col shrink-0 overflow-hidden`}>
+        <aside
+          className={`${
+            mobileActiveView === "sidebar" ? "flex" : "hidden"
+          } ${
+            isLeftSidebarOpen ? "lg:flex w-full lg:w-[460px]" : "hidden lg:hidden w-0"
+          } border-r bg-muted/20 flex-col shrink-0 overflow-hidden transition-all duration-300 ease-in-out`}
+        >
           {/* Mode Switcher Tabs */}
-          <div className="p-3 border-b bg-background/50 flex items-center gap-1">
+          <div className="p-2.5 sm:p-3 border-b bg-background/50 flex items-center gap-1.5">
             <button
               onClick={() => setSidebarMode("template")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -785,6 +886,17 @@ function EditorContentComponent() {
               <Wand2 className="h-3.5 w-3.5" />
               <span>Chuẩn hóa nháp thô</span>
             </button>
+
+            {/* Nút đóng nhanh trực tiếp trên thanh tiêu đề khung bên trái */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleLeftSidebar}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 rounded-lg hover:bg-muted"
+              title="Đóng khung bên trái (Ctrl+B)"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Sub-header for Mode */}
@@ -960,6 +1072,22 @@ function EditorContentComponent() {
 
         {/* Right Side: A4 Canvas Editor (Tiptap) */}
         <main className={`${mobileActiveView === "canvas" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden relative`}>
+          {/* Nút nổi mở lại khung bên trái khi đang bị đóng trên Desktop */}
+          {!isLeftSidebarOpen && (
+            <div className="hidden lg:block absolute left-3 top-3 z-20 animate-in fade-in slide-in-from-left-2 duration-200">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleLeftSidebar}
+                className="h-8 gap-1.5 px-2.5 text-xs bg-background/95 backdrop-blur-xs shadow-md border-border hover:bg-accent hover:border-primary/50 text-foreground transition-all cursor-pointer"
+                title="Mở lại khung biểu mẫu & nháp thô (Ctrl+B)"
+              >
+                <PanelLeftOpen className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-[11px]">Mở biểu mẫu</span>
+              </Button>
+            </div>
+          )}
+
           <TiptapEditor
             draftId={currentDraftId || undefined}
             draftTitle={documentTitle}
