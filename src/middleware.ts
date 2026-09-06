@@ -1,41 +1,7 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  const isAuthRoute =
-    pathname.startsWith("/login") || pathname.startsWith("/register");
-  const isProtectedRoute =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/editor") ||
-    pathname.startsWith("/settings") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/organization");
-
-  // Tuyến quản trị viên (/admin): Yêu cầu đăng nhập VÀ role ADMIN
-  if (pathname.startsWith("/admin")) {
-    if (!isLoggedIn) {
-      const loginUrl = new URL("/login", req.nextUrl.origin);
-      loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    const role = (req.auth?.user as { role?: string })?.role;
-    if (role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
-    }
-  }
-
-  if (isProtectedRoute && !isLoggedIn) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
-    loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAuthRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
-  }
 
   // Xử lý CORS cho Google Docs Add-on và Word Add-in
   if (pathname.startsWith("/api/")) {
@@ -58,8 +24,36 @@ export default auth((req) => {
     return response;
   }
 
+  // Xác thực phiên đăng nhập qua session cookie của Auth.js / NextAuth
+  const sessionToken =
+    req.cookies.get("authjs.session-token")?.value ||
+    req.cookies.get("__Secure-authjs.session-token")?.value ||
+    req.cookies.get("next-auth.session-token")?.value ||
+    req.cookies.get("__Secure-next-auth.session-token")?.value;
+
+  const isLoggedIn = !!sessionToken;
+
+  const isAuthRoute =
+    pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/editor") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/organization");
+
+  if (isProtectedRoute && !isLoggedIn) {
+    const loginUrl = new URL("/login", req.nextUrl.origin);
+    loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute && isLoggedIn) {
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+  }
+
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

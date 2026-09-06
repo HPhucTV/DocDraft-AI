@@ -13,6 +13,7 @@
   <HighResolutionIconUrl DefaultValue="https://officedev.github.io/Office-Add-in-samples/Samples/hello-world/word-hello-world/assets/icon-64.png"/>
   <SupportUrl DefaultValue="https://docdraft.vn"/>
   <AppDomains>
+    <AppDomain>https://doc-draft-ai.vercel.app</AppDomain>
     <AppDomain>https://localhost:3443</AppDomain>
     <AppDomain>http://localhost:3000</AppDomain>
   </AppDomains>
@@ -20,7 +21,7 @@
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3443/word-addin"/>
+    <SourceLocation DefaultValue="https://doc-draft-ai.vercel.app/word-addin"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -71,7 +72,7 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://docdraft.vn"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3443/word-addin"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://doc-draft-ai.vercel.app/word-addin"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="DocDraft AI"/>

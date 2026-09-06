@@ -72,3 +72,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+.vercel
+.env*
