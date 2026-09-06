@@ -28,8 +28,20 @@ export interface PromptCompileOptions {
  */
 export async function resolveAIKey(
   userId?: string | null,
-  preferredProvider: AIProvider = "deepseek"
+  preferredProvider: AIProvider = "deepseek",
+  directApiKey?: string | null
 ): Promise<ResolvedAIKey> {
+  // 0. Khóa truyền trực tiếp từ Header (BYOK từ Word Add-in hoặc API Client)
+  if (directApiKey && directApiKey.trim().length > 15) {
+    const trimmed = directApiKey.trim();
+    const provider: AIProvider = trimmed.startsWith("AIza") ? "gemini" : preferredProvider;
+    return {
+      apiKey: trimmed,
+      isBYOK: true,
+      provider,
+    };
+  }
+
   // 1. Kiểm tra khóa cá nhân của người dùng (BYOK)
   if (userId) {
     try {
@@ -265,6 +277,7 @@ OUTPUT ENFORCEMENT:
 
 export interface StreamGenerationOptions {
   userId?: string | null;
+  directApiKey?: string | null;
   preferredProvider?: AIProvider;
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
   signal?: AbortSignal;
@@ -350,15 +363,15 @@ async function* streamFromGemini(
 export async function* generateDocumentStream(
   options: StreamGenerationOptions
 ): AsyncGenerator<StreamChunkResult, void, unknown> {
-  const { userId, preferredProvider = "deepseek", messages, signal } = options;
+  const { userId, directApiKey, preferredProvider = "deepseek", messages, signal } = options;
 
   let keyInfo: ResolvedAIKey;
   try {
-    keyInfo = await resolveAIKey(userId, preferredProvider);
+    keyInfo = await resolveAIKey(userId, preferredProvider, directApiKey);
   } catch {
     // Nếu provider ưu tiên không lấy được, thử fallback sang provider còn lại
     const altProvider = preferredProvider === "deepseek" ? "gemini" : "deepseek";
-    keyInfo = await resolveAIKey(userId, altProvider);
+    keyInfo = await resolveAIKey(userId, altProvider, directApiKey);
   }
 
   // 1. Thử gọi DeepSeek trước nếu là provider được chọn

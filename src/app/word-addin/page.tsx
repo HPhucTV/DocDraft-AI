@@ -21,6 +21,7 @@ import {
   Layers,
   Bot,
   Download,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,8 +86,51 @@ export default function WordAddinTaskpanePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>("formalize");
-  const [previewText, setPreviewText] = useState<string>("");
   const [showGuide, setShowGuide] = useState(false);
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [userByokKey, setUserByokKey] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("docdraft_user_byok") || "";
+      setUserByokKey(saved);
+    }
+  }, []);
+
+  const handleSaveByokKey = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("docdraft_user_byok", userByokKey.trim());
+      setStatusMessage({
+        type: "success",
+        text: userByokKey.trim()
+          ? "Đã lưu khóa API BYOK cá nhân vào Word Add-in thành công!"
+          : "Đã chuyển về sử dụng khóa AI mặc định của hệ thống!",
+      });
+    }
+  };
+
+  const handleClearByokKey = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("docdraft_user_byok");
+      setUserByokKey("");
+      setStatusMessage({
+        type: "info",
+        text: "Đã xóa khóa cá nhân. Trở về dùng khóa mặc định của hệ thống.",
+      });
+    }
+  };
+
+  const getAddinHeaders = () => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("docdraft_user_byok") : null;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "X-Client-Source": "word-addin",
+    };
+    if (saved && saved.trim().length > 0) {
+      headers["X-API-Key"] = saved.trim();
+    }
+    return headers;
+  };
 
   // Tab 2: Template Generator
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
@@ -252,7 +296,7 @@ export default function WordAddinTaskpanePage() {
 
       const res = await fetch("/api/ai/inline-edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAddinHeaders(),
         body: JSON.stringify({
           selectedText,
           command,
@@ -291,7 +335,7 @@ export default function WordAddinTaskpanePage() {
     try {
       const res = await fetch("/api/ai/generate/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAddinHeaders(),
         body: JSON.stringify({
           templateId: selectedTemplateId,
           variables: formValues,
@@ -356,7 +400,7 @@ export default function WordAddinTaskpanePage() {
     try {
       const res = await fetch("/api/ai/raw-to-doc/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAddinHeaders(),
         body: JSON.stringify({
           rawText,
           targetDocType,
@@ -426,7 +470,7 @@ export default function WordAddinTaskpanePage() {
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAddinHeaders(),
         body: JSON.stringify({
           messages: [...chatMessages, userMsg].map((m) => ({
             role: m.role,
@@ -1026,6 +1070,73 @@ export default function WordAddinTaskpanePage() {
             </div>
           </div>
         )}
+
+        {/* CẤU HÌNH KHÓA AI (BYOK CÁ NHÂN TRONG ADD-IN) */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs">
+          <button
+            type="button"
+            onClick={() => setShowKeyConfig(!showKeyConfig)}
+            className="w-full p-2.5 flex items-center justify-between font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+          >
+            <span className="flex items-center gap-1.5 text-[11px]">
+              <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+              Cấu hình Khóa AI (BYOK cá nhân)
+              {userByokKey ? (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-medium">
+                  Đã cấu hình Key
+                </span>
+              ) : (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 font-normal">
+                  Dùng Key hệ thống
+                </span>
+              )}
+            </span>
+            {showKeyConfig ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+
+          {showKeyConfig && (
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5 text-[11px] bg-slate-50/50 dark:bg-slate-900/50">
+              <p className="text-[10px] text-slate-500">
+                Nhập khóa DeepSeek (sk-...) hoặc Gemini (AIza...) của bạn để sử dụng trực tiếp không giới hạn lượt gọi:
+              </p>
+              <div className="space-y-1.5">
+                <input
+                  type="password"
+                  placeholder="Dán API Key (sk-... hoặc AIza...)"
+                  value={userByokKey}
+                  onChange={(e) => setUserByokKey(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-[11px] font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <span className="text-[9px] text-slate-400">
+                    {userByokKey ? "Đang dùng Key cá nhân" : "Đang dùng Key hệ thống mặc định"}
+                  </span>
+                  <div className="flex gap-1.5">
+                    {userByokKey && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearByokKey}
+                        className="h-7 text-[10px] px-2 text-rose-600 hover:text-rose-700"
+                      >
+                        Xóa
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleSaveByokKey}
+                      className="h-7 text-[10px] px-3 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                      Lưu khóa
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* HƯỚNG DẪN CÀI ĐẶT ADD-IN (SIDELOADING GUIDE) */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs">

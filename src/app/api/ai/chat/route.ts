@@ -20,14 +20,25 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
+  const apiKeyHeader =
+    req.headers.get("X-API-Key") ||
+    req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  const isWordAddin =
+    req.headers.get("X-Client-Source") === "word-addin" ||
+    req.headers.get("referer")?.includes("/word-addin");
+
+  const userId = session?.user?.id || (apiKeyHeader ? "addon-user" : isWordAddin ? "word-addin-user" : null);
+
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Rate limit check (TASK-214)
-  const rateLimitResult = await checkAiRateLimit(session.user.id);
-  if (!rateLimitResult.success) {
-    return createRateLimitExceededResponse(rateLimitResult);
+  if (session?.user?.id) {
+    const rateLimitResult = await checkAiRateLimit(session.user.id);
+    if (!rateLimitResult.success) {
+      return createRateLimitExceededResponse(rateLimitResult);
+    }
   }
 
   try {
@@ -65,7 +76,7 @@ QUY TẮC PHẢN HỒI:
 4. ĐẶC BIỆT KHI SOẠN THẢO MẪU VĂN BẢN HOẶC ĐIỀU KHOẢN: Không mở đầu hoặc kết thúc bằng lời chào/hỏi han dư thừa (như "Dưới đây là mẫu...", "Chào bạn...", "Nếu bạn cần thêm..."). Hãy xuất trực tiếp nội dung văn bản để người dùng có thể áp dụng trực tiếp vào tài liệu một cách chuẩn xác nhất.
 5. Sử dụng ký hiệu ngoặc vuông [...] cho các thông tin biến đổi cần người dùng điền bổ sung (ví dụ: [ĐỊA DANH], [NGÀY], [TÊN CƠ QUAN]).`;
 
-    const keyInfo = await resolveAIKey(session.user.id, preferredProvider);
+    const keyInfo = await resolveAIKey(session?.user?.id || userId, preferredProvider, apiKeyHeader);
 
     const fullMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
       { role: "system", content: systemPrompt },

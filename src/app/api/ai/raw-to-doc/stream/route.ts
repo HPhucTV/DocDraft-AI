@@ -18,8 +18,11 @@ export async function POST(req: NextRequest) {
   const apiKeyHeader =
     req.headers.get("X-API-Key") ||
     req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  const isWordAddin =
+    req.headers.get("X-Client-Source") === "word-addin" ||
+    req.headers.get("referer")?.includes("/word-addin");
 
-  const userId = session?.user?.id || (apiKeyHeader ? "addon-user" : null);
+  const userId = session?.user?.id || (apiKeyHeader ? "addon-user" : isWordAddin ? "word-addin-user" : null);
 
   if (!userId) {
     return NextResponse.json(
@@ -76,6 +79,7 @@ export async function POST(req: NextRequest) {
       try {
         const generator = streamRestructuredDocument({
           userId: session?.user?.id || userId,
+          directApiKey: apiKeyHeader,
           rawText: rawText.trim(),
           targetDocType,
           preferredProvider,

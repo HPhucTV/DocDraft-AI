@@ -21,6 +21,7 @@ export interface RawExtractionResult {
 
 export interface RawToDocStreamOptions {
   userId?: string | null;
+  directApiKey?: string | null;
   rawText: string;
   targetDocType?: string;
   preferredProvider?: AIProvider;
@@ -143,10 +144,10 @@ export async function extractFactsFromRawText(
 export async function* streamRestructuredDocument(
   options: RawToDocStreamOptions
 ): AsyncGenerator<{ text: string; reasoning?: string; facts?: RawExtractionResult }, void, unknown> {
-  const { userId, rawText, targetDocType, preferredProvider = "deepseek", signal } = options;
+  const { userId, directApiKey, rawText, targetDocType, preferredProvider = "deepseek", signal } = options;
 
   // 1. Xác định API Key
-  const keyInfo = await resolveAIKey(userId, preferredProvider);
+  const keyInfo = await resolveAIKey(userId, preferredProvider, directApiKey);
 
   // 2. Thực hiện Bước 1: Trích xuất thực thể
   const facts = await extractFactsFromRawText(
