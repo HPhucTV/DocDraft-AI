@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   title: "DocDraft AI — Hệ thống soạn thảo văn bản hành chính AI chuẩn NĐ 30/2020/NĐ-CP",
   description:
     "Nền tảng ứng dụng AI hỗ trợ soạn thảo, kiểm tra thể thức văn bản hành chính nhà nước theo Nghị định 30/2020/NĐ-CP với cơ chế RAG và BYOK bảo mật cao.",
+  manifest: "/manifest.json",
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -37,6 +39,19 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+
+        {/* Đăng ký Service Worker cho PWA & Offline Mode (TASK-505) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

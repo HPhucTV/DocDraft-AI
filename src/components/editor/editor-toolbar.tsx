@@ -65,10 +65,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { AIFeedbackWidget } from "./ai-feedback-widget";
+import { CollaborativePresenceBar } from "./collaborative-presence-bar";
 
 interface EditorToolbarProps {
   editor: Editor | null;
   placeholderCount: number;
+  currentUser?: {
+    id: string;
+    name: string;
+    email: string;
+    role?: string;
+  };
   onJumpToNextPlaceholder: () => void;
   onImportDocx?: (file: File) => void;
   isImportingDocx?: boolean;
@@ -159,6 +166,7 @@ export function EditorToolbar({
   isSuggestionsPanelOpen,
   draftId,
   draftStatus,
+  currentUser,
   onOpenSubmitApproval,
   lineSpacing = 1.25,
   onChangeLineSpacing,
@@ -260,6 +268,12 @@ export function EditorToolbar({
 
         {/* Nút hành động nhanh bên phải Ribbon */}
         <div className="ml-auto flex items-center gap-1.5 pb-1">
+          <CollaborativePresenceBar
+            draftId={draftId}
+            currentUser={currentUser || { id: "user-current", name: "Bạn", email: "user@docdraft.vn", role: "USER" }}
+            onShareClick={onOpenShareDialog}
+          />
+
           {onAutoFormatND30 && (
             <Button
               type="button"

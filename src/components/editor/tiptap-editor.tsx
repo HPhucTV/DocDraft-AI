@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cleanAndFormatAiContentForEditor } from "@/lib/ai/ai-text-formatter";
+import { collabManager } from "@/lib/collaboration/collab-manager";
 
 export interface TiptapEditorProps {
   initialContent?: string;
@@ -73,6 +74,12 @@ export interface TiptapEditorProps {
   className?: string;
   draftId?: string;
   draftTitle?: string;
+  currentUser?: {
+    id: string;
+    name: string;
+    email: string;
+    role?: string;
+  };
   draftStatus?: string;
   qrVerifyCode?: string | null;
   activeChainId?: string | null;
@@ -107,6 +114,7 @@ export function TiptapEditor({
   className = "",
   draftId,
   draftTitle,
+  currentUser,
   draftStatus = "DRAFT",
   qrVerifyCode,
   activeChainId,
@@ -232,6 +240,10 @@ export function TiptapEditor({
       } catch {
         // bỏ qua nếu ast chưa sẵn sàng
       }
+    },
+    onSelectionUpdate: ({ editor: ed }) => {
+      const { from, to } = ed.state.selection;
+      collabManager.updateCursor(from, to);
     },
   });
 
@@ -529,6 +541,7 @@ export function TiptapEditor({
         isSuggestionsPanelOpen={isSuggestionsPanelOpen}
         draftId={draftId}
         draftStatus={draftStatus}
+        currentUser={currentUser}
         onOpenSubmitApproval={() => setIsApprovalDialogOpen(true)}
         lineSpacing={lineSpacing}
         onChangeLineSpacing={setLineSpacing}

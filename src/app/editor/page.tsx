@@ -40,6 +40,7 @@ import { useAutoSave } from "@/hooks/use-auto-save";
 import { SideBySideDiffModal } from "@/components/diff/side-by-side-diff-modal";
 import { AuditTrailPanel } from "@/components/audit/audit-trail-panel";
 import { VersionHistoryPanel } from "@/components/editor/version-history-panel";
+import { OfflineStatusPill } from "@/components/offline/offline-status-pill";
 
 interface TemplateItem {
   id: string;
@@ -720,6 +721,8 @@ function EditorContentComponent() {
               {exportingFormat === "docx" ? "Đang tạo..." : "Xuất Word (.docx)"}
             </span>
           </Button>
+
+          <OfflineStatusPill draftId={currentDraftId || undefined} />
 
           <ThemeToggle />
         </div>

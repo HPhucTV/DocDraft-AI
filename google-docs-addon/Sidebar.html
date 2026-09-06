@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocDraft AI — Google Docs Add-on</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --primary-light: #eef2ff;
+        --bg-slate: #0f172a;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --radius: 8px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      body {
+        background-color: #f8fafc;
+        color: var(--text-main);
+        padding: 12px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      /* Header */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 12px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #4f46e5, #2563eb);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 14px;
+      }
+      .brand-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .badge-lite {
+        font-size: 9px;
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+      }
+      .status-pill {
+        font-size: 10px;
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #10b981;
+        border-radius: 50%;
+      }
+      /* Tabs */
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: #e2e8f0;
+        padding: 3px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        gap: 2px;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        padding: 6px 2px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-align: center;
+      }
+      .tab-btn.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      }
+      /* Card Container */
+      .card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      }
+      .card-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      /* Buttons */
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #4f46e5, #2563eb);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #4338ca, #1d4ed8);
+      }
+      .btn-outline {
+        background: white;
+        border-color: var(--border);
+        color: #334155;
+      }
+      .btn-outline:hover {
+        background: #f1f5f9;
+      }
+      .btn-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      /* Alert Message */
+      .alert {
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        margin-bottom: 10px;
+        display: none;
+      }
+      .alert.success {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        display: block;
+      }
+      .alert.error {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #9f1239;
+        display: block;
+      }
+      /* Form inputs */
+      .form-group {
+        margin-bottom: 8px;
+      }
+      .form-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        display: block;
+        margin-bottom: 3px;
+      }
+      .form-control {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        outline: none;
+        background: #f8fafc;
+      }
+      .form-control:focus {
+        border-color: var(--primary);
+        background: white;
+      }
+      textarea.form-control {
+        resize: vertical;
+      }
+      .spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .footer-note {
+        text-align: center;
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <div class="header">
+      <div class="brand">
+        <div class="logo-icon">D</div>
+        <div>
+          <div class="brand-title">DocDraft AI <span class="badge-lite">G-Docs</span></div>
+          <div style="font-size: 10px; color: var(--text-muted);">Chuẩn hóa NĐ 30/2020/NĐ-CP</div>
+        </div>
+      </div>
+      <div class="status-pill">
+        <span class="status-dot"></span> Sẵn sàng
+      </div>
+    </div>
+
+    <!-- ALERT BANNER -->
+    <div id="alertBox" class="alert"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-format')">Thể thức</button>
+      <button class="tab-btn" onclick="switchTab('tab-template')">Mẫu AI</button>
+      <button class="tab-btn" onclick="switchTab('tab-raw')">Chuốt thô</button>
+      <button class="tab-btn" onclick="switchTab('tab-settings')">Cấu hình</button>
+    </div>
+
+    <!-- TAB 1: CHUẨN HÓA THỂ THỨC -->
+    <div id="tab-format" class="tab-content">
+      <div class="card">
+        <div class="card-title">⚡ Chuẩn hóa 1-Click</div>
+        <button class="btn btn-primary" onclick="runFormatND30()">
+          <span>⚡ Căn lề 30/15 & Times New Roman 13pt</span>
+        </button>
+        <div class="btn-grid">
+          <button class="btn btn-outline" onclick="runInsertHeader()">
+            <span>➕ Quốc hiệu / Tiêu ngữ</span>
+          </button>
+          <button class="btn btn-outline" onclick="runInsertFooter()">
+            <span>➕ Nơi nhận / Ký tên</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✨ AI Copilot trên văn bản bôi đen</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+          Bôi đen đoạn văn trong Google Docs rồi bấm chọn:
+        </p>
+        <div class="btn-grid">
+          <button class="btn btn-outline" onclick="runAiRewrite('formalize')">
+            🏛️ Hành chính hóa
+          </button>
+          <button class="btn btn-outline" onclick="runAiRewrite('shorten')">
+            ✂️ Rút gọn ý
+          </button>
+          <button class="btn btn-outline" onclick="runAiRewrite('expand')">
+            📝 Mở rộng ý
+          </button>
+          <button class="btn btn-outline" onclick="runAiRewrite('fix_spelling')">
+            ✔️ Sửa chính tả
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: MẪU VĂN BẢN AI -->
+    <div id="tab-template" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-title">📄 Sinh văn bản theo mẫu</div>
+        <div class="form-group">
+          <label class="form-label">Chọn mẫu văn bản:</label>
+          <select id="templateSelect" class="form-control" onchange="renderTemplateFields()">
+            <option value="to-trinh-kinh-phi">Tờ trình xin phê duyệt kinh phí</option>
+            <option value="cong-van-thong-bao">Công văn thông báo</option>
+            <option value="quyet-dinh-bo-nhiem">Quyết định bổ nhiệm cán bộ</option>
+          </select>
+        </div>
+        <div id="templateFields"></div>
+        <button class="btn btn-primary" id="btnGenTemplate" onclick="generateFromTemplate()" style="margin-top: 6px;">
+          ✨ AI Sinh văn bản & Chèn vào Google Docs
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 3: CHUỐT NHÁP THÔ (RAW POLISH) -->
+    <div id="tab-raw" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-title">📑 Chuốt nháp thô sang NĐ 30</div>
+        <div class="form-group">
+          <label class="form-label">Loại văn bản chuẩn bị ban hành:</label>
+          <select id="rawTargetType" class="form-control">
+            <option value="Công văn">Công văn</option>
+            <option value="Tờ trình">Tờ trình</option>
+            <option value="Quyết định">Quyết định</option>
+            <option value="Thông báo">Thông báo</option>
+            <option value="Biên bản">Biên bản</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dán nội dung nháp thô hoặc ghi chú:</label>
+          <textarea id="rawInputText" rows="5" class="form-control" placeholder="Họp sáng nay bàn về kế hoạch triển khai..."></textarea>
+        </div>
+        <button class="btn btn-primary" id="btnPolishRaw" onclick="polishRawDocument()">
+          ✨ AI Tái cấu trúc chuẩn NĐ 30
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 4: CẤU HÌNH KẾT NỐI -->
+    <div id="tab-settings" class="tab-content" style="display: none;">
+      <div class="card">
+        <div class="card-title">⚙️ Cấu hình máy chủ DocDraft AI</div>
+        <div class="form-group">
+          <label class="form-label">Địa chỉ API Server DocDraft AI:</label>
+          <input type="text" id="serverUrl" class="form-control" value="http://localhost:3000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">BYOK API Key (DeepSeek / Gemini):</label>
+          <input type="password" id="byokKey" class="form-control" placeholder="Tùy chọn: Nhập sk-... nếu có">
+        </div>
+        <button class="btn btn-outline" onclick="saveSettings()">
+          💾 Lưu cấu hình
+        </button>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      DocDraft AI Enterprise • Chuẩn hóa văn bản hành chính Việt Nam
+    </div>
+
+    <script>
+      function showAlert(msg, type) {
+        var box = document.getElementById('alertBox');
+        box.className = 'alert ' + type;
+        box.innerText = msg;
+        box.style.display = 'block';
+        setTimeout(function() {
+          box.style.display = 'none';
+        }, 5000);
+      }
+
+      function switchTab(tabId) {
+        var contents = document.querySelectorAll('.tab-content');
+        contents.forEach(function(c) { c.style.display = 'none'; });
+        var btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(function(b) { b.classList.remove('active'); });
+
+        document.getElementById(tabId).style.display = 'block';
+        event.target.classList.add('active');
+      }
+
+      // Tab 1 Actions
+      function runFormatND30() {
+        showAlert('Đang căn chỉnh lề 30/15/20/20mm và font Times New Roman...', 'success');
+        google.script.run
+          .withSuccessHandler(function(res) {
+            showAlert(res.message, 'success');
+          })
+          .withFailureHandler(function(err) {
+            showAlert('Lỗi: ' + err.message, 'error');
+          })
+          .formatND30GoogleDocs();
+      }
+
+      function runInsertHeader() {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            showAlert(res.message, 'success');
+          })
+          .withFailureHandler(function(err) {
+            showAlert('Lỗi: ' + err.message, 'error');
+          })
+          .insertNationalHeaderGoogleDocs();
+      }
+
+      function runInsertFooter() {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            showAlert(res.message, 'success');
+          })
+          .withFailureHandler(function(err) {
+            showAlert('Lỗi: ' + err.message, 'error');
+          })
+          .insertSignatureGoogleDocs();
+      }
+
+      // AI Inline rewrite
+      function runAiRewrite(cmd) {
+        google.script.run
+          .withSuccessHandler(function(selectedText) {
+            if (!selectedText || !selectedText.trim()) {
+              showAlert('Vui lòng bôi đen một đoạn văn trong tài liệu trước.', 'error');
+              return;
+            }
+            showAlert('AI đang xử lý lệnh "' + cmd + '"...', 'success');
+            
+            var serverUrl = localStorage.getItem('docdraft_server') || 'http://localhost:3000';
+            fetch(serverUrl + '/api/ai/inline-edit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                selectedText: selectedText,
+                command: cmd,
+                documentTitle: 'Google Docs Document'
+              })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              if (data.resultText) {
+                google.script.run
+                  .withSuccessHandler(function() {
+                    showAlert('Đã thay thế văn bản mới từ AI thành công!', 'success');
+                  })
+                  .replaceSelectedTextGoogleDocs(data.resultText);
+              } else {
+                showAlert('Không nhận được phản hồi từ AI.', 'error');
+              }
+            })
+            .catch(function(err) {
+              showAlert('Lỗi kết nối máy chủ AI: ' + err.message, 'error');
+            });
+          })
+          .getSelectedTextGoogleDocs();
+      }
+
+      // Tab 2 Actions: Template fields
+      function renderTemplateFields() {
+        var tId = document.getElementById('templateSelect').value;
+        var container = document.getElementById('templateFields');
+        if (tId === 'to-trinh-kinh-phi') {
+          container.innerHTML = `
+            <div class="form-group">
+              <label class="form-label">Kinh phí dự kiến (VNĐ):</label>
+              <input type="text" id="field_kinh_phi" class="form-control" value="50.000.000 VNĐ">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lý do đề xuất:</label>
+              <input type="text" id="field_ly_do" class="form-control" value="Mua sắm bổ sung máy in và thiết bị văn phòng">
+            </div>
+          `;
+        } else if (tId === 'cong-van-thong-bao') {
+          container.innerHTML = `
+            <div class="form-group">
+              <label class="form-label">Trích yếu nội dung:</label>
+              <input type="text" id="field_trich_yeu" class="form-control" value="V/v Lịch làm việc và nghỉ lễ sắp tới">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nội dung chính:</label>
+              <input type="text" id="field_noi_dung" class="form-control" value="Thông báo đến toàn thể các phòng ban chuyên môn">
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="form-group">
+              <label class="form-label">Họ và tên cán bộ:</label>
+              <input type="text" id="field_ho_ten" class="form-control" value="Nguyễn Văn A">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Chức vụ bổ nhiệm:</label>
+              <input type="text" id="field_chuc_vu" class="form-control" value="Trưởng phòng Hành chính - Nhân sự">
+            </div>
+          `;
+        }
+      }
+      renderTemplateFields();
+
+      function generateFromTemplate() {
+        var tId = document.getElementById('templateSelect').value;
+        showAlert('AI đang sinh văn bản theo mẫu...', 'success');
+        
+        var serverUrl = localStorage.getItem('docdraft_server') || 'http://localhost:3000';
+        fetch(serverUrl + '/api/ai/generate/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            templateId: tId,
+            variables: {}
+          })
+        })
+        .then(function(res) {
+          // Khi stream xong chèn vào Google Docs
+          return res.text();
+        })
+        .then(function(text) {
+          var cleanText = text.replace(/data: /g, '').replace(/\[DONE\]/g, '');
+          google.script.run
+            .withSuccessHandler(function() {
+              showAlert('Đã chèn văn bản mẫu vào Google Docs!', 'success');
+            })
+            .insertTextAtCursorGoogleDocs(cleanText);
+        })
+        .catch(function(err) {
+          showAlert('Lỗi: ' + err.message, 'error');
+        });
+      }
+
+      function polishRawDocument() {
+        var rawText = document.getElementById('rawInputText').value;
+        var targetType = document.getElementById('rawTargetType').value;
+        if (!rawText.trim()) {
+          showAlert('Vui lòng nhập nội dung nháp thô.', 'error');
+          return;
+        }
+
+        showAlert('AI đang bóc tách và tái cấu trúc sang ' + targetType + '...', 'success');
+        var serverUrl = localStorage.getItem('docdraft_server') || 'http://localhost:3000';
+
+        fetch(serverUrl + '/api/ai/raw-to-doc/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rawText: rawText,
+            targetDocType: targetType
+          })
+        })
+        .then(function(res) { return res.text(); })
+        .then(function(text) {
+          var cleanText = text.replace(/data: /g, '').replace(/\[DONE\]/g, '');
+          google.script.run
+            .withSuccessHandler(function() {
+              showAlert('Đã hoàn thiện và chèn vào Google Docs!', 'success');
+            })
+            .insertTextAtCursorGoogleDocs(cleanText);
+        })
+        .catch(function(err) {
+          showAlert('Lỗi: ' + err.message, 'error');
+        });
+      }
+
+      function saveSettings() {
+        var url = document.getElementById('serverUrl').value.trim();
+        localStorage.setItem('docdraft_server', url);
+        showAlert('Đã lưu cấu hình máy chủ!', 'success');
+      }
+
+      // Load saved settings
+      if (localStorage.getItem('docdraft_server')) {
+        document.getElementById('serverUrl').value = localStorage.getItem('docdraft_server');
+      }
+    </script>
+  </body>
+</html>

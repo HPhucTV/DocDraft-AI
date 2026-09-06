@@ -54,6 +54,8 @@ export interface WordContext {
         location: string,
         data: string[][]
       ) => WordTable;
+      insertText?: (text: string, location: string) => void;
+      insertHtml?: (html: string, location: string) => void;
     };
     getSelection: () => WordRange;
   };
@@ -282,3 +284,75 @@ export async function replaceSelectedWordText(newText: string): Promise<boolean>
 
   return true;
 }
+
+/**
+ * TASK-501: Chèn đoạn trích hoặc câu trả lời AI tại vị trí con trỏ trong Microsoft Word
+ */
+export async function insertSnippetAtCursor(text: string): Promise<{ success: boolean; message: string }> {
+  const word = getWordApi();
+  if (!word) {
+    return {
+      success: true,
+      message: "Chế độ mô phỏng: Đã chèn đoạn văn bản tại vị trí con trỏ.",
+    };
+  }
+
+  await word.run(async (context) => {
+    const selection = context.document.getSelection();
+    selection.insertText(text, "After");
+    await context.sync();
+  });
+
+  return {
+    success: true,
+    message: "Đã chèn nội dung vào văn bản Word thành công.",
+  };
+}
+
+/**
+ * TASK-501: Chèn toàn bộ nội dung tài liệu (HTML / Rich Text) vào văn bản Word hiện tại
+ */
+export async function insertDocumentContent(htmlContent: string): Promise<{ success: boolean; message: string }> {
+  const word = getWordApi();
+  if (!word) {
+    return {
+      success: true,
+      message: "Chế độ mô phỏng: Đã chèn tài liệu vào văn bản Word thành công.",
+    };
+  }
+
+  try {
+    await word.run(async (context) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const selection = context.document.getSelection() as any;
+      if (typeof selection.insertHtml === "function") {
+        selection.insertHtml(htmlContent, "Replace");
+      } else {
+        // Fallback sang insertText nếu phiên bản Word cũ hơn
+        const plainText = htmlContent.replace(/<[^>]+>/g, "\n").replace(/\n+/g, "\n");
+        selection.insertText(plainText, "Replace");
+      }
+      await context.sync();
+    });
+
+    return {
+      success: true,
+      message: "Đã chèn toàn bộ văn bản vào tệp Word đang mở.",
+    };
+  } catch {
+    // Fallback qua body.insertText
+    await word.run(async (context) => {
+      const plainText = htmlContent.replace(/<[^>]+>/g, "\n").replace(/\n+/g, "\n");
+      if (context.document.body.insertText) {
+        context.document.body.insertText(plainText, "End");
+      }
+      await context.sync();
+    });
+
+    return {
+      success: true,
+      message: "Đã chèn văn bản vào Word (chế độ tương thích).",
+    };
+  }
+}
+
