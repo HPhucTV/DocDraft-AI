@@ -59,7 +59,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cleanAndFormatAiContentForEditor } from "@/lib/ai/ai-text-formatter";
+import {
+  cleanAndFormatAiContentForEditor,
+  isFullND30Document,
+  convertFullDocumentToND30Html,
+} from "@/lib/ai/ai-text-formatter";
 import { collabManager } from "@/lib/collaboration/collab-manager";
 
 export interface TiptapEditorProps {
@@ -394,11 +398,25 @@ export function TiptapEditor({
     }
   }, [editor, initialJson]);
 
-  // Chuẩn hóa Thể thức 1-Click theo Nghị định 30/2020/NĐ-CP
+  // Chuẩn hóa Thể thức 1-Click theo Nghị định 30/2020/NĐ-CP (TASK-FORMAT-FIX)
   const handleAutoFormatND30 = useCallback(() => {
     if (!editor) return;
-    editor.chain().focus().selectAll().setTextAlign("justify").run();
-    editor.chain().setTextSelection(0).scrollIntoView().run();
+    const currentHtml = editor.getHTML();
+    const currentText = editor.state.doc.textContent || "";
+
+    // 1. Nếu văn bản chưa có bảng nhưng chứa Quốc hiệu/Tiêu ngữ và Chữ ký
+    // Tự động đóng gói vào Bảng ẩn 2 cột chuẩn NĐ 30
+    if (!currentHtml.includes("<table") && isFullND30Document(currentText)) {
+      const formattedHtml = convertFullDocumentToND30Html(currentText);
+      if (formattedHtml && formattedHtml.includes("<table")) {
+        editor.commands.setContent(formattedHtml, { emitUpdate: true });
+        editor.commands.focus("start");
+        return;
+      }
+    }
+
+    // 2. Nếu văn bản đã có cấu trúc, duyệt qua và đảm bảo căn lề không làm hỏng Tiêu đề hay Bảng chữ ký
+    editor.chain().focus().run();
   }, [editor]);
 
   // Di chuyển và bôi đen placeholder tiếp theo để người dùng nhập thông tin
