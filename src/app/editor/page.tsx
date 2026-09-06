@@ -665,11 +665,11 @@ function EditorContentComponent() {
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top Header & Toolbar Bar */}
       <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 sm:px-6 shadow-xs">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild className="gap-2 h-9">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+          <Button variant="ghost" size="sm" asChild className="gap-1.5 h-9 shrink-0 px-2 sm:px-3">
             <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Dashboard</span>
+              <span className="hidden md:inline">Dashboard</span>
             </Link>
           </Button>
 
@@ -678,7 +678,7 @@ function EditorContentComponent() {
             variant="ghost"
             size="sm"
             onClick={toggleLeftSidebar}
-            className={`gap-1.5 h-9 px-2 text-xs transition-colors ${
+            className={`gap-1.5 h-9 px-2 text-xs transition-colors shrink-0 ${
               !isLeftSidebarOpen
                 ? "text-primary bg-primary/10 hover:bg-primary/20 font-semibold"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -690,30 +690,30 @@ function EditorContentComponent() {
             ) : (
               <PanelLeftOpen className="h-4 w-4 text-primary" />
             )}
-            <span className="hidden xl:inline text-xs">
+            <span className="hidden 2xl:inline text-xs">
               {isLeftSidebarOpen ? "Đóng thanh bên" : "Mở thanh bên"}
             </span>
           </Button>
 
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border shrink-0" />
 
           {/* Tiêu đề văn bản có thể chỉnh sửa trực tiếp */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
               <FileText className="h-4 w-4" />
             </div>
             <input
               type="text"
               value={documentTitle}
               onChange={(e) => setDocumentTitle(e.target.value)}
-              className="bg-transparent font-semibold text-sm sm:text-base border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5 max-w-[180px] sm:max-w-[280px] truncate"
+              className="bg-transparent font-semibold text-sm sm:text-base border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5 w-32 sm:w-44 md:w-56 lg:w-64 truncate shrink-0"
               placeholder="Nhập tên văn bản..."
             />
           </div>
 
           {/* Trạng thái Auto-save & Khóa lạc quan (TASK-118) */}
           {currentDraftId && (
-            <div className="hidden lg:flex items-center gap-2 pl-2 border-l text-xs">
+            <div className="hidden lg:flex items-center gap-1.5 pl-2 border-l text-xs shrink-0 whitespace-nowrap">
               {hasConflict ? (
                 <button
                   type="button"
@@ -721,34 +721,34 @@ function EditorContentComponent() {
                     resolveConflict(currentVersion);
                     saveNow();
                   }}
-                  className="flex items-center gap-1 text-destructive font-medium bg-destructive/10 px-2 py-0.5 rounded border border-destructive/20 hover:bg-destructive/20 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-destructive font-medium bg-destructive/10 px-2 py-0.5 rounded border border-destructive/20 hover:bg-destructive/20 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                   title="Nhấn để đồng bộ phiên bản mới nhất và thử lưu lại"
                 >
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Xung đột phiên bản (409) — Nhấn để giải quyết
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Xung đột (409)</span>
                 </button>
               ) : isSaving ? (
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                  Đang lưu...
+                <span className="flex items-center gap-1.5 text-muted-foreground shrink-0 whitespace-nowrap">
+                  <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
+                  <span>Đang lưu...</span>
                 </span>
               ) : isDirty ? (
                 <span
-                  className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20"
+                  className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0 whitespace-nowrap"
                   title="Có chỉnh sửa mới chưa lưu. Hệ thống tự động lưu sau 1 phút, hoặc nhấn Ctrl+S để lưu ngay."
                 >
-                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                  Có thay đổi (tự lưu sau 1 phút)
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  <span>Chưa lưu</span>
                 </span>
               ) : lastSavedAt ? (
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  Đã lưu {lastSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                <span className="flex items-center gap-1 text-muted-foreground shrink-0 whitespace-nowrap">
+                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  <span>Đã lưu {lastSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-muted-foreground/80">
-                  <Check className="h-3.5 w-3.5 text-emerald-500/80" />
-                  Đã đồng bộ
+                <span className="flex items-center gap-1 text-muted-foreground/80 shrink-0 whitespace-nowrap">
+                  <Check className="h-3.5 w-3.5 text-emerald-500/80 shrink-0" />
+                  <span>Đã đồng bộ</span>
                 </span>
               )}
             </div>
@@ -756,9 +756,9 @@ function EditorContentComponent() {
         </div>
 
         {/* Stats & Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {streamStats && (
-            <div className="hidden xl:flex items-center gap-2.5 text-xs text-muted-foreground mr-1">
+            <div className="hidden 2xl:flex items-center gap-2 text-xs text-muted-foreground mr-1 shrink-0 whitespace-nowrap">
               <span>Mô hình: <strong>{streamStats.modelUsed}</strong></span>
               <span>&bull;</span>
               <span>{streamStats.wordCount} từ</span>
@@ -773,11 +773,11 @@ function EditorContentComponent() {
               variant="outline"
               size="sm"
               onClick={() => setIsDiffModalOpen(true)}
-              className="gap-1.5 h-8 text-xs text-primary border-primary/30"
+              className="gap-1.5 h-8 text-xs text-primary border-primary/30 shrink-0 whitespace-nowrap px-2 sm:px-2.5"
               title="So sánh với bản nháp thô ban đầu"
             >
-              <GitCompare className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Diff View</span>
+              <GitCompare className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden xl:inline">Diff View</span>
             </Button>
           )}
 
@@ -786,10 +786,10 @@ function EditorContentComponent() {
             variant="outline"
             size="sm"
             onClick={() => setIsVersionPanelOpen(true)}
-            className="gap-1.5 h-8 text-xs font-semibold text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+            className="gap-1 h-8 text-xs font-semibold text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10 shrink-0 whitespace-nowrap px-2 sm:px-2.5"
             title="Lịch sử phiên bản & Khôi phục 1-Click"
           >
-            <History className="h-3.5 w-3.5" />
+            <History className="h-3.5 w-3.5 shrink-0" />
             <span>v{currentVersion}</span>
           </Button>
 
@@ -798,11 +798,11 @@ function EditorContentComponent() {
             variant="outline"
             size="sm"
             onClick={() => setIsAuditPanelOpen(true)}
-            className="gap-1.5 h-8 text-xs"
+            className="gap-1.5 h-8 text-xs shrink-0 whitespace-nowrap px-2 sm:px-2.5"
             title="Nhật ký kiểm toán AI & Người dùng"
           >
-            <History className="h-3.5 w-3.5 text-primary" />
-            <span className="hidden sm:inline">Audit Trail</span>
+            <History className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="hidden xl:inline">Audit Trail</span>
           </Button>
 
           {/* Nút mở AI Copilot Chat (TASK-206) */}
@@ -810,10 +810,10 @@ function EditorContentComponent() {
             variant={isChatOpen ? "default" : "outline"}
             size="sm"
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="gap-1.5 h-8 text-xs font-medium"
+            className="gap-1.5 h-8 text-xs font-medium shrink-0 whitespace-nowrap px-2 sm:px-2.5"
             title="Mở bảng trợ lý AI Copilot ngữ cảnh văn bản"
           >
-            <MessageSquare className="h-3.5 w-3.5" />
+            <MessageSquare className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden sm:inline">AI Copilot</span>
           </Button>
 
@@ -823,10 +823,10 @@ function EditorContentComponent() {
             size="sm"
             onClick={() => setIsSaveTemplateModalOpen(true)}
             disabled={!editorContent}
-            className="gap-1.5 h-8 text-xs font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 transition-all"
+            className="gap-1.5 h-8 text-xs font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 transition-all shrink-0 whitespace-nowrap px-2 sm:px-2.5"
             title="Lưu văn bản này thành mẫu mới để tái sử dụng"
           >
-            <BookmarkPlus className="h-3.5 w-3.5" />
+            <BookmarkPlus className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden sm:inline">Lưu mẫu</span>
           </Button>
 
@@ -836,11 +836,11 @@ function EditorContentComponent() {
               size="sm"
               onClick={() => saveNow()}
               disabled={isSaving}
-              className="gap-1.5 h-8 text-xs"
-              title="Lưu thủ công ngay"
+              className="gap-1.5 h-8 text-xs shrink-0 whitespace-nowrap px-2 sm:px-2.5"
+              title="Lưu thủ công ngay (Ctrl+S)"
             >
-              <Save className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Lưu</span>
+              <Save className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden md:inline">Lưu</span>
             </Button>
           )}
 
@@ -849,11 +849,11 @@ function EditorContentComponent() {
             size="sm"
             onClick={handleCopyHTML}
             disabled={!editorContent}
-            className="gap-1.5 h-8 text-xs"
+            className="gap-1.5 h-8 text-xs shrink-0 whitespace-nowrap px-2 sm:px-2.5"
             title="Sao chép mã HTML"
           >
-            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{copied ? "Đã chép" : "Sao chép"}</span>
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
+            <span className="hidden lg:inline">{copied ? "Đã chép" : "Sao chép"}</span>
           </Button>
 
           <Button
@@ -861,13 +861,13 @@ function EditorContentComponent() {
             size="sm"
             onClick={() => handleExport("pdf")}
             disabled={!editorContent || exportingFormat !== null}
-            className="gap-1.5 h-8 text-xs"
+            className="gap-1.5 h-8 text-xs shrink-0 whitespace-nowrap px-2 sm:px-2.5"
             title="Xuất file PDF vector A4 chuẩn Nghị định 30"
           >
             {exportingFormat === "pdf" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
             ) : (
-              <Printer className="h-3.5 w-3.5" />
+              <Printer className="h-3.5 w-3.5 shrink-0" />
             )}
             <span className="hidden sm:inline">
               {exportingFormat === "pdf" ? "Đang xuất..." : "In / PDF"}
@@ -876,18 +876,18 @@ function EditorContentComponent() {
 
           <Button
             size="sm"
-            className="gap-1.5 h-8 text-xs shadow-xs"
+            className="gap-1.5 h-8 text-xs shadow-xs shrink-0 whitespace-nowrap px-2.5 sm:px-3"
             onClick={() => handleExport("docx")}
             disabled={!editorContent || exportingFormat !== null}
             title="Xuất Microsoft Word (.docx) chuẩn Nghị định 30"
           >
             {exportingFormat === "docx" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
             ) : (
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-3.5 w-3.5 shrink-0" />
             )}
-            <span>
-              {exportingFormat === "docx" ? "Đang tạo..." : "Xuất Word (.docx)"}
+            <span className="hidden sm:inline">
+              {exportingFormat === "docx" ? "Đang tạo..." : "Xuất Word"}
             </span>
           </Button>
 
