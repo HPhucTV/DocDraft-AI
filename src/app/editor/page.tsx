@@ -30,6 +30,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PanelRight,
+  BookmarkPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -43,6 +44,7 @@ import { RawExtractionResult } from "@/lib/ai/raw-to-doc-service";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { SideBySideDiffModal } from "@/components/diff/side-by-side-diff-modal";
 import { AuditTrailPanel } from "@/components/audit/audit-trail-panel";
+import { SaveTemplateDialog } from "@/components/editor/save-template-dialog";
 import { VersionHistoryPanel } from "@/components/editor/version-history-panel";
 import { OfflineStatusPill } from "@/components/offline/offline-status-pill";
 import { buildWordDocumentHtml } from "@/lib/export/word-fallback";
@@ -54,6 +56,9 @@ interface TemplateItem {
   industryPack: string;
   formSchema: FormSchema;
   userPromptTemplate: string;
+  isBuiltin?: boolean;
+  isCustom?: boolean;
+  createdBy?: string;
 }
 
 const RAW_DOC_TYPES = [
@@ -110,6 +115,7 @@ function EditorContentComponent() {
   // State cho AI Chat Sidebar & In-line Copilot (TASK-206)
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isImportingDocx, setIsImportingDocx] = useState(false);
+  const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
   const insertTextRef = useRef<((text: string) => void) | null>(null);
   const setEditorContentRef = useRef<((content: string | object) => void) | null>(null);
 
@@ -811,6 +817,19 @@ function EditorContentComponent() {
             <span className="hidden sm:inline">AI Copilot</span>
           </Button>
 
+          {/* Nút Lưu thành Mẫu mới */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsSaveTemplateModalOpen(true)}
+            disabled={!editorContent}
+            className="gap-1.5 h-8 text-xs font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 transition-all"
+            title="Lưu văn bản này thành mẫu mới để tái sử dụng"
+          >
+            <BookmarkPlus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Lưu mẫu</span>
+          </Button>
+
           {currentDraftId && (
             <Button
               variant="ghost"
@@ -1003,11 +1022,16 @@ function EditorContentComponent() {
                   }}
                   className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-xs focus:border-primary focus:outline-none"
                 >
-                  {templates.map((tmpl) => (
-                    <option key={tmpl.id} value={tmpl.id}>
-                      {tmpl.title} {tmpl.industryPack ? `(${tmpl.industryPack})` : ""}
-                    </option>
-                  ))}
+                  {templates.map((tmpl) => {
+                    const isCustom = tmpl.isCustom || tmpl.isBuiltin === false;
+                    return (
+                      <option key={tmpl.id} value={tmpl.id}>
+                        {isCustom
+                          ? `⭐ [Mẫu của tôi] ${tmpl.title}`
+                          : `${tmpl.title} ${tmpl.industryPack ? `(${tmpl.industryPack})` : ""}`}
+                      </option>
+                    );
+                  })}
                 </select>
               )}
             </div>
@@ -1212,6 +1236,19 @@ function EditorContentComponent() {
           setEditorJson(contentJson);
           setEditorContentRef.current?.(contentJson);
           resolveConflict(newVersion);
+        }}
+      />
+
+      {/* Dialog Lưu thành Mẫu mới */}
+      <SaveTemplateDialog
+        isOpen={isSaveTemplateModalOpen}
+        onClose={() => setIsSaveTemplateModalOpen(false)}
+        defaultTitle={documentTitle ? `Mẫu: ${documentTitle}` : "Mẫu văn bản mới"}
+        initialContentHtml={editorContent}
+        onSuccess={(newTemplate) => {
+          setTemplates((prev) => [newTemplate, ...prev]);
+          setSelectedTemplateId(newTemplate.id);
+          setDocumentTitle(`Dự thảo ${newTemplate.title}`);
         }}
       />
     </div>

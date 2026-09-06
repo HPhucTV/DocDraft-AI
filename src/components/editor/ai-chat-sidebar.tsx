@@ -12,9 +12,11 @@ import {
   User,
   Square,
   Sparkles,
+  BookmarkPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cleanAndFormatAiContentForEditor } from "@/lib/ai/ai-text-formatter";
+import { SaveTemplateDialog } from "@/components/editor/save-template-dialog";
 
 export interface ChatMessage {
   id: string;
@@ -172,6 +174,15 @@ export function AIChatSidebar({
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [appliedId, setAppliedId] = useState<string | null>(null);
+  const [saveTemplateData, setSaveTemplateData] = useState<{
+    isOpen: boolean;
+    content: string;
+    title: string;
+  }>({
+    isOpen: false,
+    content: "",
+    title: "",
+  });
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -414,29 +425,49 @@ export function AIChatSidebar({
                       <span>{copiedId === msg.id ? "Đã sao chép" : "Sao chép"}</span>
                     </Button>
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const cleanHtml = cleanAndFormatAiContentForEditor(msg.content);
-                        onApplyText(cleanHtml);
-                        setAppliedId(msg.id);
-                        setTimeout(() => setAppliedId(null), 2000);
-                      }}
-                      className="h-6 text-[11px] gap-1 px-2.5 text-primary border-primary/30 hover:bg-primary/5 transition-all"
-                    >
-                      {appliedId === msg.id ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-500" />
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">Đã áp dụng</span>
-                        </>
-                      ) : (
-                        <>
-                          <PlusCircle className="h-3 w-3" />
-                          <span>Áp dụng vào văn bản</span>
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const cleanHtml = cleanAndFormatAiContentForEditor(msg.content);
+                          setSaveTemplateData({
+                            isOpen: true,
+                            content: cleanHtml,
+                            title: documentTitle ? `Mẫu: ${documentTitle}` : "Mẫu văn bản AI",
+                          });
+                        }}
+                        className="h-6 text-[11px] gap-1 px-2 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 transition-all"
+                        title="Lưu nội dung này thành Mẫu mới để tái sử dụng"
+                      >
+                        <BookmarkPlus className="h-3 w-3" />
+                        <span>Lưu mẫu</span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const cleanHtml = cleanAndFormatAiContentForEditor(msg.content);
+                          onApplyText(cleanHtml);
+                          setAppliedId(msg.id);
+                          setTimeout(() => setAppliedId(null), 2000);
+                        }}
+                        className="h-6 text-[11px] gap-1 px-2.5 text-primary border-primary/30 hover:bg-primary/5 transition-all"
+                      >
+                        {appliedId === msg.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-500" />
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Đã áp dụng</span>
+                          </>
+                        ) : (
+                          <>
+                            <PlusCircle className="h-3 w-3" />
+                            <span>Áp dụng vào văn bản</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -489,6 +520,14 @@ export function AIChatSidebar({
           </div>
         </form>
       </footer>
+
+      {/* Dialog lưu mẫu tùy chỉnh */}
+      <SaveTemplateDialog
+        isOpen={saveTemplateData.isOpen}
+        onClose={() => setSaveTemplateData((prev) => ({ ...prev, isOpen: false }))}
+        defaultTitle={saveTemplateData.title}
+        initialContentHtml={saveTemplateData.content}
+      />
     </div>
   );
 }

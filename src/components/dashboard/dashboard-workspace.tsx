@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useTransition } from "react";
+import React, { useState, useEffect, useCallback, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileText,
@@ -14,9 +14,13 @@ import {
   RotateCcw,
   X,
   Loader2,
+  UploadCloud,
+  BookmarkCheck,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FolderTree } from "./folder-tree";
+import { SaveTemplateDialog } from "@/components/editor/save-template-dialog";
 
 export interface DraftItem {
   id: string;
@@ -45,6 +49,9 @@ export interface TemplateChoice {
   title: string;
   description?: string | null;
   industryPack?: string | null;
+  isBuiltin?: boolean;
+  isCustom?: boolean;
+  createdBy?: string | null;
 }
 
 const INDUSTRY_OPTIONS = [
@@ -72,10 +79,22 @@ export function DashboardWorkspace() {
   const [selectedIndustry, setSelectedIndustry] = useState("ALL");
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
-  // Modal tạo mới
+  // Modal tạo mới & Quản lý mẫu
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [templates, setTemplates] = useState<TemplateChoice[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [templateTab, setTemplateTab] = useState<"ALL" | "SYSTEM" | "CUSTOM">("ALL");
+  const [isUploadingTemplate, setIsUploadingTemplate] = useState(false);
+  const [uploadedTemplateData, setUploadedTemplateData] = useState<{
+    isOpen: boolean;
+    title: string;
+    content: string;
+  }>({
+    isOpen: false,
+    title: "",
+    content: "",
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, startCreatingTransition] = useTransition();
 
   // Tải danh sách bản nháp
@@ -120,22 +139,79 @@ export function DashboardWorkspace() {
     return () => clearTimeout(handler);
   }, [fetchDrafts]);
 
-  // Mở modal tạo mới & tải templates
+  // Tải danh sách templates (bao gồm mẫu quy chuẩn và mẫu cá nhân)
+  const fetchTemplates = useCallback(async () => {
+    setLoadingTemplates(true);
+    try {
+      const res = await fetch("/api/templates");
+      if (res.ok) {
+        const data = await res.json();
+        setTemplates(data);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải biểu mẫu:", err);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  }, []);
+
+  // Mở modal tạo mới & làm mới danh sách templates
   const handleOpenCreateModal = async () => {
     setIsCreateModalOpen(true);
-    if (templates.length === 0) {
-      setLoadingTemplates(true);
-      try {
-        const res = await fetch("/api/templates");
-        if (res.ok) {
-          const data = await res.json();
-          setTemplates(data);
-        }
-      } catch (err) {
-        console.error("Lỗi khi tải biểu mẫu:", err);
-      } finally {
-        setLoadingTemplates(false);
+    fetchTemplates();
+  };
+
+  // Xử lý tải lên tệp mẫu (.docx, .txt, .md)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingTemplate(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/templates/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Không thể tải lên và bóc tách tệp mẫu");
       }
+
+      // Mở modal xác nhận lưu mẫu
+      setUploadedTemplateData({
+        isOpen: true,
+        title: data.title || file.name.replace(/\.[^/.]+$/, ""),
+        content: data.contentHtml,
+      });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(`Lỗi tải tệp mẫu: ${errMsg}`);
+    } finally {
+      setIsUploadingTemplate(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Xử lý xóa mẫu cá nhân
+  const handleDeleteCustomTemplate = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Bạn có chắc chắn muốn xóa mẫu văn bản cá nhân này không?")) return;
+    try {
+      const res = await fetch(`/api/templates/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setTemplates((prev) => prev.filter((t) => t.id !== id));
+      } else {
+        const err = await res.json();
+        alert(err.error || "Không thể xóa mẫu văn bản");
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa mẫu:", err);
     }
   };
 
@@ -616,69 +692,201 @@ export function DashboardWorkspace() {
               </Button>
             </div>
 
-            {/* Quick Option: Blank Document */}
-            <div
-              onClick={() => handleCreateFromTemplate()}
-              className="flex items-center justify-between p-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <FileText className="h-5 w-5" />
+            {/* Quick Options Grid: Blank Document & Upload Template File */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Soạn thảo tự do */}
+              <div
+                onClick={() => handleCreateFromTemplate()}
+                className="flex items-center justify-between p-3.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground group-hover:scale-105 transition-transform shrink-0">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm">Soạn thảo văn bản tự do</h4>
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">
+                      Trang A4 trắng lề chuẩn 30/15/20/20mm
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm">Soạn thảo văn bản tự do</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Trang A4 trắng với đầy đủ định dạng lề 30/15/20/20mm và bảng 2 cột
-                  </p>
-                </div>
+                <Button size="sm" variant="outline" className="h-7 text-xs font-medium" disabled={isCreating}>
+                  Bắt đầu
+                </Button>
               </div>
-              <Button size="sm" variant="outline" disabled={isCreating}>
-                Bắt đầu ngay
-              </Button>
+
+              {/* Tải lên tệp mẫu */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center justify-between p-3.5 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-white group-hover:scale-105 transition-transform shrink-0">
+                    {isUploadingTemplate ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <UploadCloud className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm text-foreground">Tải lên tệp mẫu</h4>
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">
+                      Hỗ trợ tệp .docx, .txt, .md
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs font-medium border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  disabled={isUploadingTemplate}
+                >
+                  {isUploadingTemplate ? "Đang đọc..." : "Chọn tệp"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,.txt,.md"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </div>
             </div>
 
-            {/* Template Gallery */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Mẫu văn bản quy chuẩn (Seed Templates)
-                </span>
+            {/* Template Gallery with Tabs */}
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center justify-between border-b pb-2.5">
+                {/* Tabs phân loại mẫu */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  <button
+                    onClick={() => setTemplateTab("ALL")}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      templateTab === "ALL"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    Tất cả ({templates.length})
+                  </button>
+                  <button
+                    onClick={() => setTemplateTab("SYSTEM")}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      templateTab === "SYSTEM"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    Mẫu quy chuẩn ({templates.filter((t) => t.isBuiltin !== false).length})
+                  </button>
+                  <button
+                    onClick={() => setTemplateTab("CUSTOM")}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+                      templateTab === "CUSTOM"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                    }`}
+                  >
+                    <BookmarkCheck className="h-3 w-3" />
+                    <span>
+                      Mẫu của tôi ({templates.filter((t) => t.isCustom || t.isBuiltin === false).length})
+                    </span>
+                  </button>
+                </div>
+
                 {loadingTemplates && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
               </div>
 
+              {/* Danh sách templates theo tab */}
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-                {templates.map((tmpl) => (
-                  <div
-                    key={tmpl.id}
-                    onClick={() => handleCreateFromTemplate(tmpl)}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:border-primary hover:bg-muted/30 transition-colors cursor-pointer group"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm group-hover:text-primary transition-colors">
-                          {tmpl.title}
-                        </span>
-                        {tmpl.industryPack && (
-                          <span className="text-[10px] font-medium bg-muted px-2 py-0.5 rounded text-muted-foreground">
-                            {tmpl.industryPack}
-                          </span>
-                        )}
-                      </div>
-                      {tmpl.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1">{tmpl.description}</p>
-                      )}
-                    </div>
+                {templates
+                  .filter((tmpl) => {
+                    if (templateTab === "SYSTEM") return tmpl.isBuiltin !== false;
+                    if (templateTab === "CUSTOM") return tmpl.isCustom === true || tmpl.isBuiltin === false;
+                    return true;
+                  })
+                  .map((tmpl) => {
+                    const isCustom = tmpl.isCustom || tmpl.isBuiltin === false;
+                    return (
+                      <div
+                        key={tmpl.id}
+                        onClick={() => handleCreateFromTemplate(tmpl)}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:border-primary hover:bg-muted/30 transition-colors cursor-pointer group"
+                      >
+                        <div className="space-y-1 min-w-0 pr-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">
+                              {tmpl.title}
+                            </span>
+                            {isCustom ? (
+                              <span className="text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <BookmarkCheck className="h-2.5 w-2.5" />
+                                MẪU CỦA TÔI
+                              </span>
+                            ) : tmpl.industryPack ? (
+                              <span className="text-[10px] font-medium bg-muted px-2 py-0.5 rounded text-muted-foreground">
+                                {tmpl.industryPack}
+                              </span>
+                            ) : null}
+                          </div>
+                          {tmpl.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">{tmpl.description}</p>
+                          )}
+                        </div>
 
-                    <Button size="sm" variant="ghost" className="h-8 text-xs font-medium" disabled={isCreating}>
-                      Chọn mẫu
-                    </Button>
-                  </div>
-                ))}
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {isCustom && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              title="Xóa mẫu này"
+                              onClick={(e) => handleDeleteCustomTemplate(tmpl.id, e)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-xs font-medium"
+                            disabled={isCreating}
+                            onClick={() => handleCreateFromTemplate(tmpl)}
+                          >
+                            Chọn mẫu
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {/* Khi tab Mẫu của tôi trống */}
+                {templateTab === "CUSTOM" &&
+                  templates.filter((t) => t.isCustom || t.isBuiltin === false).length === 0 && (
+                    <div className="py-8 text-center space-y-2 border border-dashed rounded-xl p-4">
+                      <BookmarkCheck className="h-8 w-8 text-muted-foreground mx-auto opacity-50" />
+                      <p className="text-xs font-medium text-foreground">Bạn chưa lưu mẫu văn bản cá nhân nào</p>
+                      <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
+                        Hãy bấm &ldquo;Tải lên tệp mẫu&rdquo; ở trên hoặc dùng Copilot AI trong trình soạn thảo để lưu những mẫu văn bản ưng ý nhất.
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Dialog lưu mẫu khi tải lên file */}
+      <SaveTemplateDialog
+        isOpen={uploadedTemplateData.isOpen}
+        onClose={() => setUploadedTemplateData((prev) => ({ ...prev, isOpen: false }))}
+        defaultTitle={uploadedTemplateData.title}
+        initialContentHtml={uploadedTemplateData.content}
+        onSuccess={(newTemplate) => {
+          setTemplates((prev) => [newTemplate, ...prev]);
+          setTemplateTab("CUSTOM");
+        }}
+      />
       </div>
     </div>
   );
