@@ -26,10 +26,8 @@ import {
   Calendar,
   Building,
   MessageSquare,
-  PanelLeft,
   PanelLeftClose,
   PanelLeftOpen,
-  PanelRight,
   BookmarkPlus,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -922,33 +920,6 @@ function EditorContentComponent() {
 
           <OfflineStatusPill draftId={currentDraftId || undefined} />
 
-          {/* Bộ điều khiển Bố cục (Layout Controls - phong cách Modern IDE chuẩn như hình mẫu) */}
-          <div className="hidden sm:flex items-center gap-0.5 p-1 rounded-md border border-border/80 bg-muted/30" title="Tùy chỉnh bố cục hiển thị">
-            <button
-              type="button"
-              onClick={toggleLeftSidebar}
-              className={`h-7 w-7 rounded flex items-center justify-center transition-all ${
-                isLeftSidebarOpen
-                  ? "bg-background text-foreground shadow-2xs border border-border/60 font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
-              title={isLeftSidebarOpen ? "Ẩn khung biểu mẫu bên trái (Ctrl+B)" : "Hiện khung biểu mẫu bên trái (Ctrl+B)"}
-            >
-              <PanelLeft className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className={`h-7 w-7 rounded flex items-center justify-center transition-all ${
-                isChatOpen
-                  ? "bg-background text-foreground shadow-2xs border border-border/60 font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
-              title={isChatOpen ? "Đóng AI Copilot bên phải" : "Mở AI Copilot bên phải"}
-            >
-              <PanelRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
 
           <ThemeToggle />
         </div>
