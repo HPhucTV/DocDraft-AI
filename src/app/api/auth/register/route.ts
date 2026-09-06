@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { checkGeneralApiRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local-client";
+    const rateLimit = await checkGeneralApiRateLimit(`register:${ip}`);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Bạn đã thao tác đăng ký quá nhiều lần. Vui lòng thử lại sau ít phút." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { email, password, fullName, organization, jobTitle } = body;
 

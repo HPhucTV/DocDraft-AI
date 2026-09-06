@@ -17,11 +17,14 @@ export interface UserCustomApiKeys {
  * Ưu tiên ENCRYPTION_MASTER_KEY -> NEXTAUTH_SECRET -> Fallback dev key.
  */
 function getMasterKey(): Buffer {
-  const rawKey =
-    process.env.ENCRYPTION_MASTER_KEY ||
-    process.env.NEXTAUTH_SECRET ||
-    "docdraft-default-dev-encryption-key-2026";
+  const envKey = process.env.ENCRYPTION_MASTER_KEY || process.env.NEXTAUTH_SECRET;
+  if (!envKey && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Lỗi bảo mật nghiêm trọng: Chưa cấu hình biến môi trường ENCRYPTION_MASTER_KEY hoặc NEXTAUTH_SECRET trên môi trường Production!"
+    );
+  }
 
+  const rawKey = envKey || "docdraft-default-dev-encryption-key-2026";
   return crypto.createHash("sha256").update(rawKey).digest();
 }
 

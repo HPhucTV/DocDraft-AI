@@ -123,9 +123,12 @@ export const authConfig: NextAuthConfig = {
           (user as { jobTitle?: string | null }).jobTitle || null;
       }
 
-      // Cập nhật session từ client trigger update()
+      // Cập nhật session từ client trigger update() — bảo vệ phân quyền: chỉ cho phép các trường an toàn, KHÔNG ghi đè role/id
       if (trigger === "update" && session) {
-        token = { ...token, ...session };
+        if (session.name) token.name = String(session.name);
+        if (session.organization !== undefined) token.organization = session.organization ? String(session.organization) : null;
+        if (session.jobTitle !== undefined) token.jobTitle = session.jobTitle ? String(session.jobTitle) : null;
+        if (session.locale) token.locale = String(session.locale);
       }
 
       return token;

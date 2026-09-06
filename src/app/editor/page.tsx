@@ -32,22 +32,40 @@ import {
   PanelRight,
   BookmarkPlus,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
-import { AIChatSidebar } from "@/components/editor/ai-chat-sidebar";
 import { DynamicFormEngine } from "@/components/forms/dynamic-form-engine";
 import { FormSchema } from "@/types/form-schema";
 import { streamDocumentGeneration } from "@/lib/ai/stream-client";
 import { streamRawToDocument } from "@/lib/ai/raw-to-doc-client";
 import { RawExtractionResult } from "@/lib/ai/raw-to-doc-service";
 import { useAutoSave } from "@/hooks/use-auto-save";
-import { SideBySideDiffModal } from "@/components/diff/side-by-side-diff-modal";
-import { AuditTrailPanel } from "@/components/audit/audit-trail-panel";
-import { SaveTemplateDialog } from "@/components/editor/save-template-dialog";
-import { VersionHistoryPanel } from "@/components/editor/version-history-panel";
 import { OfflineStatusPill } from "@/components/offline/offline-status-pill";
 import { buildWordDocumentHtml } from "@/lib/export/word-fallback";
+
+// Tối ưu hóa Bundle Size: Lazy-load các Panel & Modal nặng (bundle-dynamic-imports)
+const SideBySideDiffModal = dynamic(
+  () => import("@/components/diff/side-by-side-diff-modal").then((m) => m.SideBySideDiffModal),
+  { ssr: false }
+);
+const AuditTrailPanel = dynamic(
+  () => import("@/components/audit/audit-trail-panel").then((m) => m.AuditTrailPanel),
+  { ssr: false }
+);
+const SaveTemplateDialog = dynamic(
+  () => import("@/components/editor/save-template-dialog").then((m) => m.SaveTemplateDialog),
+  { ssr: false }
+);
+const VersionHistoryPanel = dynamic(
+  () => import("@/components/editor/version-history-panel").then((m) => m.VersionHistoryPanel),
+  { ssr: false }
+);
+const AIChatSidebar = dynamic(
+  () => import("@/components/editor/ai-chat-sidebar").then((m) => m.AIChatSidebar),
+  { ssr: false }
+);
 
 interface TemplateItem {
   id: string;

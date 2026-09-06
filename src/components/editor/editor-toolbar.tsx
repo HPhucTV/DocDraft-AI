@@ -316,7 +316,7 @@ export function EditorToolbar({
       </div>
 
       {/* 2. Nội dung các Nhóm Công cụ (Ribbon Command Center) */}
-      <div className="p-1.5 flex items-center gap-1 overflow-x-auto touch-scroll-x text-xs">
+      <div className="p-1.5 flex items-center gap-1 overflow-x-auto touch-scroll-x touch-manipulation text-xs">
         {/* ========================================================================= */}
         {/* TAB 1: TRANG CHỦ (HOME)                                                  */}
         {/* ========================================================================= */}
