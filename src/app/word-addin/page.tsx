@@ -74,6 +74,18 @@ function sanitizeHtml(html: string): string {
     .replace(/(href|src)\s*=\s*['"]?javascript:[^'"]*['"]?/gi, "");
 }
 
+/**
+ * Làm sạch mã HTML trước khi truyền vào Word Office.js API
+ * Xóa markdown code fence nếu LLM trả về dạng ```html ... ```
+ */
+function cleanHtmlForWord(raw: string): string {
+  if (!raw) return "";
+  let cleaned = raw.trim();
+  cleaned = cleaned.replace(/^```(?:html)?\s*/i, "");
+  cleaned = cleaned.replace(/\s*```$/i, "");
+  return cleaned.trim();
+}
+
 export default function WordAddinTaskpanePage() {
   const [isOfficeReady, setIsOfficeReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"format" | "template" | "raw" | "copilot">("format");
@@ -331,7 +343,7 @@ export default function WordAddinTaskpanePage() {
     if (!selectedTemplateId) return;
     setIsGeneratingTemplate(true);
     setGeneratedDocHtml("");
-    setStatusMessage(null);
+    setStatusMessage({ type: "info", text: "DocDraft AI đang kết nối và chuẩn bị sinh văn bản..." });
 
     try {
       const res = await fetch("/api/ai/generate/stream", {
@@ -348,38 +360,95 @@ export default function WordAddinTaskpanePage() {
       }
 
       const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder("utf-8");
       let accumulated = "";
+      let buffer = "";
+      let currentEvent = "message";
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const dataStr = line.replace("data: ", "").trim();
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(":")) continue;
+
+            if (trimmed.startsWith("event:")) {
+              currentEvent = trimmed.replace(/^event:\s*/, "").trim();
+              if (currentEvent === "thinking") {
+                setStatusMessage({
+                  type: "info",
+                  text: "AI đang suy nghĩ và lập dàn ý thể thức NĐ 30...",
+                });
+              } else if (currentEvent === "content") {
+                setStatusMessage({
+                  type: "info",
+                  text: "AI đang soạn thảo văn bản...",
+                });
+              }
+              continue;
+            }
+
+            if (trimmed.startsWith("data:")) {
+              const dataStr = trimmed.replace(/^data:\s*/, "").trim();
               if (dataStr === "[DONE]") break;
+
+              // Không chèn tokens reasoning nội bộ vào văn bản
+              if (currentEvent === "thinking") {
+                continue;
+              }
+
               try {
                 const parsed = JSON.parse(dataStr);
-                if (parsed.content) {
-                  accumulated += parsed.content;
+                const textChunk =
+                  parsed.text ?? parsed.chunk ?? parsed.content ?? "";
+                if (textChunk) {
+                  accumulated += textChunk;
                   setGeneratedDocHtml(accumulated);
                 }
               } catch {
-                accumulated += dataStr;
-                setGeneratedDocHtml(accumulated);
+                if (currentEvent !== "ping" && currentEvent !== "error" && currentEvent !== "done") {
+                  accumulated += dataStr;
+                  setGeneratedDocHtml(accumulated);
+                }
               }
             }
           }
         }
       }
 
-      setStatusMessage({
-        type: "success",
-        text: "AI đã sinh xong văn bản! Bạn có thể bấm 'Chèn vào Word' bên dưới.",
-      });
+      // Xử lý dữ liệu còn tồn đọng trong buffer
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith("data:")) {
+          const dataStr = trimmed.replace(/^data:\s*/, "").trim();
+          if (dataStr && dataStr !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(dataStr);
+              const textChunk =
+                parsed.text ?? parsed.chunk ?? parsed.content ?? "";
+              if (textChunk) accumulated += textChunk;
+            } catch {
+              accumulated += dataStr;
+            }
+          }
+        }
+      }
+
+      if (accumulated.trim()) {
+        setGeneratedDocHtml(accumulated);
+        setStatusMessage({
+          type: "success",
+          text: "AI đã sinh xong văn bản! Bạn có thể bấm 'Chèn vào Word' bên dưới.",
+        });
+      } else {
+        throw new Error("Không nhận được nội dung từ AI. Vui lòng thử lại.");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Có lỗi";
       setStatusMessage({ type: "error", text: `Lỗi sinh mẫu: ${msg}` });
@@ -396,7 +465,7 @@ export default function WordAddinTaskpanePage() {
     }
     setIsPolishing(true);
     setPolishedHtml("");
-    setStatusMessage(null);
+    setStatusMessage({ type: "info", text: "AI đang phân tích và tái cấu trúc nháp thô..." });
 
     try {
       const res = await fetch("/api/ai/raw-to-doc/stream", {
@@ -413,38 +482,82 @@ export default function WordAddinTaskpanePage() {
       }
 
       const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder("utf-8");
       let accumulated = "";
+      let buffer = "";
+      let currentEvent = "message";
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const dataStr = line.replace("data: ", "").trim();
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(":")) continue;
+
+            if (trimmed.startsWith("event:")) {
+              currentEvent = trimmed.replace(/^event:\s*/, "").trim();
+              continue;
+            }
+
+            if (trimmed.startsWith("data:")) {
+              const dataStr = trimmed.replace(/^data:\s*/, "").trim();
               if (dataStr === "[DONE]") break;
+
+              if (currentEvent === "thinking") {
+                continue;
+              }
+
               try {
                 const parsed = JSON.parse(dataStr);
-                if (parsed.content) {
-                  accumulated += parsed.content;
+                const textChunk =
+                  parsed.chunk ?? parsed.text ?? parsed.content ?? "";
+                if (textChunk) {
+                  accumulated += textChunk;
                   setPolishedHtml(accumulated);
                 }
               } catch {
-                accumulated += dataStr;
-                setPolishedHtml(accumulated);
+                if (currentEvent !== "ping" && currentEvent !== "error" && currentEvent !== "done") {
+                  accumulated += dataStr;
+                  setPolishedHtml(accumulated);
+                }
               }
             }
           }
         }
       }
 
-      setStatusMessage({
-        type: "success",
-        text: "Đã chuốt xong văn bản! Sẵn sàng chèn vào Word.",
-      });
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith("data:")) {
+          const dataStr = trimmed.replace(/^data:\s*/, "").trim();
+          if (dataStr && dataStr !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(dataStr);
+              const textChunk =
+                parsed.chunk ?? parsed.text ?? parsed.content ?? "";
+              if (textChunk) accumulated += textChunk;
+            } catch {
+              accumulated += dataStr;
+            }
+          }
+        }
+      }
+
+      if (accumulated.trim()) {
+        setPolishedHtml(accumulated);
+        setStatusMessage({
+          type: "success",
+          text: "Đã chuốt xong văn bản! Sẵn sàng chèn vào Word.",
+        });
+      } else {
+        throw new Error("Không nhận được kết quả chuốt từ AI. Vui lòng thử lại.");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Có lỗi";
       setStatusMessage({ type: "error", text: `Lỗi chuốt văn bản: ${msg}` });
@@ -486,8 +599,10 @@ export default function WordAddinTaskpanePage() {
       }
 
       const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder("utf-8");
       let assistantReply = "";
+      let buffer = "";
+      let currentEvent = "message";
       const botMsgId = `b-${Date.now()}`;
 
       setChatMessages((prev) => [
@@ -499,25 +614,45 @@ export default function WordAddinTaskpanePage() {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const dataStr = line.replace("data: ", "").trim();
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(":")) continue;
+
+            if (trimmed.startsWith("event:")) {
+              currentEvent = trimmed.replace(/^event:\s*/, "").trim();
+              continue;
+            }
+
+            if (trimmed.startsWith("data:")) {
+              const dataStr = trimmed.replace(/^data:\s*/, "").trim();
               if (dataStr === "[DONE]") break;
+
               try {
                 const parsed = JSON.parse(dataStr);
-                if (parsed.content) {
-                  assistantReply += parsed.content;
+                const textChunk =
+                  parsed.chunk ?? parsed.content ?? parsed.text ?? "";
+                if (textChunk) {
+                  assistantReply += textChunk;
                   setChatMessages((prev) =>
-                    prev.map((m) => (m.id === botMsgId ? { ...m, content: assistantReply } : m))
+                    prev.map((m) =>
+                      m.id === botMsgId ? { ...m, content: assistantReply } : m
+                    )
                   );
                 }
               } catch {
-                assistantReply += dataStr;
-                setChatMessages((prev) =>
-                  prev.map((m) => (m.id === botMsgId ? { ...m, content: assistantReply } : m))
-                );
+                if (currentEvent !== "ping" && currentEvent !== "error" && currentEvent !== "done") {
+                  assistantReply += dataStr;
+                  setChatMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === botMsgId ? { ...m, content: assistantReply } : m
+                    )
+                  );
+                }
               }
             }
           }
@@ -542,7 +677,8 @@ export default function WordAddinTaskpanePage() {
   const handleInsertGenerated = async (html: string) => {
     setIsLoading(true);
     try {
-      const res = await insertDocumentContent(html);
+      const cleaned = cleanHtmlForWord(html);
+      const res = await insertDocumentContent(cleaned);
       setStatusMessage({ type: "success", text: res.message });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi";
@@ -886,26 +1022,41 @@ export default function WordAddinTaskpanePage() {
             </div>
 
             {/* Preview & Insert Button */}
-            {generatedDocHtml && (
-              <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2">
+            {(generatedDocHtml || isGeneratingTemplate) && (
+              <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-300">
-                    Bản nháp AI vừa sinh:
+                  <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                    {isGeneratingTemplate ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        AI đang soạn thảo...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        Bản nháp AI vừa sinh:
+                      </>
+                    )}
                   </span>
                   <Button
                     size="sm"
                     onClick={() => handleInsertGenerated(generatedDocHtml)}
-                    disabled={isLoading}
-                    className="h-7 text-[10px] px-2 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={isLoading || isGeneratingTemplate || !generatedDocHtml}
+                    className="h-7 text-[10px] px-2.5 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
                   >
-                    <ArrowDownToLine className="w-3 h-3" />
+                    <ArrowDownToLine className="w-3.5 h-3.5" />
                     Chèn vào Word
                   </Button>
                 </div>
 
                 <div
-                  className="max-h-40 overflow-y-auto p-2 rounded bg-white dark:bg-slate-900 text-[10px] border border-indigo-100 dark:border-indigo-900 text-slate-700 dark:text-slate-300 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(generatedDocHtml) }}
+                  className="max-h-48 overflow-y-auto p-2.5 rounded bg-white dark:bg-slate-900 text-[10px] border border-indigo-100 dark:border-indigo-900 text-slate-700 dark:text-slate-300 leading-relaxed font-sans"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(
+                      generatedDocHtml ||
+                        `<p class="italic text-slate-400 dark:text-slate-500">DocDraft AI đang kết nối và sinh văn bản...</p>`
+                    ),
+                  }}
                 />
               </div>
             )}
@@ -966,26 +1117,41 @@ export default function WordAddinTaskpanePage() {
             </div>
 
             {/* Polished Result */}
-            {polishedHtml && (
-              <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 space-y-2">
+            {(polishedHtml || isPolishing) && (
+              <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 space-y-2 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-purple-900 dark:text-purple-300">
-                    Văn bản sau chuốt:
+                  <span className="text-[11px] font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                    {isPolishing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600 dark:text-purple-400" />
+                        AI đang tái cấu trúc...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        Văn bản sau chuốt:
+                      </>
+                    )}
                   </span>
                   <Button
                     size="sm"
                     onClick={() => handleInsertGenerated(polishedHtml)}
-                    disabled={isLoading}
-                    className="h-7 text-[10px] px-2 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={isLoading || isPolishing || !polishedHtml}
+                    className="h-7 text-[10px] px-2.5 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
                   >
-                    <ArrowDownToLine className="w-3 h-3" />
+                    <ArrowDownToLine className="w-3.5 h-3.5" />
                     Chèn vào Word
                   </Button>
                 </div>
 
                 <div
-                  className="max-h-40 overflow-y-auto p-2 rounded bg-white dark:bg-slate-900 text-[10px] border border-purple-100 dark:border-purple-900 text-slate-700 dark:text-slate-300 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(polishedHtml) }}
+                  className="max-h-48 overflow-y-auto p-2.5 rounded bg-white dark:bg-slate-900 text-[10px] border border-purple-100 dark:border-purple-900 text-slate-700 dark:text-slate-300 leading-relaxed font-sans"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(
+                      polishedHtml ||
+                        `<p class="italic text-slate-400 dark:text-slate-500">DocDraft AI đang tái cấu trúc nháp thô...</p>`
+                    ),
+                  }}
                 />
               </div>
             )}
