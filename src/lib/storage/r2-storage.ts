@@ -125,9 +125,9 @@ class R2StorageService {
     }
 
     // 2. Fallback: Kiểm tra bộ đệm cục bộ (Local Disk Cache)
-    const localFilePath = path.join(this.localFallbackDir, `${hash}.${format}`);
-    if (fs.existsSync(localFilePath)) {
-      const fileBuffer = fs.readFileSync(localFilePath);
+    const localFilePath = path.join(process.cwd(), ".exports", `${hash}.${format}`);
+    if (fs.existsSync(/*turbopackIgnore: true*/ localFilePath)) {
+      const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ localFilePath);
       return {
         isCached: true,
         fileUrl: `/api/storage/export/${hash}.${format}`,
@@ -194,10 +194,11 @@ class R2StorageService {
 
     // 2. Lưu vào local storage làm fallback dự phòng
     try {
-      if (!fs.existsSync(this.localFallbackDir)) {
-        fs.mkdirSync(this.localFallbackDir, { recursive: true });
+      const exportDir = path.join(process.cwd(), ".exports");
+      if (!fs.existsSync(/*turbopackIgnore: true*/ exportDir)) {
+        fs.mkdirSync(/*turbopackIgnore: true*/ exportDir, { recursive: true });
       }
-      fs.writeFileSync(path.join(this.localFallbackDir, `${hash}.${format}`), buffer);
+      fs.writeFileSync(/*turbopackIgnore: true*/ path.join(exportDir, `${hash}.${format}`), buffer);
     } catch (fsErr) {
       console.warn("Không thể ghi file local fallback:", fsErr);
     }

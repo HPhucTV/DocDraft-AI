@@ -74,6 +74,7 @@ export interface TiptapEditorProps {
   onImportDocx?: (file: File) => void;
   isImportingDocx?: boolean;
   onApplyTextRef?: React.MutableRefObject<((text: string) => void) | null>;
+  onOpenSmartFill?: () => void;
   editable?: boolean;
   className?: string;
   draftId?: string;
@@ -114,6 +115,7 @@ export function TiptapEditor({
   onImportDocx,
   isImportingDocx = false,
   onApplyTextRef,
+  onOpenSmartFill,
   editable = true,
   className = "",
   draftId,
@@ -549,6 +551,7 @@ export function TiptapEditor({
         isImportingDocx={isImportingDocx}
         onOpenLegalDialog={() => setIsLegalDialogOpen(true)}
         onOpenComplianceDialog={() => setIsComplianceDialogOpen(true)}
+        onOpenSmartFill={onOpenSmartFill}
         complianceScore={complianceScore}
         onOpenShareDialog={() => setIsShareDialogOpen(true)}
         onToggleComments={() => setIsCommentsOpen(!isCommentsOpen)}

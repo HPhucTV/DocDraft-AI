@@ -49,6 +49,7 @@ import {
   FilePlus2,
   Ruler,
   Palette,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +82,7 @@ interface EditorToolbarProps {
   isImportingDocx?: boolean;
   onOpenLegalDialog?: () => void;
   onOpenComplianceDialog?: () => void;
+  onOpenSmartFill?: () => void;
   complianceScore?: number;
   onOpenShareDialog?: () => void;
   onToggleComments?: () => void;
@@ -155,6 +157,7 @@ export function EditorToolbar({
   isImportingDocx = false,
   onOpenLegalDialog,
   onOpenComplianceDialog,
+  onOpenSmartFill,
   complianceScore,
   onOpenShareDialog,
   onToggleComments,
@@ -944,6 +947,25 @@ export function EditorToolbar({
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   <span>⚡ Chuẩn hóa 1-Click</span>
+                </Button>
+              )}
+
+              {onOpenSmartFill && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenSmartFill}
+                  className="h-7 gap-1.5 text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-900 dark:text-amber-200 shadow-2xs"
+                  title="Smart Fill AI: Tự động điền các ô [...] từ hồ sơ tổ chức (Ctrl+Shift+F)"
+                >
+                  <Zap className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Điền [...]</span>
+                  {placeholderCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/25 text-amber-950 dark:text-amber-100">
+                      {placeholderCount}
+                    </span>
+                  )}
                 </Button>
               )}
 

@@ -29,6 +29,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { collabManager, type Collaborator } from "@/lib/collaboration/collab-manager";
+import { useNotificationStore } from "@/lib/stores/notification-store";
 
 export interface ShareExportPopoverProps {
   open?: boolean;
@@ -99,15 +100,51 @@ export function ShareExportPopover({
     return () => unsub();
   }, []);
 
-  // Xử lý thêm người qua email
-  const handleAddMember = (e?: React.FormEvent) => {
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteFeedback, setInviteFeedback] = useState<string | null>(null);
+
+  // Xử lý thêm người qua email và gửi email thực tế
+  const handleAddMember = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const email = inviteEmail.trim();
-    if (!email) return;
-    if (!invitedMembers.includes(email)) {
-      setInvitedMembers((prev) => [...prev, email]);
+    if (!email || isSendingInvite) return;
+
+    setIsSendingInvite(true);
+    setInviteFeedback(null);
+
+    try {
+      await fetch("/api/email/send-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          documentTitle: draftTitle,
+          draftId: draftId || "draft-temp",
+          permission: accessLevel === "PUBLIC_EDIT" ? "EDIT" : "VIEW",
+        }),
+      });
+
+      if (!invitedMembers.includes(email)) {
+        setInvitedMembers((prev) => [...prev, email]);
+      }
+
+      // Tạo thông báo vào store
+      useNotificationStore.getState().addNotification({
+        title: "Đã gửi lời mời cộng tác",
+        message: `Bạn đã gửi lời mời tham gia chỉnh sửa văn bản "${draftTitle}" tới ${email}.`,
+        category: "INVITE",
+        documentTitle: draftTitle,
+      });
+
+      setInviteFeedback(`Đã gửi lời mời tới ${email}`);
+      setTimeout(() => setInviteFeedback(null), 4000);
+      setInviteEmail("");
+    } catch (err) {
+      console.error("Lỗi khi gửi email:", err);
+      setInviteFeedback("Không thể gửi email lúc này");
+    } finally {
+      setIsSendingInvite(false);
     }
-    setInviteEmail("");
   };
 
   // Sao chép liên kết chia sẻ (Tương thích API & URL hiện hành)
@@ -242,13 +279,23 @@ export function ShareExportPopover({
                 type="submit"
                 size="sm"
                 variant="outline"
-                disabled={!inviteEmail.trim()}
+                disabled={!inviteEmail.trim() || isSendingInvite}
                 className="h-9 px-2.5 rounded-xl text-xs gap-1 hover:bg-violet-50 hover:text-violet-600 dark:hover:bg-violet-950/40"
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Mời</span>
+                {isSendingInvite ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-600" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
+                <span>{isSendingInvite ? "Đang gửi..." : "Mời"}</span>
               </Button>
             </form>
+            {inviteFeedback && (
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1.5 flex items-center gap-1 animate-in fade-in">
+                <Check className="h-3 w-3" />
+                <span>{inviteFeedback}</span>
+              </p>
+            )}
           </div>
 
           {/* Hàng Avatar Thành viên đã truy cập */}

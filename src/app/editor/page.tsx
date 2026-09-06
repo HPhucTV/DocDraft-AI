@@ -67,6 +67,17 @@ const ShareDialog = dynamic(
   () => import("@/components/editor/share-dialog").then((m) => m.ShareDialog),
   { ssr: false }
 );
+const ShortcutsDialog = dynamic(
+  () => import("@/components/ui/shortcuts-dialog").then((m) => m.ShortcutsDialog),
+  { ssr: false }
+);
+const SmartFillDialog = dynamic(
+  () => import("@/components/editor/smart-fill-dialog").then((m) => m.SmartFillDialog),
+  { ssr: false }
+);
+import type { PlaceholderReplacement } from "@/components/editor/smart-fill-dialog";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { Zap, Keyboard } from "lucide-react";
 
 const DEFAULT_EDITOR_USER = {
   id: "user-current",
@@ -144,6 +155,8 @@ function EditorContentComponent() {
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isSmartFillOpen, setIsSmartFillOpen] = useState(false);
   const insertTextRef = useRef<((text: string) => void) | null>(null);
   const setEditorContentRef = useRef<((content: string | object) => void) | null>(null);
 
@@ -660,6 +673,76 @@ function EditorContentComponent() {
     }
   };
 
+  // Xử lý áp dụng các trường Smart Fill AI vào Tiptap Editor (TASK-B1)
+  const handleApplySmartFillReplacements = (replacements: PlaceholderReplacement[]) => {
+    let updatedHtml = editorContent;
+    for (const item of replacements) {
+      if (item.placeholder && item.value) {
+        updatedHtml = updatedHtml.split(item.placeholder).join(item.value);
+      }
+    }
+    setEditorContent(updatedHtml);
+    if (setEditorContentRef.current) {
+      setEditorContentRef.current(updatedHtml);
+    }
+  };
+
+  // Hệ thống Phím tắt toàn diện cho Editor (TASK-A5, B4, B1)
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+
+      // 1. Ctrl+Shift+E: Xuất Word
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "e" || e.key === "E")) {
+        e.preventDefault();
+        handleExport("docx");
+        return;
+      }
+
+      // 2. Ctrl+Shift+P: Xuất / In PDF
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        handleExport("pdf");
+        return;
+      }
+
+      // 3. Ctrl+/: Bật / Tắt AI Chat
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        e.preventDefault();
+        setIsChatOpen((prev) => !prev);
+        return;
+      }
+
+      // 4. Ctrl+Shift+F: Mở Smart Fill Agent
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "f" || e.key === "F")) {
+        e.preventDefault();
+        setIsSmartFillOpen(true);
+        return;
+      }
+
+      // 5. Ctrl+Shift+S: Mở menu chia sẻ
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        setIsShareOpen(true);
+        return;
+      }
+
+      // 6. ?: Mở bảng tra cứu phím tắt (khi không trong input)
+      if (e.key === "?" && !isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcuts);
+    return () => window.removeEventListener("keydown", handleGlobalShortcuts);
+  }, [editorContent, documentTitle]);
+
   // 10. Xử lý Nhập khẩu tệp Word (.docx) sang Tiptap Canvas (TASK-207)
   const handleImportDocx = async (file: File) => {
     setIsImportingDocx(true);
@@ -907,8 +990,17 @@ function EditorContentComponent() {
             onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
           />
 
-          <OfflineStatusPill draftId={currentDraftId || undefined} />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsShortcutsOpen(true)}
+            className="h-9 w-9 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+            title="Bảng tra cứu phím tắt (?)"
+          >
+            <Keyboard className="h-4 w-4" />
+          </Button>
 
+          <NotificationBell />
 
           <ThemeToggle />
         </div>
@@ -1181,6 +1273,7 @@ function EditorContentComponent() {
             onImportDocx={handleImportDocx}
             isImportingDocx={isImportingDocx}
             onApplyTextRef={insertTextRef}
+            onOpenSmartFill={() => setIsSmartFillOpen(true)}
             className="flex-1 overflow-hidden"
           />
 
@@ -1247,6 +1340,20 @@ function EditorContentComponent() {
         onOpenChange={setIsShareDialogOpen}
         draftId={currentDraftId || "draft-temp"}
         draftTitle={documentTitle || "Văn bản dự thảo"}
+      />
+
+      {/* Bảng tra cứu phím tắt (TASK-A5) */}
+      <ShortcutsDialog
+        open={isShortcutsOpen}
+        onOpenChange={setIsShortcutsOpen}
+      />
+
+      {/* Smart Fill Agent điền tự động placeholder [...] (TASK-B1) */}
+      <SmartFillDialog
+        open={isSmartFillOpen}
+        onOpenChange={setIsSmartFillOpen}
+        editorContent={editorContent}
+        onApplyReplacements={handleApplySmartFillReplacements}
       />
     </div>
   );

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import type {
   OrganizationProfile,
   Department,
@@ -315,6 +316,7 @@ export default function OrganizationAdminPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <ThemeToggle />
             <Link href="/editor">
               <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold gap-1.5 shadow-xs">

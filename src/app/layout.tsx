@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { GlobalCommandPalette } from "@/components/navigation/global-command-palette";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -19,6 +20,9 @@ export const metadata: Metadata = {
   description:
     "Nền tảng ứng dụng AI hỗ trợ soạn thảo, kiểm tra thể thức văn bản hành chính nhà nước theo Nghị định 30/2020/NĐ-CP với cơ chế RAG và BYOK bảo mật cao.",
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
   themeColor: "#0f172a",
 };
 
@@ -39,6 +43,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <GlobalCommandPalette />
           <Analytics />
         </ThemeProvider>
 
