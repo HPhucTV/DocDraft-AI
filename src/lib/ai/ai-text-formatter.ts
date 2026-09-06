@@ -118,25 +118,34 @@ function inlineMarkdownToHtml(text: string): string {
  * Kiểm tra xem đoạn văn bản có phải là toàn văn văn bản hành chính NĐ 30 không
  * (Có Quốc hiệu - Tiêu ngữ hoặc Cơ quan ban hành + Chữ ký)
  */
-function isFullND30Document(text: string): boolean {
+export function isFullND30Document(text: string): boolean {
+  if (!text) return false;
   const hasNationalMotto =
     /cộng hòa xã hội chủ nghĩa việt nam/i.test(text) ||
-    /độc lập - tự do - hạnh phúc/i.test(text);
+    /độc lập\s*[-–—]\s*tự do\s*[-–—]\s*hạnh phúc/i.test(text);
   const hasSignatory =
     /nơi nhận/i.test(text) ||
-    /hiệu trưởng|giám đốc|chủ tịch|trưởng phòng|người làm đơn|thủ trưởng/i.test(
+    /hiệu trưởng|giám đốc|chủ tịch|trưởng phòng|người làm đơn|thủ trưởng|bộ trưởng|chánh văn phòng|đại diện/i.test(
       text
     ) ||
-    /ký, ghi rõ họ/i.test(text);
+    /ký,\s*ghi rõ họ/i.test(text);
 
   return hasNationalMotto && hasSignatory;
 }
 
 /**
  * Chuyển đổi toàn văn một văn bản hành chính sang HTML hoàn chỉnh chuẩn NĐ 30
+ * Bắt buộc đóng gói Header & Chữ ký vào Bảng ẩn 2 cột (table-layout: fixed; border: none)
+ * Triệt tiêu hoàn toàn các dấu gạch nối bàn phím rời rạc (-------------)
  */
-function convertFullDocumentToND30Html(text: string): string {
-  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l !== "---");
+export function convertFullDocumentToND30Html(text: string): string {
+  const rawLines = text.split("\n").map((l) => l.trim());
+  // Lọc bỏ toàn bộ dòng rỗng hoặc chỉ chứa các ký tự gạch rời rạc (---, --------, ___________)
+  const lines = rawLines.filter((l) => {
+    if (!l) return false;
+    if (/^[-_—–\s.]{2,}$/.test(l)) return false;
+    return true;
+  });
 
   let orgLines: string[] = [];
   let docNumber = "";
@@ -149,82 +158,31 @@ function convertFullDocumentToND30Html(text: string): string {
   let signatoryTitle = "";
   let signatoryName = "";
 
-  let parsingStage: "HEADER" | "TITLE" | "BODY" | "SIGNATURE" = "HEADER";
+  let inHeader = true;
+  let inSignature = false;
 
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
     const cleanLine = rawLine.replace(/\*\*/g, "").trim();
 
     if (!cleanLine) continue;
+    if (/^[-_—–\s.]{2,}$/.test(cleanLine)) continue;
 
-    // 1. GIAI ĐOẠN HEADER: Tìm Cơ quan, Số hiệu, Quốc hiệu, Địa danh ngày tháng
-    if (parsingStage === "HEADER") {
-      if (cleanLine.toLowerCase().startsWith("số:")) {
-        docNumber = cleanLine;
-        continue;
-      }
-      if (/cộng hòa xã hội chủ nghĩa việt nam/i.test(cleanLine)) {
-        continue;
-      }
-      if (/độc lập - tự do - hạnh phúc/i.test(cleanLine)) {
-        continue;
-      }
-      if (/ngày.*tháng.*năm/i.test(cleanLine)) {
-        locationDate = cleanLine;
-        parsingStage = "TITLE";
-        continue;
-      }
-
-      // Tên cơ quan (thường viết hoa ở các dòng đầu bên trái)
-      if (
-        orgLines.length < 3 &&
-        !cleanLine.toLowerCase().startsWith("số:") &&
-        !/ngày.*tháng.*năm/i.test(cleanLine)
-      ) {
-        orgLines.push(cleanLine);
-        continue;
-      }
-    }
-
-    // 2. GIAI ĐOẠN TITLE: Tên loại văn bản (GIẤY MỜI, QUYẾT ĐỊNH...) & Trích yếu
-    if (parsingStage === "TITLE") {
-      // Nhận diện Tiêu đề chính (thường in hoa toàn bộ)
-      if (!title && (cleanLine === cleanLine.toUpperCase() || /giấy mời|quyết định|thông báo|báo cáo|tờ trình|công văn/i.test(cleanLine))) {
-        title = cleanLine;
-        continue;
-      }
-
-      // Nhận diện Trích yếu (Về việc...)
-      if (title && !subject && (cleanLine.toLowerCase().startsWith("về việc") || cleanLine.toLowerCase().startsWith("v/v"))) {
-        subject = cleanLine;
-        continue;
-      }
-
-      // Kính gửi
-      if (cleanLine.toLowerCase().startsWith("kính gửi:")) {
-        recipient = cleanLine.replace(/^kính gửi:\s*/i, "").trim();
-        parsingStage = "BODY";
-        continue;
-      }
-
-      // Nếu không phải các trường trên, chuyển sang BODY
-      parsingStage = "BODY";
-    }
-
-    // 3. GIAI ĐOẠN SIGNATURE: Nơi nhận và Người ký
+    // 1. Nhận diện chuyển sang phần Chữ ký (SIGNATURE)
     if (
       cleanLine.toLowerCase().startsWith("nơi nhận:") ||
-      /^(hiệu trưởng|giám đốc|chủ tịch|trưởng phòng|người làm đơn|thủ trưởng)/i.test(cleanLine) ||
+      /^(hiệu trưởng|giám đốc|chủ tịch|trưởng phòng|người làm đơn|thủ trưởng|bộ trưởng|chánh văn phòng)/i.test(cleanLine) ||
       cleanLine.toLowerCase().includes("ký, ghi rõ họ")
     ) {
-      parsingStage = "SIGNATURE";
+      inHeader = false;
+      inSignature = true;
     }
 
-    if (parsingStage === "SIGNATURE") {
+    if (inSignature) {
       if (cleanLine.toLowerCase().startsWith("nơi nhận:")) {
         continue;
       }
-      if (cleanLine.startsWith("-") && cleanLine.length < 60) {
+      if (cleanLine.startsWith("-") && cleanLine.length < 70) {
         recipientsList.push(cleanLine);
         continue;
       }
@@ -239,42 +197,96 @@ function convertFullDocumentToND30Html(text: string): string {
         signatoryName = cleanLine;
         continue;
       }
+      continue;
     }
 
-    // 4. GIAI ĐOẠN BODY
-    if (parsingStage === "BODY") {
-      if (cleanLine.toLowerCase().startsWith("kính gửi:")) {
-        recipient = cleanLine.replace(/^kính gửi:\s*/i, "").trim();
+    // 2. Nhận diện Header: Cơ quan, Số hiệu, Quốc hiệu, Tiêu ngữ, Ngày tháng
+    if (inHeader) {
+      if (cleanLine.toLowerCase().startsWith("số:")) {
+        docNumber = cleanLine;
         continue;
       }
-      bodyParagraphs.push(rawLine);
+      if (/cộng hòa xã hội chủ nghĩa việt nam/i.test(cleanLine)) {
+        continue;
+      }
+      if (/độc lập\s*[-–—]\s*tự do\s*[-–—]\s*hạnh phúc/i.test(cleanLine)) {
+        continue;
+      }
+      if (/ngày.*tháng.*năm/i.test(cleanLine)) {
+        locationDate = cleanLine;
+        continue;
+      }
+
+      // Nhận diện Tiêu đề chính để ngắt Header
+      if (
+        /^(giấy mời|quyết định|thông báo|báo cáo|tờ trình|công văn|kế hoạch|chỉ thị|nghị quyết|hợp đồng)\b/i.test(cleanLine) ||
+        (cleanLine === cleanLine.toUpperCase() &&
+          cleanLine.length > 5 &&
+          !cleanLine.includes("TRƯỜNG") &&
+          !cleanLine.includes("UBND") &&
+          !cleanLine.includes("CÔNG TY") &&
+          !cleanLine.includes("PHÒNG") &&
+          !cleanLine.includes("SỞ") &&
+          !cleanLine.includes("BỘ "))
+      ) {
+        title = cleanLine;
+        inHeader = false;
+        continue;
+      }
+
+      // Tên cơ quan ban hành / cơ quan chủ quản
+      if (
+        orgLines.length < 3 &&
+        !cleanLine.toLowerCase().startsWith("số:") &&
+        !/ngày.*tháng.*năm/i.test(cleanLine)
+      ) {
+        orgLines.push(cleanLine);
+        continue;
+      }
     }
+
+    // 3. Nhận diện Tiêu đề & Trích yếu
+    if (!title && /^(giấy mời|quyết định|thông báo|báo cáo|tờ trình|công văn|kế hoạch|chỉ thị|nghị quyết)\b/i.test(cleanLine)) {
+      title = cleanLine;
+      continue;
+    }
+    if (title && !subject && (cleanLine.toLowerCase().startsWith("về việc") || cleanLine.toLowerCase().startsWith("v/v"))) {
+      subject = cleanLine;
+      continue;
+    }
+    if (cleanLine.toLowerCase().startsWith("kính gửi:")) {
+      recipient = cleanLine.replace(/^kính gửi:\s*/i, "").trim();
+      continue;
+    }
+
+    // 4. Thân văn bản (Body)
+    bodyParagraphs.push(rawLine);
   }
 
-  // Xây dựng Bảng Header 2 cột chuẩn NĐ 30
+  // Xây dựng Bảng Header 2 cột chuẩn NĐ 30 (ẩn viền hoàn toàn)
   const orgHtml = orgLines.length > 0 
-    ? orgLines.map((l) => `<p style="text-align: center; margin: 0; font-size: 12pt; line-height: 1.3;"><strong>${l}</strong></p>`).join("")
-    : `<p style="text-align: center; margin: 0; font-size: 12pt; line-height: 1.3;"><strong>[TÊN CƠ QUAN BAN HÀNH]</strong></p>`;
+    ? orgLines.map((l) => `<p style="text-align: center; margin: 0; font-size: 12pt; line-height: 1.25;"><strong>${l}</strong></p>`).join("")
+    : `<p style="text-align: center; margin: 0; font-size: 12pt; line-height: 1.25;"><strong>[TÊN CƠ QUAN BAN HÀNH]</strong></p>`;
 
   const numberHtml = docNumber 
-    ? `<p style="text-align: center; margin: 4px 0 0 0; font-size: 12pt; line-height: 1.3;">${docNumber}</p>`
-    : `<p style="text-align: center; margin: 4px 0 0 0; font-size: 12pt; line-height: 1.3;">Số: [SỐ/KÝ HIỆU]</p>`;
+    ? `<p style="text-align: center; margin: 3pt 0 0 0; font-size: 12pt; line-height: 1.25;">${docNumber}</p>`
+    : `<p style="text-align: center; margin: 3pt 0 0 0; font-size: 12pt; line-height: 1.25;">Số: [SỐ/KÝ HIỆU]</p>`;
 
   const dateHtml = locationDate 
-    ? `<p style="text-align: center; margin: 6px 0 0 0; font-size: 13pt; font-style: italic; line-height: 1.3;">${locationDate}</p>`
-    : `<p style="text-align: center; margin: 6px 0 0 0; font-size: 13pt; font-style: italic; line-height: 1.3;">[ĐỊA DANH], ngày [NGÀY] tháng [THÁNG] năm [NĂM]</p>`;
+    ? `<p style="text-align: center; margin: 4pt 0 0 0; font-size: 12pt; font-style: italic; line-height: 1.25;">${locationDate}</p>`
+    : `<p style="text-align: center; margin: 4pt 0 0 0; font-size: 12pt; font-style: italic; line-height: 1.25;">[Địa danh], ngày ... tháng ... năm ...</p>`;
 
   const headerTable = `
-<table data-nd30-table="true" data-table-type="header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 20px;">
+<table data-nd30-table="true" data-table-type="header" style="width: 100%; border: none !important; border-collapse: collapse !important; margin-bottom: 14pt; table-layout: fixed;">
   <tbody>
     <tr>
-      <td data-col-width="40%" style="width: 40%; text-align: center; vertical-align: top; border: none; padding: 4px;">
+      <td data-col-width="40%" style="width: 40%; text-align: center; vertical-align: top; border: none !important; padding: 2pt 4pt;">
         ${orgHtml}
         ${numberHtml}
       </td>
-      <td data-col-width="60%" style="width: 60%; text-align: center; vertical-align: top; border: none; padding: 4px;">
-        <p style="text-align: center; margin: 0; font-size: 13pt; line-height: 1.3;"><strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong></p>
-        <p style="text-align: center; margin: 2px 0 0 0; font-size: 14pt; line-height: 1.3;"><strong><u>Độc lập - Tự do - Hạnh phúc</u></strong></p>
+      <td data-col-width="60%" style="width: 60%; text-align: center; vertical-align: top; border: none !important; padding: 2pt 4pt;">
+        <p style="text-align: center; margin: 0; font-size: 12pt; line-height: 1.25;"><strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong></p>
+        <p style="text-align: center; margin: 2pt 0 0 0; font-size: 13pt; line-height: 1.25;"><strong><u>Độc lập - Tự do - Hạnh phúc</u></strong></p>
         ${dateHtml}
       </td>
     </tr>
@@ -285,13 +297,13 @@ function convertFullDocumentToND30Html(text: string): string {
   // Xây dựng Tiêu đề & Trích yếu
   let titleHtml = "";
   if (title) {
-    titleHtml += `<h2 style="text-align: center; font-size: 15pt; font-weight: bold; margin: 18px 0 6px 0; text-transform: uppercase;">${title}</h2>`;
+    titleHtml += `<h2 style="text-align: center; font-size: 15pt; font-weight: bold; margin: 14pt 0 5pt 0; text-transform: uppercase;">${title}</h2>`;
   }
   if (subject) {
-    titleHtml += `<p style="text-align: center; font-size: 13pt; font-weight: bold; margin: 0 0 16px 0;">${subject}</p>`;
+    titleHtml += `<p style="text-align: center; font-size: 13pt; font-weight: bold; margin: 0 0 12pt 0;">${subject}</p>`;
   }
   if (recipient) {
-    titleHtml += `<p style="text-align: center; font-size: 13pt; margin: 0 0 16px 0;"><strong>Kính gửi:</strong> ${recipient}</p>`;
+    titleHtml += `<p style="text-align: center; font-size: 13pt; margin: 0 0 12pt 0;"><strong>Kính gửi:</strong> ${recipient}</p>`;
   }
 
   // Xây dựng Thân văn bản
@@ -300,8 +312,8 @@ function convertFullDocumentToND30Html(text: string): string {
       let formatted = inlineMarkdownToHtml(p);
       const isListItem = /^\d+\.\s+|-/.test(p);
       const style = isListItem
-        ? `margin: 0 0 8px 0; line-height: 1.35; font-size: 13pt; text-align: justify;`
-        : `margin: 0 0 8px 0; line-height: 1.35; font-size: 13pt; text-align: justify; text-indent: 1.25cm;`;
+        ? `margin: 0 0 6pt 0; line-height: 1.35; font-size: 13pt; text-align: justify;`
+        : `margin: 0 0 6pt 0; line-height: 1.35; font-size: 13pt; text-align: justify; text-indent: 1.27cm;`;
       return `<p style="${style}">${formatted}</p>`;
     })
     .join("\n");
@@ -311,20 +323,20 @@ function convertFullDocumentToND30Html(text: string): string {
   const finalSignatoryName = signatoryName || "[HỌ VÀ TÊN]";
   const defaultRecipients = recipientsList.length > 0 
     ? recipientsList.map((r) => `<p style="margin: 0; font-size: 11pt; line-height: 1.2;">${r}</p>`).join("")
-    : `<p style="margin: 0; font-size: 11pt; line-height: 1.2;">- Như trên;</p><p style="margin: 0; font-size: 11pt; line-height: 1.2;">- Lưu: VT.</p>`;
+    : `<p style="margin: 0; font-size: 11pt; line-height: 1.2;">- Như Điều ...;</p><p style="margin: 0; font-size: 11pt; line-height: 1.2;">- Lưu: VT.</p>`;
 
   const signatureTable = `
-<table data-nd30-table="true" data-table-type="signature" style="width: 100%; border: none; border-collapse: collapse; margin-top: 28px;">
+<table data-nd30-table="true" data-table-type="signature" style="width: 100%; border: none !important; border-collapse: collapse !important; margin-top: 18pt; table-layout: fixed;">
   <tbody>
     <tr>
-      <td data-col-width="50%" style="width: 50%; text-align: left; vertical-align: top; border: none; padding: 4px;">
-        <p style="margin: 0 0 4px 0; font-size: 12pt; line-height: 1.2;"><strong><em><u>Nơi nhận:</u></em></strong></p>
+      <td data-col-width="50%" style="width: 50%; text-align: left; vertical-align: top; border: none !important; padding: 2pt 4pt;">
+        <p style="margin: 0 0 3pt 0; font-size: 11pt; line-height: 1.2;"><strong><em><u>Nơi nhận:</u></em></strong></p>
         ${defaultRecipients}
       </td>
-      <td data-col-width="50%" style="width: 50%; text-align: center; vertical-align: top; border: none; padding: 4px;">
-        <p style="text-align: center; margin: 0; font-size: 13pt; line-height: 1.2;"><strong>${finalSignatoryTitle}</strong></p>
-        <p style="text-align: center; margin: 2px 0 0 0; font-size: 11pt; font-style: italic; line-height: 1.2;">(Ký, ghi rõ họ và tên)</p>
-        <p style="text-align: center; margin: 40px 0 0 0; font-size: 13pt; line-height: 1.2;"><strong>${finalSignatoryName}</strong></p>
+      <td data-col-width="50%" style="width: 50%; text-align: center; vertical-align: top; border: none !important; padding: 2pt 4pt;">
+        <p style="text-align: center; margin: 0; font-size: 13pt; line-height: 1.25;"><strong>${finalSignatoryTitle}</strong></p>
+        <p style="text-align: center; margin: 2pt 0 0 0; font-size: 11pt; font-style: italic; line-height: 1.25;">(Ký, ghi rõ họ và tên)</p>
+        <p style="text-align: center; margin: 40pt 0 0 0; font-size: 13pt; line-height: 1.25;"><strong>${finalSignatoryName}</strong></p>
       </td>
     </tr>
   </tbody>

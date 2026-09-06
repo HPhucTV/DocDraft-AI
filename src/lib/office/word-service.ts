@@ -10,6 +10,10 @@ import {
   MarginsConfig,
   getStoredFormatConfig,
 } from "./format-config";
+import {
+  isFullND30Document,
+  convertFullDocumentToND30Html,
+} from "../ai/ai-text-formatter";
 
 export interface WordSection {
   pageSetup: {
@@ -135,6 +139,9 @@ export function cleanHtmlForWord(raw: string): string {
   let cleaned = raw.trim();
   cleaned = cleaned.replace(/^```(?:html)?\s*/i, "");
   cleaned = cleaned.replace(/\s*```$/i, "");
+  // Lọc sạch toàn bộ các đoạn paragraph chỉ chứa dấu gạch nối bàn phím (-------------, --------, __________)
+  cleaned = cleaned.replace(/<p[^>]*>\s*[-_—–\s.]{2,}\s*<\/p>/gi, "");
+  cleaned = cleaned.replace(/^[-_—–\s.]{2,}$/gm, "");
   return cleaned.trim();
 }
 
@@ -151,6 +158,12 @@ export function formatMarkdownToWordHtml(
   if (!rawMarkdown || !rawMarkdown.trim()) return "";
 
   let text = cleanHtmlForWord(rawMarkdown);
+
+  // Nếu text là toàn văn văn bản NĐ 30 chưa có bảng ẩn 2 cột -> Tự động đóng gói vào Bảng 2 cột chuẩn NĐ 30
+  if (isFullND30Document(text) && !text.includes("data-nd30-table")) {
+    const nd30Html = convertFullDocumentToND30Html(text);
+    return wrapHtmlWithWordStyles(nd30Html, currentConfig);
+  }
 
   // Nếu text đã là HTML đầy đủ có chứa thẻ <table hoặc <p>, bọc style trực tiếp
   if (/<(table|div|p|h1|h2|h3)[^>]*>/i.test(text)) {
@@ -283,7 +296,16 @@ export function formatMarkdownToWordHtml(
     }
 
     // 5. Đoạn văn thường
-    const formatted = inlineMarkdown(trimmed);
+    let formatted = inlineMarkdown(trimmed);
+
+    // Chuẩn hóa đường kẻ Tiêu ngữ: Luôn có gạch chân liền nét trang trọng
+    if (/độc lập\s*[-–—]\s*tự do\s*[-–—]\s*hạnh phúc/i.test(formatted) && !formatted.includes("<u>")) {
+      formatted = formatted.replace(
+        /(?:<strong>)?(độc lập\s*[-–—]\s*tự do\s*[-–—]\s*hạnh phúc)(?:<\/strong>)?/gi,
+        "<strong><u>$1</u></strong>"
+      );
+    }
+
     const isCentered =
       /^(CỘNG HÒA|Độc lập|GIẤY MỜI|THÔNG BÁO|QUYẾT ĐỊNH|TỜ TRÌNH|BIÊN BẢN)/i.test(trimmed);
     const textAlign = isCentered ? "center" : currentConfig.alignment.toLowerCase();
@@ -318,13 +340,22 @@ export function wrapHtmlWithWordStyles(
   cleaned = cleaned.replace(/(?:<p[^>]*>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*){2,}/gi, '<p style="margin:0 0 2pt 0;">&nbsp;</p>');
   cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, "");
 
+  // Dọn dẹp các đoạn paragraph chỉ chứa dấu gạch rời rạc (-------------)
+  cleaned = cleaned.replace(/<p[^>]*>\s*[-_—–\s.]{2,}\s*<\/p>/gi, "");
+
+  // Chuẩn hóa dòng Tiêu ngữ luôn có gạch chân liền nét trang trọng
+  cleaned = cleaned.replace(
+    /(?:<strong>)?(Độc lập\s*[-–—]\s*Tự do\s*[-–—]\s*Hạnh phúc)(?:<\/strong>)?/gi,
+    (match, pText) => `<strong><u>${pText}</u></strong>`
+  );
+
   // 2. Chuẩn hóa các bảng 2 cột (Quốc hiệu, Chữ ký): Đảm bảo table-layout fixed, không bị viền và padding cực nhỏ gọn
   cleaned = cleaned.replace(/<table\b([^>]*)>/gi, (match, attrs) => {
     if (
       /data-nd30-table|header|signature/i.test(attrs) ||
       /border:\s*none/i.test(attrs)
     ) {
-      return `<table ${attrs} data-nd30-table="true" style="width: 100%; table-layout: fixed; border: none !important; border-collapse: collapse !important; margin: 4pt 0 10pt 0;">`;
+      return `<table ${attrs} data-nd30-table="true" style="width: 100%; table-layout: fixed !important; border: none !important; border-collapse: collapse !important; margin: 4pt 0 10pt 0;">`;
     }
     return `<table ${attrs} style="width: 100%; border-collapse: collapse; margin: 6pt 0;">`;
   });
@@ -604,7 +635,14 @@ export async function insertDocumentContent(
     };
   }
 
-  const styledHtml = wrapHtmlWithWordStyles(htmlContent, currentConfig);
+  // Tự động kiểm tra: Nếu tài liệu chứa Quốc hiệu + Cơ quan/Chữ ký mà chưa có bảng 2 cột
+  // -> Tự động chuyển đổi sang Bảng ẩn 2 cột chuẩn NĐ 30 trước khi chèn vào Word
+  let contentToInsert = htmlContent;
+  if (isFullND30Document(htmlContent) && !htmlContent.includes("data-nd30-table")) {
+    contentToInsert = convertFullDocumentToND30Html(htmlContent);
+  }
+
+  const styledHtml = wrapHtmlWithWordStyles(contentToInsert, currentConfig);
 
   try {
     await word.run(async (context) => {
