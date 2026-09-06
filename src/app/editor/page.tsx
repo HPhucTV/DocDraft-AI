@@ -7,10 +7,7 @@ import {
   FileText,
   ArrowLeft,
   Square,
-  Copy,
   Check,
-  Download,
-  Printer,
   Save,
   Layers,
   HelpCircle,
@@ -42,6 +39,8 @@ import { RawExtractionResult } from "@/lib/ai/raw-to-doc-service";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { OfflineStatusPill } from "@/components/offline/offline-status-pill";
 import { buildWordDocumentHtml } from "@/lib/export/word-fallback";
+import { ShareExportPopover } from "@/components/editor/share-export-popover";
+import { CollaborativePresenceBar } from "@/components/editor/collaborative-presence-bar";
 
 // Tối ưu hóa Bundle Size: Lazy-load các Panel & Modal nặng (bundle-dynamic-imports)
 const SideBySideDiffModal = dynamic(
@@ -62,6 +61,10 @@ const VersionHistoryPanel = dynamic(
 );
 const AIChatSidebar = dynamic(
   () => import("@/components/editor/ai-chat-sidebar").then((m) => m.AIChatSidebar),
+  { ssr: false }
+);
+const ShareDialog = dynamic(
+  () => import("@/components/editor/share-dialog").then((m) => m.ShareDialog),
   { ssr: false }
 );
 
@@ -132,6 +135,8 @@ function EditorContentComponent() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isImportingDocx, setIsImportingDocx] = useState(false);
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const insertTextRef = useRef<((text: string) => void) | null>(null);
   const setEditorContentRef = useRef<((content: string | object) => void) | null>(null);
 
@@ -871,52 +876,29 @@ function EditorContentComponent() {
             </Button>
           )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyHTML}
-            disabled={!editorContent}
-            className="gap-1.5 h-8 text-xs shrink-0 whitespace-nowrap px-2 sm:px-2.5"
-            title="Sao chép mã HTML"
-          >
-            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
-            <span className="hidden lg:inline">{copied ? "Đã chép" : "Sao chép"}</span>
-          </Button>
+          {/* Cụm Hiển thị Trực tuyến (Giữ nguyên vẹn theo yêu cầu người dùng) */}
+          <CollaborativePresenceBar
+            draftId={currentDraftId || "default-draft"}
+            currentUser={{ id: "user-current", name: "Bạn", email: "user@docdraft.vn", role: "USER" }}
+            onShareClick={() => setIsShareOpen(true)}
+          />
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport("pdf")}
-            disabled={!editorContent || exportingFormat !== null}
-            className="gap-1.5 h-8 text-xs shrink-0 whitespace-nowrap px-2 sm:px-2.5"
-            title="Xuất file PDF vector A4 chuẩn Nghị định 30"
-          >
-            {exportingFormat === "pdf" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
-            ) : (
-              <Printer className="h-3.5 w-3.5 shrink-0" />
-            )}
-            <span className="hidden sm:inline">
-              {exportingFormat === "pdf" ? "Đang xuất..." : "In / PDF"}
-            </span>
-          </Button>
-
-          <Button
-            size="sm"
-            className="gap-1.5 h-8 text-xs shadow-xs shrink-0 whitespace-nowrap px-2.5 sm:px-3"
-            onClick={() => handleExport("docx")}
-            disabled={!editorContent || exportingFormat !== null}
-            title="Xuất Microsoft Word (.docx) chuẩn Nghị định 30"
-          >
-            {exportingFormat === "docx" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-            ) : (
-              <Download className="h-3.5 w-3.5 shrink-0" />
-            )}
-            <span className="hidden sm:inline">
-              {exportingFormat === "docx" ? "Đang tạo..." : "Xuất Word"}
-            </span>
-          </Button>
+          {/* Menu Chia sẻ & Xuất bản chuẩn phong cách Canva (Gói gọn 3 nút Xuất Word, In/PDF, Sao chép + Mời) */}
+          <ShareExportPopover
+            open={isShareOpen}
+            onOpenChange={setIsShareOpen}
+            draftId={currentDraftId || undefined}
+            draftTitle={documentTitle || "Văn bản dự thảo"}
+            editorContent={editorContent}
+            currentUser={{ id: "user-current", name: "Bạn", email: "user@docdraft.vn", role: "USER" }}
+            exportingFormat={exportingFormat as ("pdf" | "docx" | null)}
+            onExport={handleExport}
+            onCopyHTML={handleCopyHTML}
+            copied={copied}
+            onOpenAdvancedShare={() => setIsShareDialogOpen(true)}
+            onOpenHistory={() => setIsVersionPanelOpen(true)}
+            onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
+          />
 
           <OfflineStatusPill draftId={currentDraftId || undefined} />
 
@@ -1250,6 +1232,14 @@ function EditorContentComponent() {
           setSelectedTemplateId(newTemplate.id);
           setDocumentTitle(`Dự thảo ${newTemplate.title}`);
         }}
+      />
+
+      {/* Dialog Cài đặt Chia sẻ Nâng cao (Mật khẩu, Hạn dùng, Thu hồi) */}
+      <ShareDialog
+        open={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        draftId={currentDraftId || "draft-temp"}
+        draftTitle={documentTitle || "Văn bản dự thảo"}
       />
     </div>
   );

@@ -86,9 +86,9 @@ export function CollaborativePresenceBar({
         {currentUser && (
           <div
             title={`Bạn (${currentUser.name}) - ${getRoleLabel(currentUser.role)}`}
-            className="relative inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-bold ring-2 ring-white dark:ring-slate-900 shadow-xs cursor-default"
+            className="relative inline-flex items-center justify-center w-6 h-6 rounded-full bg-violet-600 text-white text-[10px] font-bold ring-2 ring-white dark:ring-slate-900 shadow-xs cursor-default shrink-0"
           >
-            {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+            {currentUser.name && currentUser.name !== "Bạn" ? currentUser.name.charAt(0).toUpperCase() : "B"}
           </div>
         )}
 
@@ -98,7 +98,7 @@ export function CollaborativePresenceBar({
             key={user.id}
             title={`${user.name} (${getRoleLabel(user.role)})`}
             style={{ backgroundColor: user.color }}
-            className="relative inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ring-2 ring-white dark:ring-slate-900 shadow-xs cursor-default transition-transform hover:scale-110"
+            className="relative inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ring-2 ring-white dark:ring-slate-900 shadow-xs cursor-default transition-transform hover:scale-110 shrink-0"
           >
             {user.name ? user.name.charAt(0).toUpperCase() : "C"}
           </div>
@@ -108,12 +108,13 @@ export function CollaborativePresenceBar({
       {/* Quick Share Trigger */}
       {onShareClick && (
         <button
+          type="button"
           onClick={onShareClick}
-          className="ml-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-semibold flex items-center gap-1 hover:underline pl-1 border-l border-slate-200 dark:border-slate-800"
+          className="ml-1 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-700 font-semibold flex items-center gap-1 hover:underline pl-1 border-l border-slate-200 dark:border-slate-800 cursor-pointer"
           title="Chia sẻ liên kết cộng tác soạn thảo"
         >
           <Users className="w-3 h-3" />
-          <span className="hidden md:inline">Mời</span>
+          <span className="hidden sm:inline">Mời</span>
         </button>
       )}
     </div>
