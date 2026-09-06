@@ -109,23 +109,23 @@ function cleanHtmlForWord(raw: string): string {
 
 export default function WordAddinTaskpanePage() {
   const [isOfficeReady, setIsOfficeReady] = useState(false);
-  const [activeTab, setActiveTab] = useState<"format" | "template" | "raw" | "copilot">("format");
+  const [activeTab, setActiveTab] = useState<"template" | "raw" | "copilot">("template");
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error" | "info";
     text: string;
   } | null>(null);
 
-  // Tab 1: Format & Inline AI
+  // Tab: Format & Inline AI
   const [isLoading, setIsLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>("formalize");
   const [previewText, setPreviewText] = useState<string>("");
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [userByokKey, setUserByokKey] = useState<string>("");
 
-  // Cấu hình Thể thức (Format Settings & Presets)
+  // Cấu hình Thể thức & Bảng Cài đặt (Settings Drawer)
   const [formatConfig, setFormatConfig] = useState<DocDraftFormatConfig>(FORMAT_PRESETS.nd30);
-  const [showFormatConfig, setShowFormatConfig] = useState(false);
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [settingsActiveSection, setSettingsActiveSection] = useState<"format" | "byok">("format");
   const [streamWordCount, setStreamWordCount] = useState<number>(0);
   const [customProfiles, setCustomProfiles] = useState<DocDraftFormatConfig[]>([]);
   const [newProfileName, setNewProfileName] = useState<string>("");
@@ -899,22 +899,13 @@ export default function WordAddinTaskpanePage() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <a
-              href="/word-addin/manifest.xml"
-              download="manifest.xml"
-              title="Tải tệp manifest.xml để nạp vào Word"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-800 transition-colors shadow-2xs"
-            >
-              <Download className="w-3 h-3" />
-              <span>Tải file</span>
-            </a>
-
             <div
               className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
                 isOfficeReady
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
                   : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
               }`}
+              title={isOfficeReady ? "Đã kết nối với Microsoft Word" : "Đang mở ở chế độ xem trước"}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
@@ -923,6 +914,19 @@ export default function WordAddinTaskpanePage() {
               />
               {isOfficeReady ? "Word Ready" : "Xem trước"}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSettingsDrawer(!showSettingsDrawer)}
+              className={`p-1.5 rounded-lg border transition-all ${
+                showSettingsDrawer
+                  ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-2xs"
+              }`}
+              title="Cài đặt Thể thức & Khóa AI (BYOK)"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -954,535 +958,449 @@ export default function WordAddinTaskpanePage() {
           </div>
         )}
 
-        {/* FORMAT CONTROL BAR (PRESETS & AUTO-INSERT TOGGLE) */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-          <div className="p-2.5 flex items-center justify-between gap-1.5">
-            {/* Preset selector chip */}
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">Thể thức:</span>
-              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 truncate flex items-center gap-1">
-                {formatConfig.preset === "nd30" && "🏛️ NĐ 30"}
-                {formatConfig.preset === "corporate" && "🏢 Doanh nghiệp"}
-                {formatConfig.preset === "school" && "🏫 Trường học"}
-                {formatConfig.preset === "custom" && `⚙️ ${formatConfig.name}`}
-              </span>
-            </div>
+        {/* MICRO STATUS BAR (PRESET CHIP & AUTO-INSERT TOGGLE) */}
+        <div className="flex items-center justify-between gap-1 px-2.5 py-1 rounded-lg bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 text-[10px]">
+          <button
+            type="button"
+            onClick={() => {
+              setShowSettingsDrawer(true);
+              setSettingsActiveSection("format");
+            }}
+            className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 shrink-0"
+            title="Bấm để mở cài đặt đổi thể thức"
+          >
+            <span className="text-slate-400 font-normal">Thể thức:</span>
+            <span>
+              {formatConfig.preset === "nd30" && "🏛️ NĐ 30"}
+              {formatConfig.preset === "corporate" && "🏢 Doanh nghiệp"}
+              {formatConfig.preset === "school" && "🏫 Trường học"}
+              {formatConfig.preset === "custom" && `⚙️ ${formatConfig.name}`}
+            </span>
+          </button>
 
-            {/* Quick controls: Auto-insert toggle & Settings gear */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() =>
-                  handleUpdateFormatConfig({ autoInsertToWord: !formatConfig.autoInsertToWord })
-                }
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold border transition-colors flex items-center gap-1 ${
-                  formatConfig.autoInsertToWord
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300"
-                    : "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400"
-                }`}
-                title="Tự động ghi thẳng văn bản vào Word ngay sau khi AI hoàn tất"
-              >
-                {formatConfig.autoInsertToWord ? (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Auto-insert: BẬT
-                  </>
-                ) : (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                    Auto-insert: TẮT
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowFormatConfig(!showFormatConfig)}
-                className={`p-1 rounded-md border transition-colors ${
-                  showFormatConfig
-                    ? "bg-indigo-50 border-indigo-300 text-indigo-600 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300"
-                    : "border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-                }`}
-                title="Tùy chỉnh font chữ, cỡ chữ, khoảng cách dòng, lề trang"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* EXPANDABLE FORMAT DRAWER */}
-          {showFormatConfig && (
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 space-y-3 text-[11px] animate-in fade-in duration-150">
-              {/* 4 Presets Pills */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  Chọn bộ mẫu chuẩn (Preset):
-                </label>
-                <div className="grid grid-cols-2 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPreset("nd30")}
-                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
-                      formatConfig.preset === "nd30"
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>🏛️ Nghị định 30</span>
-                    {formatConfig.preset === "nd30" && <Check className="w-3 h-3" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPreset("corporate")}
-                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
-                      formatConfig.preset === "corporate"
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>🏢 Doanh nghiệp (SME)</span>
-                    {formatConfig.preset === "corporate" && <Check className="w-3 h-3" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPreset("school")}
-                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
-                      formatConfig.preset === "school"
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>🏫 Trường học / Nội bộ</span>
-                    {formatConfig.preset === "school" && <Check className="w-3 h-3" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPreset("custom")}
-                    className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
-                      formatConfig.preset === "custom"
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>⚙️ Tùy chỉnh riêng</span>
-                    {formatConfig.preset === "custom" && <Check className="w-3 h-3" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Font & Size */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Font chữ:</label>
-                  <select
-                    value={formatConfig.fontFamily}
-                    onChange={(e) =>
-                      handleUpdateFormatConfig({ fontFamily: e.target.value as SupportedFontFamily })
-                    }
-                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
-                  >
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Calibri">Calibri</option>
-                    <option value="Segoe UI">Segoe UI</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Cỡ chữ (pt):</label>
-                  <select
-                    value={formatConfig.fontSize}
-                    onChange={(e) => handleUpdateFormatConfig({ fontSize: Number(e.target.value) })}
-                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
-                  >
-                    <option value={11}>11 pt</option>
-                    <option value={12}>12 pt</option>
-                    <option value={13}>13 pt</option>
-                    <option value={14}>14 pt</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Line Spacing & Space After */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Giãn dòng (Line Spacing):</label>
-                  <select
-                    value={formatConfig.lineSpacing}
-                    onChange={(e) => handleUpdateFormatConfig({ lineSpacing: Number(e.target.value) })}
-                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
-                  >
-                    <option value={1.0}>Single (1.0)</option>
-                    <option value={1.15}>Multiple 1.15</option>
-                    <option value={1.2}>Multiple 1.2</option>
-                    <option value={1.3}>Multiple 1.3</option>
-                    <option value={1.5}>1.5 Lines</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Cách đoạn dưới (Space After):</label>
-                  <select
-                    value={formatConfig.spaceAfter}
-                    onChange={(e) => handleUpdateFormatConfig({ spaceAfter: Number(e.target.value) })}
-                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
-                  >
-                    <option value={0}>0 pt (Sát dòng)</option>
-                    <option value={2}>2 pt</option>
-                    <option value={3}>3 pt</option>
-                    <option value={4}>4 pt</option>
-                    <option value={6}>6 pt (Rộng)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Alignment & Indent */}
-              <div className="grid grid-cols-2 gap-2 items-center">
-                <div>
-                  <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Căn lề đoạn:</label>
-                  <select
-                    value={formatConfig.alignment}
-                    onChange={(e) =>
-                      handleUpdateFormatConfig({ alignment: e.target.value as "Justified" | "Left" })
-                    }
-                    className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
-                  >
-                    <option value="Justified">Justified (Đều 2 bên)</option>
-                    <option value="Left">Left (Căn trái)</option>
-                  </select>
-                </div>
-
-                <label className="flex items-center gap-1.5 text-[11px] pt-4 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formatConfig.indentFirstLine}
-                    onChange={(e) => handleUpdateFormatConfig({ indentFirstLine: e.target.checked })}
-                    className="rounded text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span>Thụt đầu dòng (1.27cm)</span>
-                </label>
-              </div>
-
-              {/* Margins Setup (mm) */}
-              <div className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                    Căn lề trang Word (mm):
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleApplyMarginsOnly}
-                    disabled={isLoading}
-                    className="h-6 text-[9px] px-2"
-                    title="Áp dụng lề trang vào văn bản Word"
-                  >
-                    Đặt lề trang Word
-                  </Button>
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                  <div>
-                    <span className="text-[9px] text-slate-400 block">Trên</span>
-                    <input
-                      type="number"
-                      value={formatConfig.margins.top}
-                      onChange={(e) =>
-                        handleUpdateFormatConfig({
-                          margins: { ...formatConfig.margins, top: Number(e.target.value) },
-                        })
-                      }
-                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block">Dưới</span>
-                    <input
-                      type="number"
-                      value={formatConfig.margins.bottom}
-                      onChange={(e) =>
-                        handleUpdateFormatConfig({
-                          margins: { ...formatConfig.margins, bottom: Number(e.target.value) },
-                        })
-                      }
-                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block">Trái</span>
-                    <input
-                      type="number"
-                      value={formatConfig.margins.left}
-                      onChange={(e) =>
-                        handleUpdateFormatConfig({
-                          margins: { ...formatConfig.margins, left: Number(e.target.value) },
-                        })
-                      }
-                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block">Phải</span>
-                    <input
-                      type="number"
-                      value={formatConfig.margins.right}
-                      onChange={(e) =>
-                        handleUpdateFormatConfig({
-                          margins: { ...formatConfig.margins, right: Number(e.target.value) },
-                        })
-                      }
-                      className="w-full text-[10px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Save Custom Profile */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block">
-                  Lưu cấu hình thành hồ sơ riêng:
-                </label>
-                <div className="flex gap-1">
-                  <input
-                    type="text"
-                    placeholder="Tên hồ sơ (VD: Hợp đồng XYZ...)"
-                    value={newProfileName}
-                    onChange={(e) => setNewProfileName(e.target.value)}
-                    className="flex-1 text-[11px] px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleSaveNewProfile}
-                    disabled={!newProfileName.trim()}
-                    className="h-7 text-[10px] px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    <Plus className="w-3 h-3 mr-0.5" /> Lưu
-                  </Button>
-                </div>
-
-                {customProfiles.length > 0 && (
-                  <div className="space-y-1 pt-1">
-                    <span className="text-[9px] text-slate-400 block">Hồ sơ đã lưu:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {customProfiles.map((p) => (
-                        <div
-                          key={p.name}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleSelectCustomProfile(p)}
-                            className="hover:text-indigo-600 font-medium"
-                          >
-                            {p.name}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCustomProfile(p.name)}
-                            className="text-slate-400 hover:text-rose-600 ml-0.5"
-                            title="Xóa hồ sơ"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Button apply format to active Word doc */}
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleApplyFormatToDocument}
-                disabled={isLoading}
-                className="w-full h-8 text-[11px] font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white"
-              >
-                <FileCheck className="w-3.5 h-3.5 mr-1" />
-                Áp dụng toàn bộ thể thức vào tệp Word này
-              </Button>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() =>
+              handleUpdateFormatConfig({ autoInsertToWord: !formatConfig.autoInsertToWord })
+            }
+            className={`px-2 py-0.5 rounded-full font-bold transition-all border shrink-0 flex items-center gap-1 ${
+              formatConfig.autoInsertToWord
+                ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300"
+                : "bg-white text-slate-600 border-slate-300 dark:bg-slate-900 dark:text-slate-400"
+            }`}
+            title="Bật/Tắt tự động ghi vào Word khi AI hoàn tất"
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                formatConfig.autoInsertToWord ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+              }`}
+            />
+            <span>{formatConfig.autoInsertToWord ? "Auto: BẬT" : "Auto: TẮT"}</span>
+          </button>
         </div>
 
-        {/* 4-TAB NAVIGATION BAR */}
-        <div className="grid grid-cols-4 gap-1 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-lg text-[11px] font-semibold">
+        {/* SETTINGS DRAWER (SLIDE-DOWN DRAWER FOR FORMAT & BYOK) */}
+        {showSettingsDrawer && (
+          <div className="rounded-xl border border-indigo-200 dark:border-indigo-900/70 bg-white dark:bg-slate-900 shadow-md overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="p-2.5 bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                  Cài đặt Thể thức & Khóa AI
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettingsDrawer(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs px-1.5 py-0.5 rounded hover:bg-slate-200/50"
+              >
+                ✕ Đóng
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1 p-1.5 border-b border-slate-100 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/50 text-[11px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setSettingsActiveSection("format")}
+                className={`py-1 rounded-md transition-all ${
+                  settingsActiveSection === "format"
+                    ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                🏛️ Thể thức & Lề trang
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsActiveSection("byok")}
+                className={`py-1 rounded-md transition-all flex items-center justify-center gap-1 ${
+                  settingsActiveSection === "byok"
+                    ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                <KeyRound className="w-3 h-3 text-amber-500" />
+                <span>Khóa AI (BYOK)</span>
+              </button>
+            </div>
+
+            {settingsActiveSection === "format" && (
+              <div className="p-3 space-y-3 text-[11px] max-h-[420px] overflow-y-auto">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                    Chọn bộ mẫu chuẩn (Preset):
+                  </label>
+                  <div className="grid grid-cols-2 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPreset("nd30")}
+                      className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                        formatConfig.preset === "nd30"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>🏛️ Nghị định 30</span>
+                      {formatConfig.preset === "nd30" && <Check className="w-3 h-3" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPreset("corporate")}
+                      className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                        formatConfig.preset === "corporate"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>🏢 Doanh nghiệp (SME)</span>
+                      {formatConfig.preset === "corporate" && <Check className="w-3 h-3" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPreset("school")}
+                      className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                        formatConfig.preset === "school"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>🏫 Trường học / Nội bộ</span>
+                      {formatConfig.preset === "school" && <Check className="w-3 h-3" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPreset("custom")}
+                      className={`px-2 py-1 rounded-md text-[10px] font-semibold text-left border flex items-center justify-between ${
+                        formatConfig.preset === "custom"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>⚙️ Tùy chỉnh riêng</span>
+                      {formatConfig.preset === "custom" && <Check className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleApplyFormatToDocument}
+                  disabled={isLoading}
+                  className="w-full h-8 text-[11px] font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white"
+                >
+                  <FileCheck className="w-3.5 h-3.5 mr-1" />
+                  Áp dụng thể thức vào tệp Word này
+                </Button>
+
+                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInsertHeader}
+                    disabled={isLoading}
+                    className="text-[10px] h-7 px-1.5 gap-1 border-slate-200 dark:border-slate-800"
+                    title="Chèn bảng Quốc hiệu & Tiêu ngữ chuẩn vào đầu trang"
+                  >
+                    <Columns2 className="w-3 h-3 text-indigo-600" />
+                    + Quốc hiệu/Tiêu ngữ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInsertFooter}
+                    disabled={isLoading}
+                    className="text-[10px] h-7 px-1.5 gap-1 border-slate-200 dark:border-slate-800"
+                    title="Chèn bảng Nơi nhận & Ký tên chuẩn vào cuối trang"
+                  >
+                    <Columns2 className="w-3 h-3 text-indigo-600" />
+                    + Nơi nhận & Chữ ký
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Font chữ:</label>
+                    <select
+                      value={formatConfig.fontFamily}
+                      onChange={(e) =>
+                        handleUpdateFormatConfig({ fontFamily: e.target.value as SupportedFontFamily })
+                      }
+                      className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                    >
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Calibri">Calibri</option>
+                      <option value="Segoe UI">Segoe UI</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Cỡ chữ (pt):</label>
+                    <select
+                      value={formatConfig.fontSize}
+                      onChange={(e) => handleUpdateFormatConfig({ fontSize: Number(e.target.value) })}
+                      className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                    >
+                      <option value={12}>12 pt</option>
+                      <option value={13}>13 pt (Chuẩn NĐ 30)</option>
+                      <option value={14}>14 pt</option>
+                      <option value={11}>11 pt</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Khoảng cách dòng:</label>
+                    <select
+                      value={formatConfig.lineSpacing}
+                      onChange={(e) => handleUpdateFormatConfig({ lineSpacing: Number(e.target.value) })}
+                      className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                    >
+                      <option value={1.0}>1.0 (Single)</option>
+                      <option value={1.15}>1.15</option>
+                      <option value={1.3}>1.3</option>
+                      <option value={1.35}>1.35 (Chuẩn NĐ 30)</option>
+                      <option value={1.5}>1.5</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Cách đoạn dưới:</label>
+                    <select
+                      value={formatConfig.spaceAfter}
+                      onChange={(e) => handleUpdateFormatConfig({ spaceAfter: Number(e.target.value) })}
+                      className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                    >
+                      <option value={0}>0 pt (Sát dòng)</option>
+                      <option value={2}>2 pt</option>
+                      <option value={3}>3 pt</option>
+                      <option value={4}>4 pt</option>
+                      <option value={6}>6 pt</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 items-center">
+                  <div>
+                    <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Căn lề đoạn:</label>
+                    <select
+                      value={formatConfig.alignment}
+                      onChange={(e) =>
+                        handleUpdateFormatConfig({ alignment: e.target.value as "Justified" | "Left" })
+                      }
+                      className="w-full text-[11px] p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none"
+                    >
+                      <option value="Justified">Justified (Đều 2 bên)</option>
+                      <option value="Left">Left (Căn trái)</option>
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[11px] pt-4 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formatConfig.indentFirstLine}
+                      onChange={(e) => handleUpdateFormatConfig({ indentFirstLine: e.target.checked })}
+                      className="rounded text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span>Thụt đầu dòng (1.27cm)</span>
+                  </label>
+                </div>
+
+                <div className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-600 dark:border-slate-800">
+                      Căn lề trang Word (mm):
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleApplyMarginsOnly}
+                      disabled={isLoading}
+                      className="h-6 text-[9px] px-2"
+                      title="Áp dụng lề trang vào văn bản Word"
+                    >
+                      Đặt lề trang Word
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1">
+                    <div>
+                      <span className="text-[9px] text-slate-400 block">Trên</span>
+                      <input
+                        type="number"
+                        value={formatConfig.margins.top}
+                        onChange={(e) =>
+                          handleUpdateFormatConfig({
+                            margins: { ...formatConfig.margins, top: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full text-[11px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block">Dưới</span>
+                      <input
+                        type="number"
+                        value={formatConfig.margins.bottom}
+                        onChange={(e) =>
+                          handleUpdateFormatConfig({
+                            margins: { ...formatConfig.margins, bottom: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full text-[11px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block">Trái</span>
+                      <input
+                        type="number"
+                        value={formatConfig.margins.left}
+                        onChange={(e) =>
+                          handleUpdateFormatConfig({
+                            margins: { ...formatConfig.margins, left: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full text-[11px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block">Phải</span>
+                      <input
+                        type="number"
+                        value={formatConfig.margins.right}
+                        onChange={(e) =>
+                          handleUpdateFormatConfig({
+                            margins: { ...formatConfig.margins, right: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full text-[11px] p-1 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settingsActiveSection === "byok" && (
+              <div className="p-3 space-y-2.5 text-[11px] bg-white dark:bg-slate-900">
+                <p className="text-[10px] text-slate-500">
+                  Nhập khóa DeepSeek (sk-...) hoặc Gemini (AIza...) của bạn để sử dụng trực tiếp không giới hạn lượt gọi:
+                </p>
+                <div className="space-y-1.5">
+                  <input
+                    type="password"
+                    placeholder="Dán API Key (sk-... hoặc AIza...)"
+                    value={userByokKey}
+                    onChange={(e) => setUserByokKey(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-[11px] font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[9px] text-slate-400">
+                      {userByokKey ? "Đang dùng Key cá nhân" : "Đang dùng Key hệ thống mặc định"}
+                    </span>
+                    <div className="flex gap-1.5">
+                      {userByokKey && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleClearByokKey}
+                          className="h-7 text-[10px] px-2 text-rose-600 hover:text-rose-700"
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveByokKey}
+                        className="h-7 text-[10px] px-3 bg-indigo-600 hover:bg-indigo-700 text-white"
+                      >
+                        Lưu khóa
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-right">
+                  <a
+                    href="/word-addin/manifest.xml"
+                    download="manifest.xml"
+                    className="text-[9px] text-indigo-500 hover:underline inline-flex items-center gap-1"
+                  >
+                    <Download className="w-2.5 h-2.5" />
+                    <span>Tải tệp manifest.xml cài đặt Add-in</span>
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3-TAB NAVIGATION BAR */}
+        <div className="grid grid-cols-3 gap-1 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-lg text-[11px] font-semibold">
           <button
-            onClick={() => setActiveTab("format")}
-            className={`py-1.5 rounded-md flex flex-col items-center gap-0.5 transition-all ${
-              activeTab === "format"
+            onClick={() => {
+              setActiveTab("template");
+              setShowSettingsDrawer(false);
+            }}
+            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === "template" && !showSettingsDrawer
                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-            }`}
-          >
-            <FileCheck className="w-3.5 h-3.5" />
-            <span>Thể thức</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("template")}
-            className={`py-1.5 rounded-md flex flex-col items-center gap-0.5 transition-all ${
-              activeTab === "template"
-                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             <LayoutTemplate className="w-3.5 h-3.5" />
             <span>Mẫu AI</span>
           </button>
           <button
-            onClick={() => setActiveTab("raw")}
-            className={`py-1.5 rounded-md flex flex-col items-center gap-0.5 transition-all ${
-              activeTab === "raw"
+            onClick={() => {
+              setActiveTab("raw");
+              setShowSettingsDrawer(false);
+            }}
+            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === "raw" && !showSettingsDrawer
                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
             <span>Chuốt thô</span>
           </button>
           <button
-            onClick={() => setActiveTab("copilot")}
-            className={`py-1.5 rounded-md flex flex-col items-center gap-0.5 transition-all ${
-              activeTab === "copilot"
+            onClick={() => {
+              setActiveTab("copilot");
+              setShowSettingsDrawer(false);
+            }}
+            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === "copilot" && !showSettingsDrawer
                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             <Bot className="w-3.5 h-3.5" />
             <span>Copilot</span>
           </button>
         </div>
-
-        {/* TAB 1: CHUẨN HÓA THỂ THỨC NĐ 30 */}
-        {activeTab === "format" && (
-          <div className="space-y-3">
-            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
-                Chuẩn hóa thể thức NĐ 30
-              </span>
-
-              <Button
-                onClick={handleFormatND30}
-                disabled={isLoading}
-                className="w-full h-9 text-xs font-bold gap-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xs"
-              >
-                {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                1-Click: Căn lề 30/15 & Times 13pt
-              </Button>
-
-              <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleInsertHeader}
-                  disabled={isLoading}
-                  className="text-[10px] h-8 px-1.5 gap-1 border-slate-200 dark:border-slate-800"
-                  title="Chèn bảng Quốc hiệu & Tiêu ngữ chuẩn vào đầu trang"
-                >
-                  <Columns2 className="w-3 h-3 text-indigo-600" />
-                  + Quốc hiệu/Tiêu ngữ
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleInsertFooter}
-                  disabled={isLoading}
-                  className="text-[10px] h-8 px-1.5 gap-1 border-slate-200 dark:border-slate-800"
-                  title="Chèn bảng Nơi nhận & Ký tên chuẩn vào cuối trang"
-                >
-                  <Columns2 className="w-3 h-3 text-indigo-600" />
-                  + Nơi nhận & Chữ ký
-                </Button>
-              </div>
-            </div>
-
-            {/* AI Bôi đen */}
-            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                AI Copilot trên văn bản bôi đen
-              </span>
-              <p className="text-[11px] text-slate-500">
-                Bôi đen một đoạn văn trong Word và chọn lệnh:
-              </p>
-
-              <div className="grid grid-cols-2 gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRunAiCopilot("formalize")}
-                  disabled={aiLoading}
-                  className="text-[11px] h-7.5 gap-1 border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100/70 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-900 dark:text-indigo-300"
-                >
-                  {aiLoading && selectedAction === "formalize" ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3 h-3 text-indigo-600" />
-                  )}
-                  Hành chính hóa
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRunAiCopilot("shorten")}
-                  disabled={aiLoading}
-                  className="text-[11px] h-7.5 gap-1"
-                >
-                  {aiLoading && selectedAction === "shorten" ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-3 h-3 text-blue-600" />
-                  )}
-                  Rút gọn ý chính
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRunAiCopilot("expand")}
-                  disabled={aiLoading}
-                  className="text-[11px] h-7.5 gap-1"
-                >
-                  {aiLoading && selectedAction === "expand" ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-3 h-3 text-emerald-600" />
-                  )}
-                  Viết chi tiết
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRunAiCopilot("fix_spelling")}
-                  disabled={aiLoading}
-                  className="text-[11px] h-7.5 gap-1"
-                >
-                  {aiLoading && selectedAction === "fix_spelling" ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-3 h-3 text-amber-600" />
-                  )}
-                  Sửa chính tả
-                </Button>
-              </div>
-
-              {previewText && (
-                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-[10px] space-y-1">
-                  <span className="font-semibold text-slate-500">Đã chèn thay thế vào Word:</span>
-                  <p className="line-clamp-3 text-slate-700 dark:text-slate-300 italic">
-                    &ldquo;{previewText}&rdquo;
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* TAB 2: MẪU VĂN BẢN AI (TEMPLATE GENERATOR) */}
         {activeTab === "template" && (
@@ -1757,9 +1675,90 @@ export default function WordAddinTaskpanePage() {
           </div>
         )}
 
-        {/* TAB 4: TRỢ LÝ COPILOT CHAT */}
+        {/* TAB 3: TRỢ LÝ COPILOT (LỆNH TRÊN ĐOẠN BÔI ĐEN & HỎI ĐÁP AI) */}
         {activeTab === "copilot" && (
-          <div className="flex flex-col h-[400px] border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+          <div className="space-y-2.5">
+            {/* AI Bôi đen trực tiếp trong Word */}
+            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                Lệnh AI trên đoạn bôi đen trong Word
+              </span>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRunAiCopilot("formalize")}
+                  disabled={aiLoading}
+                  className="text-[10px] h-7 gap-1 border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100/70 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-900 dark:text-indigo-300 font-semibold"
+                >
+                  {aiLoading && selectedAction === "formalize" ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3 text-indigo-600" />
+                  )}
+                  Hành chính hóa
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRunAiCopilot("shorten")}
+                  disabled={aiLoading}
+                  className="text-[10px] h-7 gap-1 font-semibold"
+                >
+                  {aiLoading && selectedAction === "shorten" ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3 h-3 text-blue-600" />
+                  )}
+                  Rút gọn ý chính
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRunAiCopilot("expand")}
+                  disabled={aiLoading}
+                  className="text-[10px] h-7 gap-1 font-semibold"
+                >
+                  {aiLoading && selectedAction === "expand" ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3 h-3 text-emerald-600" />
+                  )}
+                  Viết chi tiết
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRunAiCopilot("fix_spelling")}
+                  disabled={aiLoading}
+                  className="text-[10px] h-7 gap-1 font-semibold"
+                >
+                  {aiLoading && selectedAction === "fix_spelling" ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-3 h-3 text-amber-600" />
+                  )}
+                  Sửa chính tả
+                </Button>
+              </div>
+
+              {previewText && (
+                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-[10px] space-y-1">
+                  <span className="font-semibold text-slate-500">Đã chèn thay thế vào Word:</span>
+                  <p className="line-clamp-2 text-slate-700 dark:text-slate-300 italic">
+                    &ldquo;{previewText}&rdquo;
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Khung Chat Copilot */}
+            <div className="flex flex-col h-[340px] border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
             {/* Quick prompt chips */}
             <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-1 overflow-x-auto text-[10px]">
               <button
@@ -1835,74 +1834,10 @@ export default function WordAddinTaskpanePage() {
               </Button>
             </div>
           </div>
-        )}
-
-        {/* CẤU HÌNH KHÓA AI (BYOK CÁ NHÂN TRONG ADD-IN) */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs">
-          <button
-            type="button"
-            onClick={() => setShowKeyConfig(!showKeyConfig)}
-            className="w-full p-2.5 flex items-center justify-between font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-          >
-            <span className="flex items-center gap-1.5 text-[11px]">
-              <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-              Cấu hình Khóa AI (BYOK cá nhân)
-              {userByokKey ? (
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-medium">
-                  Đã cấu hình Key
-                </span>
-              ) : (
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 font-normal">
-                  Dùng Key hệ thống
-                </span>
-              )}
-            </span>
-            {showKeyConfig ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-
-          {showKeyConfig && (
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5 text-[11px] bg-slate-50/50 dark:bg-slate-900/50">
-              <p className="text-[10px] text-slate-500">
-                Nhập khóa DeepSeek (sk-...) hoặc Gemini (AIza...) của bạn để sử dụng trực tiếp không giới hạn lượt gọi:
-              </p>
-              <div className="space-y-1.5">
-                <input
-                  type="password"
-                  placeholder="Dán API Key (sk-... hoặc AIza...)"
-                  value={userByokKey}
-                  onChange={(e) => setUserByokKey(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-[11px] font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <span className="text-[9px] text-slate-400">
-                    {userByokKey ? "Đang dùng Key cá nhân" : "Đang dùng Key hệ thống mặc định"}
-                  </span>
-                  <div className="flex gap-1.5">
-                    {userByokKey && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleClearByokKey}
-                        className="h-7 text-[10px] px-2 text-rose-600 hover:text-rose-700"
-                      >
-                        Xóa
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleSaveByokKey}
-                      className="h-7 text-[10px] px-3 bg-indigo-600 hover:bg-indigo-700 text-white"
-                    >
-                      Lưu khóa
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
+      )}
+
+
 
         {/* FOOTER */}
         <div className="text-center text-[9px] text-slate-400 pt-1">
