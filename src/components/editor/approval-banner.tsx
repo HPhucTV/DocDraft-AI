@@ -47,7 +47,7 @@ export function ApprovalBanner({
   // Trường hợp văn bản đã được phê duyệt thành công
   if (status === "APPROVED" || status === "EXPORTED") {
     return (
-      <div className="w-full bg-emerald-500/10 border-b border-emerald-500/30 px-4 py-2.5 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 font-sans">
+      <div className="w-full bg-emerald-500/10 border-b border-emerald-500/30 px-4 py-2.5 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 font-sans no-print approval-banner">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded-full bg-emerald-600 text-white shadow-xs">
             <ShieldCheck className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function ApprovalBanner({
 
   // Trường hợp đang chờ xét duyệt
   return (
-    <div className="w-full bg-amber-500/10 border-b border-amber-500/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200 font-sans">
+    <div className="w-full bg-amber-500/10 border-b border-amber-500/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200 font-sans no-print approval-banner">
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <div>

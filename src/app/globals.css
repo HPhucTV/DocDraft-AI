@@ -97,10 +97,7 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin-top: 20mm;
-    margin-bottom: 20mm;
-    margin-left: 30mm;
-    margin-right: 15mm;
+    margin: 0; /* Triệt tiêu hoàn toàn URL, Tiêu đề, Ngày in của trình duyệt */
   }
 
   /* Ẩn toàn bộ thanh công cụ, header, sidebar, popup, nút bấm khi in */
@@ -111,9 +108,13 @@ body {
   button,
   .no-print,
   .editor-ribbon,
+  .editor-toolbar,
+  .collaborative-presence-bar,
+  .approval-banner,
   .word-ruler-container,
   .comments-panel,
   .suggestions-panel,
+  .ai-copilot-bubble-menu,
   [role="dialog"],
   [data-radix-popper-content-wrapper],
   [data-no-print="true"] {
@@ -152,11 +153,15 @@ body {
   .a4-paper-canvas {
     box-shadow: none !important;
     border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: auto !important;
+    margin: 0 auto !important;
+    padding-top: 20mm !important;
+    padding-bottom: 20mm !important;
+    padding-left: 30mm !important;
+    padding-right: 15mm !important;
+    box-sizing: border-box !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    min-height: 297mm !important;
     transform: none !important;
     background: #ffffff !important;
     color: #000000 !important;

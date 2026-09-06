@@ -62,7 +62,7 @@ export function CollaborativePresenceBar({
   };
 
   return (
-    <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-full shadow-2xs">
+    <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-full shadow-2xs no-print collaborative-presence-bar">
       {/* Live Indicator Pill */}
       <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700 dark:text-slate-300">
         <span className="relative flex h-2 w-2">

@@ -693,7 +693,7 @@ function EditorContentComponent() {
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top Header & Toolbar Bar */}
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 sm:px-6 shadow-xs">
+      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 sm:px-6 shadow-xs no-print">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
           <Button variant="ghost" size="sm" asChild className="gap-1.5 h-9 shrink-0 px-2 sm:px-3">
             <Link href="/dashboard">
@@ -955,7 +955,7 @@ function EditorContentComponent() {
       </header>
 
       {/* Mobile / Tablet Segmented View Switcher (< 1024px) (TASK-412) */}
-      <div className="flex lg:hidden border-b bg-muted/40 p-2 gap-2 shrink-0">
+      <div className="flex lg:hidden border-b bg-muted/40 p-2 gap-2 shrink-0 no-print">
         <button
           type="button"
           onClick={() => setMobileActiveView("sidebar")}
@@ -991,7 +991,7 @@ function EditorContentComponent() {
             mobileActiveView === "sidebar" ? "flex" : "hidden"
           } ${
             isLeftSidebarOpen ? "lg:flex w-full lg:w-[460px]" : "hidden lg:hidden w-0"
-          } border-r bg-muted/20 flex-col shrink-0 overflow-hidden transition-all duration-300 ease-in-out`}
+          } border-r bg-muted/20 flex-col shrink-0 overflow-hidden transition-all duration-300 ease-in-out no-print`}
         >
           {/* Mode Switcher Tabs */}
           <div className="p-2.5 sm:p-3 border-b bg-background/50 flex items-center gap-1.5">

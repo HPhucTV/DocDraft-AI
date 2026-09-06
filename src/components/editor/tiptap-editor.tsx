@@ -874,7 +874,7 @@ export function TiptapEditor({
       </div>
 
       {/* Thanh trạng thái chân trang (Document Status Bar) */}
-      <footer className="shrink-0 h-9 border-t border-border/80 bg-background/95 backdrop-blur px-3 sm:px-4 flex items-center justify-between text-xs text-muted-foreground select-none z-10">
+      <footer className="shrink-0 h-9 border-t border-border/80 bg-background/95 backdrop-blur px-3 sm:px-4 flex items-center justify-between text-xs text-muted-foreground select-none z-10 no-print">
         <div className="flex items-center gap-3">
           <span className="font-semibold text-foreground/95 bg-muted/60 px-2 py-0.5 rounded border border-border/40 font-mono text-[11px]">
             📄 Trang {pageInfo.currentPage} / {pageInfo.totalPages}

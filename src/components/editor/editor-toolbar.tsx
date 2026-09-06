@@ -228,7 +228,7 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="border-b bg-background select-none shrink-0 shadow-2xs">
+    <div className="border-b bg-background select-none shrink-0 shadow-2xs no-print editor-ribbon editor-toolbar">
       {/* 1. Thanh Tab Ribbon chuẩn Microsoft Word (Office 365) */}
       <div className="flex items-center gap-1 px-3 pt-1 border-b border-border/40 bg-muted/20 text-xs">
         <button
