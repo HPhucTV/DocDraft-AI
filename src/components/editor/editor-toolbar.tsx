@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { type Editor } from "@tiptap/react";
 import {
   Bold,
@@ -177,6 +177,19 @@ export function EditorToolbar({
 }: EditorToolbarProps) {
   const [activeTab, setActiveTab] = useState<"home" | "insert" | "layout" | "review">("home");
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Lắng nghe sự kiện editor transaction/selection để cập nhật trạng thái các nút và dropdown thời gian thực
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const handleUpdate = () => setTick((t) => t + 1);
+    editor.on("transaction", handleUpdate);
+    editor.on("selectionUpdate", handleUpdate);
+    return () => {
+      editor.off("transaction", handleUpdate);
+      editor.off("selectionUpdate", handleUpdate);
+    };
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -662,53 +675,89 @@ export function EditorToolbar({
               </Button>
             </div>
 
-            {/* Phân cấp Văn bản (Styles) */}
+            {/* Phân cấp Văn bản (Styles: Heading 1, 2, 3, Normal) */}
             <div className="flex items-center gap-1">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 gap-1 px-2 text-xs border border-border/40 hover:bg-muted"
-                    title="Chọn kiểu đoạn văn"
+                    className="h-7 gap-1 px-2 text-xs border border-border/40 hover:bg-muted font-medium min-w-[90px] justify-between"
+                    title="Chọn kiểu đoạn văn bản (Tiêu đề hoặc Văn bản thường)"
                   >
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>
-                      {editor.isActive("heading", { level: 1 })
-                        ? "Tiêu đề 1"
-                        : editor.isActive("heading", { level: 2 })
-                        ? "Tiêu đề 2"
-                        : editor.isActive("heading", { level: 3 })
-                        ? "Tiêu đề 3"
-                        : "Văn bản"}
-                    </span>
-                    <ChevronDown className="h-3 w-3 opacity-60" />
+                    <div className="flex items-center gap-1.5 truncate">
+                      <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="truncate font-semibold">
+                        {editor.isActive("heading", { level: 1 })
+                          ? "Tiêu đề 1"
+                          : editor.isActive("heading", { level: 2 })
+                          ? "Tiêu đề 2"
+                          : editor.isActive("heading", { level: 3 })
+                          ? "Tiêu đề 3"
+                          : "Văn bản"}
+                      </span>
+                    </div>
+                    <ChevronDown className="h-3 w-3 opacity-60 shrink-0 ml-0.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-40 text-xs">
+                <DropdownMenuContent align="start" className="w-48 text-xs p-1">
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground font-semibold px-2 py-1">
+                    Kiểu đoạn văn bản (Styles)
+                  </DropdownMenuLabel>
                   <DropdownMenuItem
-                    onClick={() => editor.chain().focus().setParagraph().run()}
-                    className="cursor-pointer"
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={() => (editor.chain().focus() as any).setParagraph().run()}
+                    className={`cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-md ${
+                      !editor.isActive("heading") ? "bg-primary/10 text-primary font-semibold" : ""
+                    }`}
                   >
-                    Văn bản thường
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 opacity-70" />
+                      <span>Văn bản thường</span>
+                    </div>
+                    {!editor.isActive("heading") && <Check className="h-3.5 w-3.5 text-primary" />}
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                    className="cursor-pointer font-bold text-base"
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={() => (editor.chain().focus() as any).setHeading({ level: 1 }).unsetFontSize().run()}
+                    className={`cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-md ${
+                      editor.isActive("heading", { level: 1 }) ? "bg-primary/10 text-primary font-semibold" : ""
+                    }`}
                   >
-                    Tiêu đề 1 (H1)
+                    <div className="flex items-center gap-2">
+                      <Heading1 className="h-4 w-4 text-primary" />
+                      <span className="font-bold text-sm">Tiêu đề 1 (H1)</span>
+                    </div>
+                    {editor.isActive("heading", { level: 1 }) && <Check className="h-3.5 w-3.5 text-primary" />}
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                    className="cursor-pointer font-bold text-sm"
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={() => (editor.chain().focus() as any).setHeading({ level: 2 }).unsetFontSize().run()}
+                    className={`cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-md ${
+                      editor.isActive("heading", { level: 2 }) ? "bg-primary/10 text-primary font-semibold" : ""
+                    }`}
                   >
-                    Tiêu đề 2 (H2)
+                    <div className="flex items-center gap-2">
+                      <Heading2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      <span className="font-bold text-xs">Tiêu đề 2 (H2)</span>
+                    </div>
+                    {editor.isActive("heading", { level: 2 }) && <Check className="h-3.5 w-3.5 text-primary" />}
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                    className="cursor-pointer font-semibold text-xs"
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={() => (editor.chain().focus() as any).setHeading({ level: 3 }).unsetFontSize().run()}
+                    className={`cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-md ${
+                      editor.isActive("heading", { level: 3 }) ? "bg-primary/10 text-primary font-semibold" : ""
+                    }`}
                   >
-                    Tiêu đề 3 (H3)
+                    <div className="flex items-center gap-2">
+                      <Heading3 className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-xs">Tiêu đề 3 (H3)</span>
+                    </div>
+                    {editor.isActive("heading", { level: 3 }) && <Check className="h-3.5 w-3.5 text-primary" />}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

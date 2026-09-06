@@ -377,6 +377,58 @@ body {
   text-indent: 0 !important;
 }
 
+/* Định dạng phân cấp Tiêu đề chuẩn văn bản (Heading 1, 2, 3) */
+.a4-paper-canvas h1,
+.a4-paper-canvas h1 * {
+  font-family: 'Times New Roman', Times, serif !important;
+  font-size: 17pt !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  color: inherit !important;
+  text-indent: 0 !important;
+}
+
+.a4-paper-canvas h1 {
+  margin-top: 14pt !important;
+  margin-bottom: 6pt !important;
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+}
+
+.a4-paper-canvas h2,
+.a4-paper-canvas h2 * {
+  font-family: 'Times New Roman', Times, serif !important;
+  font-size: 15pt !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  color: inherit !important;
+  text-indent: 0 !important;
+}
+
+.a4-paper-canvas h2 {
+  margin-top: 12pt !important;
+  margin-bottom: 5pt !important;
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+}
+
+.a4-paper-canvas h3,
+.a4-paper-canvas h3 * {
+  font-family: 'Times New Roman', Times, serif !important;
+  font-size: 13.5pt !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  color: inherit !important;
+  text-indent: 0 !important;
+}
+
+.a4-paper-canvas h3 {
+  margin-top: 10pt !important;
+  margin-bottom: 4pt !important;
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+}
+
 /* Bảng ẩn Tiêu ngữ (40/60) & Chữ ký (50/50): Khoảng cách dòng khít, margin 0 */
 .a4-paper-canvas table[data-nd30-table="true"] p,
 .a4-paper-canvas .nd30-table p {
