@@ -11,11 +11,16 @@ import {
   FolderKanban,
   Sparkles,
   BarChart3,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams?: Promise<{ notice?: string; error?: string }>;
+}
+
+export default async function DashboardPage(props: DashboardPageProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -23,6 +28,7 @@ export default async function DashboardPage() {
   }
 
   const { user } = session;
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
 
   // Lấy chỉ số thực tế từ cơ sở dữ liệu
   const [totalDrafts, totalFolders] = await Promise.all([
@@ -75,6 +81,21 @@ export default async function DashboardPage() {
 
       {/* Main Dashboard Workspace */}
       <main className="flex-1 container mx-auto max-w-6xl p-6 md:p-8 space-y-8">
+        {/* Notice cảnh báo phân quyền nếu cán bộ thường cố truy cập /admin */}
+        {searchParams?.notice === "admin_only" && (
+          <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                Bạn đang đăng nhập với vai trò <strong>{user.role}</strong>. Phân hệ <strong>Quản trị Cấp cao (Admin Hub)</strong> chỉ dành riêng cho Quản trị viên hệ thống.
+              </span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
+              Quyền hạn chế
+            </span>
+          </div>
+        )}
+
         {/* User Welcome Banner */}
         <div className="rounded-2xl border bg-gradient-to-r from-blue-900/10 via-primary/5 to-transparent p-6 sm:p-8 shadow-xs">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -93,13 +114,13 @@ export default async function DashboardPage() {
 
             <div className="flex flex-wrap items-center gap-2.5">
               <Button asChild className="gap-2 shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">
-                <Link href="/templates/demo">
+                <Link href="/templates">
                   <Sparkles className="h-4 w-4" />
                   <span>Thư viện mẫu chuẩn</span>
                 </Link>
               </Button>
               <Button variant="outline" asChild className="gap-2 text-xs font-semibold">
-                <Link href="/admin/analytics">
+                <Link href="/analytics">
                   <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                   <span>Năng suất & Thống kê</span>
                 </Link>
@@ -110,6 +131,14 @@ export default async function DashboardPage() {
                   <span>Cấu hình BYOK</span>
                 </Link>
               </Button>
+              {user.role === "ADMIN" && (
+                <Button variant="outline" asChild className="gap-2 text-xs font-semibold border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400">
+                  <Link href="/admin">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>Admin Hub</span>
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

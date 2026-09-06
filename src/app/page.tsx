@@ -50,7 +50,7 @@ export default function Home() {
               </Link>
             </Button>
             <Button variant="ghost" size="sm" asChild className="text-slate-300 hover:text-white hover:bg-slate-800/60">
-              <Link href="/admin/templates" className="flex items-center gap-1.5">
+              <Link href="/templates" className="flex items-center gap-1.5">
                 <Layers className="h-4 w-4 text-indigo-400" />
                 <span>Kho mẫu biểu</span>
               </Link>
@@ -62,7 +62,7 @@ export default function Home() {
               </Link>
             </Button>
             <Button variant="ghost" size="sm" asChild className="text-slate-300 hover:text-white hover:bg-slate-800/60">
-              <Link href="/admin/analytics" className="flex items-center gap-1.5">
+              <Link href="/analytics" className="flex items-center gap-1.5">
                 <BarChart3 className="h-4 w-4 text-emerald-400" />
                 <span>Thống kê</span>
               </Link>
@@ -549,10 +549,10 @@ export default function Home() {
               <Link href="/login" className="hover:text-white transition-colors">
                 Đăng nhập
               </Link>
-              <Link href="/admin/templates" className="hover:text-white transition-colors">
+              <Link href="/templates" className="hover:text-white transition-colors">
                 Kho mẫu biểu
               </Link>
-              <Link href="/admin/analytics" className="hover:text-white transition-colors">
+              <Link href="/analytics" className="hover:text-white transition-colors">
                 Thống kê
               </Link>
               <Link href="/settings" className="hover:text-white transition-colors">

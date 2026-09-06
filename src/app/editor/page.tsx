@@ -177,8 +177,19 @@ function EditorContentComponent() {
           if (!ignore && data.length > 0) {
             setTemplates(data);
             if (!draftIdFromUrl) {
-              setSelectedTemplateId(data[0].id);
-              setDocumentTitle(`Dự thảo ${data[0].title}`);
+              const urlTemplateId = searchParams.get("templateId") || searchParams.get("template");
+              const targetTemplate = urlTemplateId
+                ? data.find((t: TemplateItem) => t.id === urlTemplateId)
+                : null;
+              if (targetTemplate) {
+                setSelectedTemplateId(targetTemplate.id);
+                setDocumentTitle(`Dự thảo ${targetTemplate.title}`);
+                setIsLeftSidebarOpen(true);
+                setSidebarMode("template");
+              } else {
+                setSelectedTemplateId(data[0].id);
+                setDocumentTitle(`Dự thảo ${data[0].title}`);
+              }
             }
           }
         }
